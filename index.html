@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>変形ボクセルモデル集 | VOXEL TRANSFORMERS</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px;
+    background: radial-gradient(circle at 50% 30%, #16243d 0%, #090d16 70%);
+    background-color: #0a0e17;
+    color: #dce8ff;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  }
+  header { max-width: 1080px; margin: 0 auto 8px; }
+  h1 { font-size: 26px; letter-spacing: .12em; margin: 8px 0 4px; }
+  .sub { color: #9bb3d8; font-size: 14px; line-height: 1.8; }
+  .sub a { color: #7cc4ff; }
+  .grid {
+    max-width: 1080px; margin: 20px auto 0;
+    display: grid; gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+  .card {
+    background: rgba(12, 18, 30, 0.85);
+    border: 1px solid rgba(100, 160, 255, 0.35);
+    border-radius: 10px; overflow: hidden;
+  }
+  .card img { width: 100%; display: block; }
+  .card .body { padding: 12px 14px 14px; }
+  .card h2 { font-size: 17px; margin: 0 0 4px; }
+  .counts { color: #9bb3d8; font-size: 12.5px; margin-bottom: 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  a.btn {
+    display: inline-block; padding: 7px 12px; border-radius: 6px;
+    font-size: 12.5px; font-weight: 600; text-decoration: none;
+    background: rgba(24, 38, 64, 0.9); color: #dce8ff;
+    border: 1px solid rgba(100, 160, 255, 0.4);
+  }
+  a.btn:hover { background: rgba(45, 75, 125, 0.95); }
+  a.btn.main {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
+    border-color: #93c5fd;
+  }
+  footer {
+    max-width: 1080px; margin: 28px auto 0; color: #7e93b8;
+    font-size: 12.5px; line-height: 1.9;
+  }
+  footer a { color: #7cc4ff; }
+</style>
+</head>
+<body>
+<header>
+  <h1>変形ボクセルモデル集</h1>
+  <div class="sub">
+    Gemini が設計した、乗り物や建物からロボットへ変形するボクセルモデル10件です。<br>
+    各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。変形の様子は
+    <a href="https://oosawak.github.io/voxel-valkyrie/">Voxel Valkyrie</a>
+    のハンガーで確認できます（「変形を見る」ボタンで、そのモデルが開きます）。
+  </div>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<footer>
+  <p>
+    仕組み: モデルは2形態分のボクセルデータの組です。Voxel Valkyrie 側はデータ駆動になっていて、
+    変換したデータを <span style="font-family:monospace">models-extra.js</span> に足すだけで、ユニットとして追加できます。<br>
+    生成スクリプト（.py）は各カードからダウンロードできます。戦闘機の見本は
+    <a href="https://oosawak.github.io/sprite-stack-proto/">スプライトスタック試作</a>の valkyrie.py です。
+  </p>
+</footer>
+
+<script>
+const VV = 'https://oosawak.github.io/voxel-valkyrie/';
+const MODELS = [
+  { key: 'shinkansen', name: '新幹線', a: 2436, b: 2722, note: '先頭車が胸と頭、客車が手脚に' },
+  { key: 'trailer', name: 'トレーラー', a: 2214, b: 3024, note: 'キャブが胸、荷台パネルが背中の翼と盾に' },
+  { key: 'castle', name: 'お城', a: 2416, b: 2807, note: '天守が胴体、金の鯱が兜の鍬形に' },
+  { key: 'tank', name: '戦車', a: 2384, b: 3956, note: '砲塔と主砲が背中から右肩のキャノンに' },
+  { key: 'dinosaur', name: '恐竜（ティラノサウルス）', a: 2330, b: 3887, note: '恐竜の頭が右腕の武器、尻尾は背中に' },
+  { key: 'excavator', name: 'ショベルカー', a: 2463, b: 3736, note: 'ブームとバケットが右腕そのものに' },
+  { key: 'steamloco', name: '蒸気機関車', a: 2420, b: 3124, note: 'ボイラーと前照灯が胸、動輪が脚に' },
+  { key: 'submarine', name: '潜水艦', a: 2008, b: 2952, note: '艦橋と潜望鏡が背中、スクリューが脚部に' },
+  { key: 'firetruck', name: 'はしご消防車', a: 2104, b: 3041, note: '白いはしごが右肩のキャノン、頭は防火帽' },
+  { key: 'ferriswheel', name: '観覧車', a: 1986, b: 3341, note: '大車輪が背中の光輪、ゴンドラが装甲に' },
+];
+document.getElementById('grid').innerHTML = MODELS.map(m => `
+  <div class="card">
+    <img src="models/preview_${m.key}.png" alt="${m.name}の変形プレビュー">
+    <div class="body">
+      <h2>${m.name} → ロボット</h2>
+      <div class="counts">ボクセル数 ${m.a.toLocaleString()} → ${m.b.toLocaleString()} ／ ${m.note}</div>
+      <div class="row">
+        <a class="btn main" href="${VV}?unit=${m.key}">変形を見る</a>
+        <a class="btn main" href="${VV}?unit=${m.key}&form=1">ロボットで開く</a>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <a class="btn" href="models/${m.key}_a.vox" download>${m.name}.vox</a>
+        <a class="btn" href="models/${m.key}_b.vox" download>ロボット.vox</a>
+        <a class="btn" href="models/${m.key}.py" download>生成スクリプト.py</a>
+      </div>
+    </div>
+  </div>`).join('');
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script>
+</body>
+</html>
