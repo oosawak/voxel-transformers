@@ -55,7 +55,7 @@
 <header>
   <h1>変形ボクセルモデル集</h1>
   <div class="sub">
-    Gemini が設計した、乗り物や建物からロボットへ変形するボクセルモデル10件です。<br>
+    Gemini が設計した、乗り物や建物からロボットへ変形するボクセルモデル30件です。<br>
     各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。変形の様子は
     <a href="https://oosawak.github.io/voxel-valkyrie/">Voxel Valkyrie</a>
     のハンガーで確認できます（「変形を見る」ボタンで、そのモデルが開きます）。
@@ -86,6 +86,26 @@ const MODELS = [
   { key: 'submarine', name: '潜水艦', a: 2008, b: 2952, note: '艦橋と潜望鏡が背中、スクリューが脚部に' },
   { key: 'firetruck', name: 'はしご消防車', a: 2104, b: 3041, note: '白いはしごが右肩のキャノン、頭は防火帽' },
   { key: 'ferriswheel', name: '観覧車', a: 1986, b: 3341, note: '大車輪が背中の光輪、ゴンドラが装甲に' },
+  { key: 'dump', name: 'ダンプトラック', a: 2254, b: 3142, note: '荷台が背中の大きな盾に' },
+  { key: 'helicopter', name: 'ヘリコプター', a: 1959, b: 3163, note: 'メインローターが背中と武器に' },
+  { key: 'jet', name: '旅客機', a: 2086, b: 3491, note: '主翼が背中の翼、尾翼が頭飾りに' },
+  { key: 'rocket', name: 'ロケット', a: 2116, b: 3426, note: '機体が胴体、ノーズが頭に' },
+  { key: 'ufo', name: 'UFO', a: 2092, b: 3393, note: '円盤が肩と腰の装甲、ドームが頭に' },
+  { key: 'bus', name: '二階建てバス', a: 2372, b: 3244, note: '車体が胴体、窓列が胸の意匠に' },
+  { key: 'police', name: 'パトカー', a: 2042, b: 3362, note: '赤色灯が頭と肩に' },
+  { key: 'snowmobile', name: 'スノーモービル', a: 1812, b: 3230, note: 'ソリが脚、カウルが胸に' },
+  { key: 'forklift', name: 'フォークリフト', a: 2153, b: 3495, note: 'フォークが右腕の武器に' },
+  { key: 'mixer', name: 'ミキサー車', a: 2329, b: 3109, note: 'ドラムが胴体そのものに' },
+  { key: 'torii', name: '鳥居', a: 1964, b: 3204, note: '笠木が肩と頭の冠に' },
+  { key: 'pagoda', name: '五重塔', a: 2194, b: 3436, note: '五層の屋根が肩と腰の装甲に' },
+  { key: 'lighthouse', name: '灯台', a: 2009, b: 3143, note: '灯室が頭、塔体が胴体に' },
+  { key: 'windmill', name: '風車', a: 2247, b: 3442, note: '羽根が背中の大きな十字翼に' },
+  { key: 'balloon', name: '熱気球', a: 2189, b: 3542, note: '球皮が胴体と肩の装甲に' },
+  { key: 'sailship', name: '帆船', a: 2776, b: 4464, note: '帆が背中の翼、船体が脚に' },
+  { key: 'shark', name: 'サメ', a: 1280, b: 3237, note: 'サメの頭が胸と腕、背びれが背中に' },
+  { key: 'whale', name: 'クジラ', a: 1250, b: 2627, note: '大きな頭が胸、尾びれが背中の翼に' },
+  { key: 'penguin', name: 'ペンギン', a: 1122, b: 3153, note: '翼が腕、くちばしが頭の意匠に' },
+  { key: 'tractor', name: 'トラクター', a: 2602, b: 4482, note: '大きな後輪が脚と肩に' },
 ];
 document.getElementById('grid').innerHTML = MODELS.map(m => `
   <div class="card">
