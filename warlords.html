@@ -311,7 +311,13 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
 
   // --- 獣形態の型アニメ（うねり・はばたき・四足歩行） ---
   const BEAST = {};
-  const BEAST_LABELS = { wave: 'アニメ: うねり', flap: 'アニメ: はばたき', quad: 'アニメ: 四足歩行' };
+  const BEAST_LABELS = { wave: 'アニメ: うねり', flap: 'アニメ: はばたき', quad_cat: 'アニメ: 四足歩行', quad_monkey: 'アニメ: サルの歩行', quad_deer: 'アニメ: 四足歩行', quad_small: 'アニメ: 四足歩行' };
+  const QUAD_PARAMS = {
+    quad_cat: { spd: 0.6, amp: 0.50, front: 1.0, roll: 0.02, bob: 0.15 },
+    quad_monkey: { spd: 1.0, amp: 0.38, front: 1.7, roll: 0.07, bob: 0.2 },
+    quad_deer: { spd: 1.35, amp: 0.34, front: 1.0, roll: 0, bob: 0.5 },
+    quad_small: { spd: 1.2, amp: 0.38, front: 1.0, roll: 0.03, bob: 0.2 }
+  };
   function buildBeast(key) {
     const m = MODELS.find(e => e.key === key);
     BEAST[key] = m.forms.map((f, i) => {
@@ -329,9 +335,10 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
       if (type === 'flap') {
         parts = list.map(v => (v.y > minY + H * 0.5 && Math.abs(v.x) > spanX * 0.16)
           ? { side: v.x > 0 ? 1 : -1, cx: (v.x > 0 ? 1 : -1) * spanX * 0.10, cy: minY + H * 0.52 } : null);
-      } else if (type === 'quad') {
+      } else if (type.startsWith('quad')) {
         const py = minY + H * 0.38;
-        parts = list.map(v => v.y < py ? { py, phase: ((v.x < 0) !== (v.z < 0)) ? 0 : Math.PI } : null);
+        const midZ = (minZ + maxZ) / 2;
+        parts = list.map(v => v.y < py ? { py, phase: ((v.x < 0) !== (v.z < 0)) ? 0 : Math.PI, front: v.z < midZ } : null);
       }
       return { type, parts, minX, maxX, minY, maxY, minZ, maxZ, spanX, spanZ };
     });
@@ -352,16 +359,29 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
       const nx = (p.x - b.minX) / (b.spanX || 1);
       return { x: p.x, y: p.y + Math.cos(ph * 1.4 - p.x * 0.32) * 0.22 * w, z: p.z + Math.sin(ph * 1.4 - p.x * 0.32) * 1.0 * w * (0.55 + 0.45 * nx) };
     }
-    if (!part) return p;
+    if (b.type.startsWith('quad')) {
+      // 下の quad 処理へ（part が無いボクセルにも体の揺れを付ける）
+    } else if (!part) return p;
     if (b.type === 'flap') {
       const a = part.side * Math.sin(ph * 1.5) * 0.5 * w;
       const c = Math.cos(a), s = Math.sin(a);
       const dx = p.x - part.cx, dy = p.y - part.cy;
       return { x: part.cx + dx * c - dy * s, y: part.cy + dx * s + dy * c, z: p.z };
     }
-    const ang = Math.sin(ph + part.phase) * 0.4 * w;
-    const [yy, zz] = rotXAround(p.y, p.z, part.py, 0, ang);
-    return { x: p.x, y: yy, z: zz };
+    const P = QUAD_PARAMS[b.type] || QUAD_PARAMS.quad_cat;
+    const qph = ph * P.spd;
+    let x = p.x, y = p.y + Math.abs(Math.sin(qph)) * P.bob * w, z = p.z;
+    if (P.roll) {
+      const a = Math.sin(qph) * P.roll * w;
+      const c = Math.cos(a), sn = Math.sin(a);
+      const cy = b.minY + (b.maxY - b.minY) * 0.45;
+      const dx = x, dy = y - cy;
+      x = dx * c - dy * sn; y = cy + dx * sn + dy * c;
+    }
+    if (!part) return { x, y, z };
+    const ang = Math.sin(qph + part.phase) * P.amp * (part.front ? P.front : 1) * w;
+    const [yy, zz] = rotXAround(y, z, part.py, 0, ang);
+    return { x, y: yy, z: zz };
   }
 
   // --- THREE 描画 ---
