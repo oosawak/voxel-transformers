@@ -314,7 +314,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
   const BEAST_LABELS = { wave: 'アニメ: うねり', flap: 'アニメ: はばたき', quad_cat: 'アニメ: 四足歩行', quad_monkey: 'アニメ: サルの歩行', quad_deer: 'アニメ: 四足歩行', quad_small: 'アニメ: 四足歩行' };
   const QUAD_PARAMS = {
     quad_cat: { spd: 0.6, amp: 0.50, front: 1.0, roll: 0.02, bob: 0.15 },
-    quad_monkey: { spd: 1.0, amp: 0.38, front: 1.7, roll: 0.07, bob: 0.2 },
+    quad_monkey: { spd: 1.0, amp: 0.38, front: 1.7, roll: 0.07, bob: 0.2, pitch: 0.06, hindAmp: 1.35 },
     quad_deer: { spd: 1.35, amp: 0.34, front: 1.0, roll: 0, bob: 0.5 },
     quad_small: { spd: 1.2, amp: 0.38, front: 1.0, roll: 0.03, bob: 0.2 }
   };
@@ -338,9 +338,17 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
       } else if (type.startsWith('quad')) {
         const py = minY + H * 0.38;
         const midZ = (minZ + maxZ) / 2;
-        parts = list.map(v => v.y < py ? { py, phase: ((v.x < 0) !== (v.z < 0)) ? 0 : Math.PI, front: v.z < midZ } : null);
+        parts = list.map(v => {
+          if (v.y >= py) return null;
+          const front = v.z < midZ;
+          // サル型は前足が左右交互、後ろ足はそろえて蹴る。それ以外は対角ペア
+          const phase = type === 'quad_monkey'
+            ? (front ? (v.x < 0 ? 0 : Math.PI) : 0.8)
+            : (((v.x < 0) !== (v.z < 0)) ? 0 : Math.PI);
+          return { py, phase, front };
+        });
       }
-      return { type, parts, minX, maxX, minY, maxY, minZ, maxZ, spanX, spanZ };
+      return { type, parts, minX, maxX, minY, maxY, minZ, maxZ, spanX, spanZ, H };
     });
   }
   function animKind() {
@@ -378,8 +386,14 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
       const dx = x, dy = y - cy;
       x = dx * c - dy * sn; y = cy + dx * sn + dy * c;
     }
+    if (P.pitch) {
+      const pa = Math.sin(qph + 0.6) * P.pitch * w;
+      const cy2 = b.minY + b.H * 0.42, cz2 = (b.minZ + b.maxZ) / 2;
+      const [py2, pz2] = rotXAround(y, z, cy2, cz2, pa);
+      y = py2; z = pz2;
+    }
     if (!part) return { x, y, z };
-    const ang = Math.sin(qph + part.phase) * P.amp * (part.front ? P.front : 1) * w;
+    const ang = Math.sin(qph + part.phase) * P.amp * (part.front ? P.front : (P.hindAmp || 1)) * w;
     const [yy, zz] = rotXAround(y, z, part.py, 0, ang);
     return { x, y: yy, z: zz };
   }
