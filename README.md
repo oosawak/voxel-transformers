@@ -8,3 +8,7 @@ Gemini が設計した「乗り物・建物・生き物 → ロボット」の�
 
 モデルの正本データは sprite-stack-proto の gemini-transformers フォルダで生成し、
 Voxel Valkyrie 側へは `convert_to_vv.py` で変換した `models-extra.js` として登録しています。
+
+## ライセンス
+
+MIT License（名義: Lyre3 Games）。このリポジトリのモデルデータ（.vox）、生成スクリプト（.py）、サンプル、サイトのコードが対象です。詳細は LICENSE を参照してください。
