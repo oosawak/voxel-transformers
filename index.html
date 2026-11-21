@@ -116,7 +116,7 @@
     </div>
   </div>
   <canvas id="viewer-canvas"></canvas>
-  <div class="viewer-note">ドラッグで回転できます。カードの「このページで変形を見る」からも、そのモデルがここに開きます。ロボット形態では「アニメ」ボタンで関節アニメ（歩行・構え・敬礼・L字）が再生でき、「関節の位置」で回転中心を1ブロックずつ調整できます。</div>
+  <div class="viewer-note">ドラッグで回転できます。カードの「このページで変形を見る」からも、そのモデルがここに開きます。ロボット形態では「アニメ」ボタンで関節アニメ（歩行・構え・敬礼・L字・走行・移動）が、獣形態では型アニメ（うねり・はばたき・四足歩行）が再生でき、「関節の位置」で回転中心を1ブロックずつ調整できます。</div>
 </section>
 
 <div class="grid" id="grid"></div>
@@ -348,6 +348,62 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
   }
 
 
+
+  // --- 獣形態の型アニメ（うねり・はばたき・四足歩行） ---
+  const BEAST = {};
+  const BEAST_LABELS = { wave: 'アニメ: うねり', flap: 'アニメ: はばたき', quad: 'アニメ: 四足歩行' };
+  function buildBeast(key) {
+    const m = MODELS.find(e => e.key === key);
+    BEAST[key] = m.forms.map((f, i) => {
+      const type = m.formAnim ? m.formAnim[i] : null;
+      if (!type) return null;
+      const list = SURFACES[key][i];
+      let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, minZ = 1e9, maxZ = -1e9;
+      for (const v of list) {
+        if (v.x < minX) minX = v.x; if (v.x > maxX) maxX = v.x;
+        if (v.y < minY) minY = v.y; if (v.y > maxY) maxY = v.y;
+        if (v.z < minZ) minZ = v.z; if (v.z > maxZ) maxZ = v.z;
+      }
+      const H = maxY - minY, spanX = maxX - minX, spanZ = maxZ - minZ;
+      let parts = null;
+      if (type === 'flap') {
+        parts = list.map(v => (v.y > minY + H * 0.5 && Math.abs(v.x) > spanX * 0.16)
+          ? { side: v.x > 0 ? 1 : -1, cx: (v.x > 0 ? 1 : -1) * spanX * 0.10, cy: minY + H * 0.52 } : null);
+      } else if (type === 'quad') {
+        const py = minY + H * 0.38;
+        parts = list.map(v => v.y < py ? { py, phase: ((v.x < 0) !== (v.z < 0)) ? 0 : Math.PI } : null);
+      }
+      return { type, parts, minX, maxX, minY, maxY, minZ, maxZ, spanX, spanZ };
+    });
+  }
+  function animKind() {
+    const m = MODELS.find(e => e.key === unitKey);
+    if (!m) return null;
+    if ((m.robotForms || [1]).includes(targetForm)) return 'robot';
+    const b = BEAST[unitKey] && BEAST[unitKey][targetForm];
+    return b ? b.type : null;
+  }
+  function beastPoint(p, b, part, w, ph) {
+    if (b.type === 'wave') {
+      if (b.spanZ >= b.spanX) {
+        const nz = (p.z - b.minZ) / (b.spanZ || 1);
+        return { x: p.x + Math.sin(ph * 1.4 - p.z * 0.32) * 1.0 * w * (0.55 + 0.45 * nz), y: p.y + Math.cos(ph * 1.4 - p.z * 0.32) * 0.22 * w, z: p.z };
+      }
+      const nx = (p.x - b.minX) / (b.spanX || 1);
+      return { x: p.x, y: p.y + Math.cos(ph * 1.4 - p.x * 0.32) * 0.22 * w, z: p.z + Math.sin(ph * 1.4 - p.x * 0.32) * 1.0 * w * (0.55 + 0.45 * nx) };
+    }
+    if (!part) return p;
+    if (b.type === 'flap') {
+      const a = part.side * Math.sin(ph * 1.5) * 0.5 * w;
+      const c = Math.cos(a), s = Math.sin(a);
+      const dx = p.x - part.cx, dy = p.y - part.cy;
+      return { x: part.cx + dx * c - dy * s, y: part.cy + dx * s + dy * c, z: p.z };
+    }
+    const ang = Math.sin(ph + part.phase) * 0.4 * w;
+    const [yy, zz] = rotXAround(p.y, p.z, part.py, 0, ang);
+    return { x: p.x, y: yy, z: zz };
+  }
+
   // --- THREE 描画 ---
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -397,6 +453,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     toList = SURFACES[key][form];
     moveX = 0; moveZ = 0; heading = 0;
     buildParts(key);
+    buildBeast(key);
     fitCamera(key);
     buildFormButtons();
   }
@@ -408,6 +465,9 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     targetForm = idx;
     morphT = 0.0;
     buildFormButtons();
+    const k2 = animKind();
+    if (k2 && k2 !== 'robot' && animMode > 1) animMode = 1;
+    refreshAnimBtn();
   }
   function buildFormButtons() {
     const m = window.EXTRA_MODELS.find(e => e.key === unitKey);
@@ -439,10 +499,18 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
   rotateBtn.classList.add('active');
 
   const animBtn = document.getElementById('btn-anim');
-  animBtn.addEventListener('click', () => {
-    animMode = (animMode + 1) % ANIM_LABELS.length;
-    animBtn.textContent = ANIM_LABELS[animMode];
+  function refreshAnimBtn() {
+    const kind = animKind();
+    animBtn.textContent = (kind && kind !== 'robot')
+      ? (animMode > 0 ? BEAST_LABELS[kind] : 'アニメ: なし')
+      : ANIM_LABELS[animMode];
     animBtn.classList.toggle('active', animMode > 0);
+  }
+  animBtn.addEventListener('click', () => {
+    const kind = animKind();
+    if (kind && kind !== 'robot') animMode = animMode > 0 ? 0 : 1;
+    else animMode = (animMode + 1) % ANIM_LABELS.length;
+    refreshAnimBtn();
   });
   document.querySelectorAll('#pivot-row button[data-pv]').forEach(b => {
     b.addEventListener('click', () => {
@@ -491,7 +559,8 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     const count = Math.max(fromList.length, toList.length);
     const curModel = MODELS.find(e => e.key === unitKey);
     const isRobot = curModel && (curModel.robotForms || [1]).includes(targetForm);
-    animW = Math.max(0, Math.min(1, animW + ((animMode > 0 && isRobot) ? dt * 3 : -dt * 3)));
+    const kindNow = animKind();
+    animW = Math.max(0, Math.min(1, animW + ((animMode > 0 && kindNow) ? dt * 3 : -dt * 3)));
     const ph = now / 1000 * (animMode === 5 ? 11.5 : 7.0);
     const bob = (animMode === 1 || animMode === 6) ? Math.abs(Math.sin(ph)) * 0.8 * animW * t : animMode === 5 ? Math.abs(Math.sin(ph)) * 1.3 * animW * t : 0;
     scrollZ = (scrollZ + dt * 16 * (animMode === 5 ? animW : 0)) % 5;
@@ -534,10 +603,19 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
       const sc = scA + (scB - scA) * t;
       let bx = b.x, by = b.y, bz = b.z;
       if (animW > 0) {
-        const plist = PARTS[unitKey] ? PARTS[unitKey][targetForm] : null;
-        if (plist) {
-          const part = plist[i % toList.length];
-          if (part) { const pp = posePoint(b, part, animW * t, ph); bx = pp.x; by = pp.y; bz = pp.z; }
+        if (kindNow === 'robot') {
+          const plist = PARTS[unitKey] ? PARTS[unitKey][targetForm] : null;
+          if (plist) {
+            const part = plist[i % toList.length];
+            if (part) { const pp = posePoint(b, part, animW * t, ph); bx = pp.x; by = pp.y; bz = pp.z; }
+          }
+        } else if (kindNow) {
+          const bb = BEAST[unitKey] ? BEAST[unitKey][targetForm] : null;
+          if (bb) {
+            const part = bb.parts ? bb.parts[i % toList.length] : null;
+            const pp = beastPoint(b, bb, part, animW * t, ph);
+            bx = pp.x; by = pp.y; bz = pp.z;
+          }
         }
       }
       dummy.position.set(
