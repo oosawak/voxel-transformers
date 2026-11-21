@@ -84,7 +84,7 @@
 <header>
   <h1>変形ボクセルモデル集</h1>
   <div class="sub">
-    Gemini が設計した、乗り物や建物からロボットへ変形するボクセルモデル30件です。<br>
+    Gemini が設計した、乗り物や建物からロボットへ変形するボクセルモデル50件です。<br>
     変形の様子は、このページのビューアでそのまま見られます。各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。
     ゲームの中で使う様子は
     <a href="https://oosawak.github.io/voxel-valkyrie/">Voxel Valkyrie</a>
@@ -149,6 +149,26 @@ const MODELS = [
   { key: 'whale', name: 'クジラ', a: 1250, b: 2627, note: '大きな頭が胸、尾びれが背中の翼に' },
   { key: 'penguin', name: 'ペンギン', a: 1122, b: 3153, note: '翼が腕、くちばしが頭の意匠に' },
   { key: 'tractor', name: 'トラクター', a: 2602, b: 4482, note: '大きな後輪が脚と肩に' },
+  { key: 'crane', name: 'クレーン車', a: 2331, b: 3661, note: 'ブームが右腕、フックが武器に' },
+  { key: 'ambulance', name: '救急車', a: 2274, b: 3374, note: '赤十字と赤色灯が胸と頭の意匠に' },
+  { key: 'racingcar', name: 'レーシングカー', a: 2400, b: 3925, note: '低い車体が脚、ウイングが背中の翼に' },
+  { key: 'motorcycle', name: 'バイク', a: 2125, b: 3726, note: '車体が胴体、前後の車輪が肩と脚に' },
+  { key: 'snowplow', name: '除雪車', a: 2479, b: 3846, note: '排雪板が胸の大きな盾に' },
+  { key: 'camper', name: 'キャンピングカー', a: 2352, b: 3331, note: '居住部が胴体、窓の列が胸の意匠に' },
+  { key: 'octopus', name: 'タコ', a: 1576, b: 2837, note: '8本の脚が腕と脚、丸い頭が胴体に' },
+  { key: 'crab', name: 'カニ', a: 1375, b: 3450, note: '大きなハサミが両腕、甲羅が胸に' },
+  { key: 'turtle', name: 'ウミガメ', a: 1498, b: 3398, note: '甲羅が背中と胸の装甲、ヒレが腕に' },
+  { key: 'elephant', name: 'ゾウ', a: 2166, b: 3565, note: '長い鼻が右腕、大きな耳が肩の装甲に' },
+  { key: 'giraffe', name: 'キリン', a: 1298, b: 2323, note: '長い首と脚、そのまま背の高い姿に' },
+  { key: 'owl', name: 'フクロウ', a: 2122, b: 3663, note: '翼が背中、大きな目が頭の意匠に' },
+  { key: 'pyramid', name: 'ピラミッド', a: 2070, b: 3293, note: '石の段が脚、四角錐が胴体に' },
+  { key: 'tokyotower', name: '東京タワー', a: 1660, b: 3442, note: '鉄塔が胴体、展望台が頭に' },
+  { key: 'daruma', name: 'だるま', a: 1890, b: 3118, note: '丸い体が胴体、顔が胸の意匠に' },
+  { key: 'snowman', name: '雪だるま', a: 1706, b: 3218, note: '雪玉が胴体と頭、枝の腕はそのままに' },
+  { key: 'guitar', name: 'ギター', a: 1237, b: 3775, note: 'ボディが胴体、ネックが右腕の武器に' },
+  { key: 'piano', name: 'グランドピアノ', a: 2173, b: 3599, note: '鍵盤が胸、開いた蓋が背中の翼に' },
+  { key: 'vending', name: '自動販売機', a: 2025, b: 3445, note: '箱の体が胴体、陳列窓が胸に' },
+  { key: 'battleship', name: '戦艦', a: 2286, b: 3632, note: '艦橋が頭、主砲が両肩のキャノンに' },
 ];
 document.getElementById('grid').innerHTML = MODELS.map(m => `
   <div class="card">
