@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>武将ロボシリーズ | VOXEL TRANSFORMERS</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px;
+    background: radial-gradient(circle at 50% 30%, #16243d 0%, #090d16 70%);
+    background-color: #0a0e17;
+    color: #dce8ff;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  }
+  header { max-width: 1080px; margin: 0 auto 8px; }
+  h1 { font-size: 26px; letter-spacing: .12em; margin: 8px 0 4px; }
+  .sub { color: #9bb3d8; font-size: 14px; line-height: 1.8; }
+  .sub a { color: #7cc4ff; }
+  .grid {
+    max-width: 1080px; margin: 20px auto 0;
+    display: grid; gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+  .card {
+    background: rgba(12, 18, 30, 0.85);
+    border: 1px solid rgba(100, 160, 255, 0.35);
+    border-radius: 10px; overflow: hidden;
+  }
+  .card img { width: 100%; display: block; }
+  .card .body { padding: 12px 14px 14px; }
+  .card h2 { font-size: 17px; margin: 0 0 4px; }
+  .counts { color: #9bb3d8; font-size: 12.5px; margin-bottom: 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  a.btn, button.btn {
+    display: inline-block; padding: 7px 12px; border-radius: 6px;
+    font-size: 12.5px; font-weight: 600; text-decoration: none;
+    background: rgba(24, 38, 64, 0.9); color: #dce8ff;
+    border: 1px solid rgba(100, 160, 255, 0.4);
+    font-family: inherit; cursor: pointer;
+  }
+  a.btn:hover, button.btn:hover { background: rgba(45, 75, 125, 0.95); }
+  a.btn.main, button.btn.main {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
+    border-color: #93c5fd;
+  }
+  button.btn.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
+    border-color: #93c5fd;
+  }
+  #viewer {
+    max-width: 1080px; margin: 20px auto 0;
+    background: rgba(12, 18, 30, 0.85);
+    border: 1px solid rgba(100, 160, 255, 0.35);
+    border-radius: 10px; overflow: hidden;
+  }
+  .viewer-head {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 12px 14px;
+  }
+  .viewer-head select {
+    font-size: 14px; padding: 7px 10px; border-radius: 6px;
+    background: rgba(24, 38, 64, 0.9); color: #dce8ff;
+    border: 1px solid rgba(100, 160, 255, 0.4); font-family: inherit;
+    max-width: 100%;
+  }
+  #viewer-canvas {
+    width: 100%; height: 440px; display: block;
+    background: #0b1324; touch-action: none; cursor: grab;
+  }
+  @media (max-width: 640px) { #viewer-canvas { height: 320px; } }
+  .viewer-note {
+    padding: 8px 14px 12px; color: #9bb3d8; font-size: 12.5px;
+  }
+  footer {
+    max-width: 1080px; margin: 28px auto 0; color: #7e93b8;
+    font-size: 12.5px; line-height: 1.9;
+  }
+  footer a { color: #7cc4ff; }
+</style>
+</head>
+<body>
+<header>
+  <h1>武将ロボシリーズ</h1>
+  <div class="sub">
+    戦国武将のロボットが、ゆかりの獣へ変形するボクセルモデルのシリーズです。全20件のうち、現在10件を公開しています（残りは順次追加）。<br>
+    変形の様子は、このページのビューアでそのまま見られます。各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。
+    ゲームの中で使う様子は
+    <a href="https://oosawak.github.io/voxel-valkyrie/">Voxel Valkyrie</a>
+    のハンガーで確認できます。<br>
+    乗り物や建物がロボットになるモデル集は
+    <a href="./">変形ボクセルモデル集</a>
+    にあります。
+  </div>
+</header>
+
+<section id="viewer">
+  <div class="viewer-head">
+    <select id="unit-select" aria-label="モデルを選ぶ"><option>読み込み中…</option></select>
+    <div class="row" id="form-btns"></div>
+    <div class="row">
+      <button class="btn" id="btn-rotate">回転: オン</button>
+    </div>
+  </div>
+  <canvas id="viewer-canvas"></canvas>
+  <div class="viewer-note">ドラッグで回転できます。カードの「このページで変形を見る」からも、そのモデルがここに開きます。</div>
+</section>
+
+<div class="grid" id="grid"></div>
+
+<footer>
+  <p>
+    仕組み: モデルは2形態分のボクセルデータの組です。ビューアと Voxel Valkyrie は、同じ
+    <span style="font-family:monospace">models-extra.js</span>
+    のデータを読んで変形を表示しています。変換したデータを足すだけで、ユニットとして追加できます。<br>
+    生成スクリプト（.py）は各カードからダウンロードできます。戦闘機の見本は
+    <a href="https://oosawak.github.io/sprite-stack-proto/">スプライトスタック試作</a>の valkyrie.py です。
+  </p>
+</footer>
+
+<script>
+const VV = 'https://oosawak.github.io/voxel-valkyrie/';
+const MODELS = [
+  { key: 'masamune', title: '伊達政宗ロボ → 竜', forms: [['ロボット', 2615, 'a'], ['ロボット改', 3831, 'b'], ['竜', 3647, 'c']], note: '独眼竜。三日月の前立てが竜の角になり、片目が竜の目に' },
+  { key: 'shigezane', title: '伊達成実ロボ → ムカデ', forms: [['ロボット', 3212, 'a'], ['ムカデ', 2155, 'b']], note: '大ムカデ前立ての兜。節と脚がロボの装甲に分かれる' },
+  { key: 'yoshiaki', title: '最上義光ロボ → 鮭', forms: [['ロボット', 3455, 'a'], ['鮭', 1869, 'b']], note: '最上川の鮭。背びれが背部の装甲に' },
+  { key: 'hideyoshi', title: '豊臣秀吉ロボ → 猿', forms: [['ロボット', 2625, 'a'], ['猿', 1949, 'b']], note: '千成瓢箪の意匠。猿の顔立ちと長い腕に' },
+  { key: 'kenshin', title: '上杉謙信ロボ → 龍', forms: [['ロボット', 3089, 'a'], ['龍', 2941, 'b']], note: '越後の龍。白と紺の装束から青白い龍へ' },
+  { key: 'shingen', title: '武田信玄ロボ → 虎', forms: [['ロボット', 3534, 'a'], ['虎', 2641, 'b']], note: '甲斐の虎。諏訪法性の兜と赤い装備が虎の縞に' },
+  { key: 'ieyasu', title: '徳川家康ロボ → 狸', forms: [['ロボット', 3691, 'a'], ['狸', 2214, 'b']], note: '茶と金の重厚な姿。丸い腹と狸の顔に' },
+  { key: 'dosan', title: '斎藤道三ロボ → 蛇', forms: [['ロボット', 3999, 'a'], ['蛇', 3380, 'b']], note: '美濃の蝮。とぐろがロボの下半身に' },
+  { key: 'ujiyasu', title: '北条氏康ロボ → 獅子', forms: [['ロボット', 3666, 'a'], ['獅子', 3492, 'b']], note: '相模の獅子。たてがみが兜と肩の装甲に' },
+  { key: 'tadakatsu', title: '本多忠勝ロボ → 鹿', forms: [['ロボット', 3257, 'a'], ['鹿', 2274, 'b']], note: '鹿角の兜そのまま。立派な角と槍の意匠' },
+];
+document.getElementById('grid').innerHTML = MODELS.map(m => `
+  <div class="card">
+    <img src="models/preview_${m.key}.png" alt="${m.title}の変形プレビュー">
+    <div class="body">
+      <h2>${m.title}</h2>
+      <div class="counts">ボクセル数 ${m.forms.map(f => f[1].toLocaleString()).join(' → ')} ／ ${m.note}</div>
+      <div class="row">
+        <button class="btn main" onclick="showInViewer('${m.key}')">このページで変形を見る</button>
+        <a class="btn" href="${VV}?unit=${m.key}">ゲームで開く</a>
+      </div>
+      <div class="row" style="margin-top:8px">
+        ${m.forms.map(f => `<a class="btn" href="models/${m.key}_${f[2]}.vox" download>${f[0]}.vox</a>`).join('')}
+        <a class="btn" href="models/${m.key}.py" download>生成スクリプト.py</a>
+      </div>
+    </div>
+  </div>`).join('');
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://oosawak.github.io/voxel-valkyrie/models-extra.js"></script>
+<script>
+// =========================================================
+// ページ内ビューア: Voxel Valkyrie と同じ models-extra.js を読み、
+// 同じ方式（表面ボクセルの位置を補間）で変形を表示する。
+// =========================================================
+(function () {
+  const select = document.getElementById('unit-select');
+  const formBtns = document.getElementById('form-btns');
+  const canvas = document.getElementById('viewer-canvas');
+  if (!window.THREE || !window.EXTRA_MODELS) {
+    select.innerHTML = '<option>ビューアを読み込めませんでした</option>';
+    return;
+  }
+
+  // --- .vox 由来データの展開（Voxel Valkyrie と同じ手順） ---
+  function createGrid(X, Y, Z) {
+    return { X, Y, Z, data: new Uint8Array(X * Y * Z) };
+  }
+  function setVoxel(g, x, y, z, c) {
+    if (x < 0 || y < 0 || z < 0 || x >= g.X || y >= g.Y || z >= g.Z) return;
+    g.data[x + g.X * (y + g.Y * z)] = c;
+  }
+  function getVoxel(g, x, y, z) {
+    if (x < 0 || y < 0 || z < 0 || x >= g.X || y >= g.Y || z >= g.Z) return 0;
+    return g.data[x + g.X * (y + g.Y * z)];
+  }
+  function gridFromQuads(dims, dataB64) {
+    const g = createGrid(dims[0], dims[1], dims[2]);
+    const bin = atob(dataB64);
+    for (let i = 0; i + 3 < bin.length; i += 4) {
+      setVoxel(g, bin.charCodeAt(i), bin.charCodeAt(i + 1), bin.charCodeAt(i + 2), bin.charCodeAt(i + 3));
+    }
+    return g;
+  }
+  function extractSurfaceVoxels(grid, palette) {
+    const list = [];
+    for (let x = 0; x < grid.X; x++) {
+      for (let y = 0; y < grid.Y; y++) {
+        for (let z = 0; z < grid.Z; z++) {
+          const c = getVoxel(grid, x, y, z);
+          if (!c) continue;
+          if (getVoxel(grid, x - 1, y, z) && getVoxel(grid, x + 1, y, z) &&
+              getVoxel(grid, x, y - 1, z) && getVoxel(grid, x, y + 1, z) &&
+              getVoxel(grid, x, y, z - 1) && getVoxel(grid, x, y, z + 1)) continue;
+          list.push({
+            x: x - grid.X / 2 + 0.5,
+            y: z - grid.Z / 2 + 0.5,
+            z: -(y - grid.Y / 2 + 0.5),
+            color: palette[c]
+          });
+        }
+      }
+    }
+    return list;
+  }
+
+  const WARLORD_KEYS = ['masamune','shigezane','yoshiaki','hideyoshi','kenshin','shingen','ieyasu','dosan','ujiyasu','tadakatsu'];
+  const ALL_MODELS = window.EXTRA_MODELS.filter(m => WARLORD_KEYS.includes(m.key));
+  const SURFACES = {};
+  for (const m of ALL_MODELS) {
+    SURFACES[m.key] = m.forms.map(f => extractSurfaceVoxels(gridFromQuads(f.dims, f.data), m.palette));
+  }
+
+  // --- THREE 描画 ---
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1324);
+  const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 2000);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.72));
+  const dir = new THREE.DirectionalLight(0xfff5e6, 0.95);
+  dir.position.set(40, 80, 50);
+  scene.add(dir);
+  const rim = new THREE.DirectionalLight(0x4da6ff, 0.45);
+  rim.position.set(-50, 20, -60);
+  scene.add(rim);
+  const grid = new THREE.GridHelper(160, 32, 0x3b82f6, 0x1e293b);
+  scene.add(grid);
+
+  const MAX_INSTANCES = 5200;
+  const mesh = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.96, 0.96, 0.96),
+    new THREE.MeshLambertMaterial({ color: 0xffffff }),
+    MAX_INSTANCES
+  );
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  scene.add(mesh);
+  const dummy = new THREE.Object3D();
+  const tmpColor = new THREE.Color();
+
+  // --- 状態 ---
+  let unitKey = null, currentForm = 0, targetForm = 0, morphT = 1.0;
+  let fromList = [], toList = [], camDist = 60;
+  let yaw = 0.65, pitch = 0.32, autoRotate = true, dragging = false;
+
+  function fitCamera(key) {
+    const m = ALL_MODELS.find(e => e.key === key);
+    const d = Math.max(...m.forms[0].dims);
+    camDist = d * 2.1;
+    grid.position.y = -d / 2 - 1;
+  }
+  function loadUnit(key, form) {
+    unitKey = key;
+    currentForm = form; targetForm = form; morphT = 1.0;
+    fromList = SURFACES[key][form];
+    toList = SURFACES[key][form];
+    fitCamera(key);
+    buildFormButtons();
+  }
+  function setForm(idx) {
+    if (!unitKey || idx === targetForm) return;
+    fromList = SURFACES[unitKey][targetForm];
+    toList = SURFACES[unitKey][idx];
+    currentForm = targetForm;
+    targetForm = idx;
+    morphT = 0.0;
+    buildFormButtons();
+  }
+  function buildFormButtons() {
+    const m = ALL_MODELS.find(e => e.key === unitKey);
+    formBtns.innerHTML = m.formNames.map((n, i) =>
+      `<button class="btn ${i === targetForm ? 'active' : ''}" data-form="${i}">${n}</button>`).join('');
+    formBtns.querySelectorAll('button').forEach(b =>
+      b.addEventListener('click', () => setForm(Number(b.dataset.form))));
+  }
+
+  select.innerHTML = ALL_MODELS.map(m =>
+    `<option value="${m.key}">${m.name}</option>`).join('');
+  select.addEventListener('change', () => loadUnit(select.value, 0));
+  loadUnit(ALL_MODELS[0].key, 0);
+
+  window.showInViewer = function (key) {
+    if (!SURFACES[key]) return;
+    select.value = key;
+    loadUnit(key, 0);
+    document.getElementById('viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => setForm(1), 450);
+  };
+
+  const rotateBtn = document.getElementById('btn-rotate');
+  rotateBtn.addEventListener('click', () => {
+    autoRotate = !autoRotate;
+    rotateBtn.textContent = autoRotate ? '回転: オン' : '回転: オフ';
+    rotateBtn.classList.toggle('active', autoRotate);
+  });
+  rotateBtn.classList.add('active');
+
+  let lastX = 0, lastY = 0;
+  canvas.addEventListener('pointerdown', e => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    yaw += (e.clientX - lastX) * 0.008;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch + (e.clientY - lastY) * 0.006));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  canvas.addEventListener('pointerup', () => { dragging = false; });
+  canvas.addEventListener('pointercancel', () => { dragging = false; });
+
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (canvas.width !== Math.floor(w * renderer.getPixelRatio()) ||
+        canvas.height !== Math.floor(h * renderer.getPixelRatio())) {
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+  }
+
+  let last = performance.now();
+  function animate(now) {
+    requestAnimationFrame(animate);
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    resize();
+    if (autoRotate && !dragging) yaw += dt * 0.4;
+    if (morphT < 1.0) morphT = Math.min(1.0, morphT + dt * 2.2);
+    const t = morphT * morphT * (3 - 2 * morphT);
+    const count = Math.max(fromList.length, toList.length);
+    for (let i = 0; i < MAX_INSTANCES; i++) {
+      if (i >= count) {
+        dummy.position.set(0, 0, 0);
+        dummy.scale.set(0, 0, 0);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+        continue;
+      }
+      const a = fromList[i % fromList.length];
+      const b = toList[i % toList.length];
+      const scA = i < fromList.length ? 1 : 0.01;
+      const scB = i < toList.length ? 1 : 0.01;
+      const sc = scA + (scB - scA) * t;
+      dummy.position.set(
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t,
+        a.z + (b.z - a.z) * t
+      );
+      dummy.scale.set(sc, sc, sc);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      tmpColor.setHex(t < 0.5 ? a.color : b.color);
+      mesh.setColorAt(i, tmpColor);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    camera.position.set(
+      Math.sin(yaw) * Math.cos(pitch) * camDist,
+      Math.sin(pitch) * camDist,
+      Math.cos(yaw) * Math.cos(pitch) * camDist
+    );
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(animate);
+})();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script>
+</body>
+</html>
