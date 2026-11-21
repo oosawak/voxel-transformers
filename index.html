@@ -33,16 +33,45 @@
   .card h2 { font-size: 17px; margin: 0 0 4px; }
   .counts { color: #9bb3d8; font-size: 12.5px; margin-bottom: 10px; }
   .row { display: flex; flex-wrap: wrap; gap: 8px; }
-  a.btn {
+  a.btn, button.btn {
     display: inline-block; padding: 7px 12px; border-radius: 6px;
     font-size: 12.5px; font-weight: 600; text-decoration: none;
     background: rgba(24, 38, 64, 0.9); color: #dce8ff;
     border: 1px solid rgba(100, 160, 255, 0.4);
+    font-family: inherit; cursor: pointer;
   }
-  a.btn:hover { background: rgba(45, 75, 125, 0.95); }
-  a.btn.main {
+  a.btn:hover, button.btn:hover { background: rgba(45, 75, 125, 0.95); }
+  a.btn.main, button.btn.main {
     background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
     border-color: #93c5fd;
+  }
+  button.btn.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
+    border-color: #93c5fd;
+  }
+  #viewer {
+    max-width: 1080px; margin: 20px auto 0;
+    background: rgba(12, 18, 30, 0.85);
+    border: 1px solid rgba(100, 160, 255, 0.35);
+    border-radius: 10px; overflow: hidden;
+  }
+  .viewer-head {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 12px 14px;
+  }
+  .viewer-head select {
+    font-size: 14px; padding: 7px 10px; border-radius: 6px;
+    background: rgba(24, 38, 64, 0.9); color: #dce8ff;
+    border: 1px solid rgba(100, 160, 255, 0.4); font-family: inherit;
+    max-width: 100%;
+  }
+  #viewer-canvas {
+    width: 100%; height: 440px; display: block;
+    background: #0b1324; touch-action: none; cursor: grab;
+  }
+  @media (max-width: 640px) { #viewer-canvas { height: 320px; } }
+  .viewer-note {
+    padding: 8px 14px 12px; color: #9bb3d8; font-size: 12.5px;
   }
   footer {
     max-width: 1080px; margin: 28px auto 0; color: #7e93b8;
@@ -56,18 +85,32 @@
   <h1>変形ボクセルモデル集</h1>
   <div class="sub">
     Gemini が設計した、乗り物や建物からロボットへ変形するボクセルモデル30件です。<br>
-    各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。変形の様子は
+    変形の様子は、このページのビューアでそのまま見られます。各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。
+    ゲームの中で使う様子は
     <a href="https://oosawak.github.io/voxel-valkyrie/">Voxel Valkyrie</a>
-    のハンガーで確認できます（「変形を見る」ボタンで、そのモデルが開きます）。
+    のハンガーで確認できます。
   </div>
 </header>
+
+<section id="viewer">
+  <div class="viewer-head">
+    <select id="unit-select" aria-label="モデルを選ぶ"><option>読み込み中…</option></select>
+    <div class="row" id="form-btns"></div>
+    <div class="row">
+      <button class="btn" id="btn-rotate">回転: オン</button>
+    </div>
+  </div>
+  <canvas id="viewer-canvas"></canvas>
+  <div class="viewer-note">ドラッグで回転できます。カードの「このページで変形を見る」からも、そのモデルがここに開きます。</div>
+</section>
 
 <div class="grid" id="grid"></div>
 
 <footer>
   <p>
-    仕組み: モデルは2形態分のボクセルデータの組です。Voxel Valkyrie 側はデータ駆動になっていて、
-    変換したデータを <span style="font-family:monospace">models-extra.js</span> に足すだけで、ユニットとして追加できます。<br>
+    仕組み: モデルは2形態分のボクセルデータの組です。ビューアと Voxel Valkyrie は、同じ
+    <span style="font-family:monospace">models-extra.js</span>
+    のデータを読んで変形を表示しています。変換したデータを足すだけで、ユニットとして追加できます。<br>
     生成スクリプト（.py）は各カードからダウンロードできます。戦闘機の見本は
     <a href="https://oosawak.github.io/sprite-stack-proto/">スプライトスタック試作</a>の valkyrie.py です。
   </p>
@@ -114,8 +157,8 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
       <h2>${m.name} → ロボット</h2>
       <div class="counts">ボクセル数 ${m.a.toLocaleString()} → ${m.b.toLocaleString()} ／ ${m.note}</div>
       <div class="row">
-        <a class="btn main" href="${VV}?unit=${m.key}">変形を見る</a>
-        <a class="btn main" href="${VV}?unit=${m.key}&form=1">ロボットで開く</a>
+        <button class="btn main" onclick="showInViewer('${m.key}')">このページで変形を見る</button>
+        <a class="btn" href="${VV}?unit=${m.key}">ゲームで開く</a>
       </div>
       <div class="row" style="margin-top:8px">
         <a class="btn" href="models/${m.key}_a.vox" download>${m.name}.vox</a>
@@ -124,6 +167,225 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
       </div>
     </div>
   </div>`).join('');
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://oosawak.github.io/voxel-valkyrie/models-extra.js"></script>
+<script>
+// =========================================================
+// ページ内ビューア: Voxel Valkyrie と同じ models-extra.js を読み、
+// 同じ方式（表面ボクセルの位置を補間）で変形を表示する。
+// =========================================================
+(function () {
+  const select = document.getElementById('unit-select');
+  const formBtns = document.getElementById('form-btns');
+  const canvas = document.getElementById('viewer-canvas');
+  if (!window.THREE || !window.EXTRA_MODELS) {
+    select.innerHTML = '<option>ビューアを読み込めませんでした</option>';
+    return;
+  }
+
+  // --- .vox 由来データの展開（Voxel Valkyrie と同じ手順） ---
+  function createGrid(X, Y, Z) {
+    return { X, Y, Z, data: new Uint8Array(X * Y * Z) };
+  }
+  function setVoxel(g, x, y, z, c) {
+    if (x < 0 || y < 0 || z < 0 || x >= g.X || y >= g.Y || z >= g.Z) return;
+    g.data[x + g.X * (y + g.Y * z)] = c;
+  }
+  function getVoxel(g, x, y, z) {
+    if (x < 0 || y < 0 || z < 0 || x >= g.X || y >= g.Y || z >= g.Z) return 0;
+    return g.data[x + g.X * (y + g.Y * z)];
+  }
+  function gridFromQuads(dims, dataB64) {
+    const g = createGrid(dims[0], dims[1], dims[2]);
+    const bin = atob(dataB64);
+    for (let i = 0; i + 3 < bin.length; i += 4) {
+      setVoxel(g, bin.charCodeAt(i), bin.charCodeAt(i + 1), bin.charCodeAt(i + 2), bin.charCodeAt(i + 3));
+    }
+    return g;
+  }
+  function extractSurfaceVoxels(grid, palette) {
+    const list = [];
+    for (let x = 0; x < grid.X; x++) {
+      for (let y = 0; y < grid.Y; y++) {
+        for (let z = 0; z < grid.Z; z++) {
+          const c = getVoxel(grid, x, y, z);
+          if (!c) continue;
+          if (getVoxel(grid, x - 1, y, z) && getVoxel(grid, x + 1, y, z) &&
+              getVoxel(grid, x, y - 1, z) && getVoxel(grid, x, y + 1, z) &&
+              getVoxel(grid, x, y, z - 1) && getVoxel(grid, x, y, z + 1)) continue;
+          list.push({
+            x: x - grid.X / 2 + 0.5,
+            y: z - grid.Z / 2 + 0.5,
+            z: -(y - grid.Y / 2 + 0.5),
+            color: palette[c]
+          });
+        }
+      }
+    }
+    return list;
+  }
+
+  const SURFACES = {};
+  for (const m of window.EXTRA_MODELS) {
+    SURFACES[m.key] = m.forms.map(f => extractSurfaceVoxels(gridFromQuads(f.dims, f.data), m.palette));
+  }
+
+  // --- THREE 描画 ---
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1324);
+  const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 2000);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.72));
+  const dir = new THREE.DirectionalLight(0xfff5e6, 0.95);
+  dir.position.set(40, 80, 50);
+  scene.add(dir);
+  const rim = new THREE.DirectionalLight(0x4da6ff, 0.45);
+  rim.position.set(-50, 20, -60);
+  scene.add(rim);
+  const grid = new THREE.GridHelper(160, 32, 0x3b82f6, 0x1e293b);
+  scene.add(grid);
+
+  const MAX_INSTANCES = 5200;
+  const mesh = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.96, 0.96, 0.96),
+    new THREE.MeshLambertMaterial({ color: 0xffffff }),
+    MAX_INSTANCES
+  );
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  scene.add(mesh);
+  const dummy = new THREE.Object3D();
+  const tmpColor = new THREE.Color();
+
+  // --- 状態 ---
+  let unitKey = null, currentForm = 0, targetForm = 0, morphT = 1.0;
+  let fromList = [], toList = [], camDist = 60;
+  let yaw = 0.65, pitch = 0.32, autoRotate = true, dragging = false;
+
+  function fitCamera(key) {
+    const m = window.EXTRA_MODELS.find(e => e.key === key);
+    const d = Math.max(...m.forms[0].dims);
+    camDist = d * 2.1;
+    grid.position.y = -d / 2 - 1;
+  }
+  function loadUnit(key, form) {
+    unitKey = key;
+    currentForm = form; targetForm = form; morphT = 1.0;
+    fromList = SURFACES[key][form];
+    toList = SURFACES[key][form];
+    fitCamera(key);
+    buildFormButtons();
+  }
+  function setForm(idx) {
+    if (!unitKey || idx === targetForm) return;
+    fromList = SURFACES[unitKey][targetForm];
+    toList = SURFACES[unitKey][idx];
+    currentForm = targetForm;
+    targetForm = idx;
+    morphT = 0.0;
+    buildFormButtons();
+  }
+  function buildFormButtons() {
+    const m = window.EXTRA_MODELS.find(e => e.key === unitKey);
+    formBtns.innerHTML = m.formNames.map((n, i) =>
+      `<button class="btn ${i === targetForm ? 'active' : ''}" data-form="${i}">${n}</button>`).join('');
+    formBtns.querySelectorAll('button').forEach(b =>
+      b.addEventListener('click', () => setForm(Number(b.dataset.form))));
+  }
+
+  select.innerHTML = window.EXTRA_MODELS.map(m =>
+    `<option value="${m.key}">${m.name}</option>`).join('');
+  select.addEventListener('change', () => loadUnit(select.value, 0));
+  loadUnit(window.EXTRA_MODELS[0].key, 0);
+
+  window.showInViewer = function (key) {
+    if (!SURFACES[key]) return;
+    select.value = key;
+    loadUnit(key, 0);
+    document.getElementById('viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => setForm(1), 450);
+  };
+
+  const rotateBtn = document.getElementById('btn-rotate');
+  rotateBtn.addEventListener('click', () => {
+    autoRotate = !autoRotate;
+    rotateBtn.textContent = autoRotate ? '回転: オン' : '回転: オフ';
+    rotateBtn.classList.toggle('active', autoRotate);
+  });
+  rotateBtn.classList.add('active');
+
+  let lastX = 0, lastY = 0;
+  canvas.addEventListener('pointerdown', e => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    yaw += (e.clientX - lastX) * 0.008;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch + (e.clientY - lastY) * 0.006));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  canvas.addEventListener('pointerup', () => { dragging = false; });
+  canvas.addEventListener('pointercancel', () => { dragging = false; });
+
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (canvas.width !== Math.floor(w * renderer.getPixelRatio()) ||
+        canvas.height !== Math.floor(h * renderer.getPixelRatio())) {
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+  }
+
+  let last = performance.now();
+  function animate(now) {
+    requestAnimationFrame(animate);
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    resize();
+    if (autoRotate && !dragging) yaw += dt * 0.4;
+    if (morphT < 1.0) morphT = Math.min(1.0, morphT + dt * 2.2);
+    const t = morphT * morphT * (3 - 2 * morphT);
+    const count = Math.max(fromList.length, toList.length);
+    for (let i = 0; i < MAX_INSTANCES; i++) {
+      if (i >= count) {
+        dummy.position.set(0, 0, 0);
+        dummy.scale.set(0, 0, 0);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+        continue;
+      }
+      const a = fromList[i % fromList.length];
+      const b = toList[i % toList.length];
+      const scA = i < fromList.length ? 1 : 0.01;
+      const scB = i < toList.length ? 1 : 0.01;
+      const sc = scA + (scB - scA) * t;
+      dummy.position.set(
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t,
+        a.z + (b.z - a.z) * t
+      );
+      dummy.scale.set(sc, sc, sc);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      tmpColor.setHex(t < 0.5 ? a.color : b.color);
+      mesh.setColorAt(i, tmpColor);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    camera.position.set(
+      Math.sin(yaw) * Math.cos(pitch) * camDist,
+      Math.sin(pitch) * camDist,
+      Math.cos(yaw) * Math.cos(pitch) * camDist
+    );
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(animate);
+})();
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script>
 </body>
