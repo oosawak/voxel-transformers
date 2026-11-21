@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>変形ボクセルの作り方 | VOXEL TRANSFORMERS</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px;
+    background: radial-gradient(circle at 50% 30%, #16243d 0%, #090d16 70%);
+    background-color: #0a0e17;
+    color: #dce8ff;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  }
+  header, main { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 26px; letter-spacing: .12em; margin: 8px 0 4px; }
+  .sub { color: #9bb3d8; font-size: 14px; line-height: 1.8; }
+  .sub a, main a { color: #7cc4ff; }
+  main { margin-top: 12px; line-height: 1.9; font-size: 15px; }
+  h2 { font-size: 19px; margin: 34px 0 8px; border-left: 4px solid #2563eb; padding-left: 10px; }
+  p, li { color: #c9d9f2; }
+  ol, ul { padding-left: 22px; }
+  li { margin: 4px 0; }
+  pre {
+    background: rgba(6, 10, 18, 0.9); border: 1px solid rgba(100, 160, 255, 0.35);
+    border-radius: 8px; padding: 14px; overflow-x: auto;
+    font-size: 12.5px; line-height: 1.6; color: #dce8ff;
+  }
+  code { font-family: "SFMono-Regular", Menlo, Consolas, monospace; }
+  p code, li code { background: rgba(24, 38, 64, 0.9); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+  .fig { width: 100%; border: 1px solid rgba(100, 160, 255, 0.35); border-radius: 10px; display: block; }
+  .cap { color: #9bb3d8; font-size: 12.5px; margin-top: 6px; }
+  a.btn {
+    display: inline-block; padding: 7px 12px; border-radius: 6px; margin: 4px 6px 4px 0;
+    font-size: 12.5px; font-weight: 600; text-decoration: none;
+    background: rgba(24, 38, 64, 0.9); color: #dce8ff;
+    border: 1px solid rgba(100, 160, 255, 0.4);
+  }
+  a.btn:hover { background: rgba(45, 75, 125, 0.95); }
+</style>
+</head>
+<body>
+<header>
+  <h1>変形ボクセルの作り方</h1>
+  <p class="sub"><a href="index.html">変形ボクセルモデル集</a> / <a href="warlords.html">武将ロボシリーズ</a> のモデルが、どうやって作られているかの手順書です。同じ方法で、自分の変形ボクセルを作れます。</p>
+</header>
+<main>
+  <h2>全体の流れ</h2>
+  <ol>
+    <li>題材を決める（例：新幹線 → ロボット、城 → ロボット）</li>
+    <li>Python スクリプトを書く。箱を積んで形を作り、形態ごとに分けて作る</li>
+    <li>スクリプトを実行すると、MagicaVoxel 形式の <code>.vox</code> とプレビュー画像が出る</li>
+    <li><code>.vox</code> を MagicaVoxel で開いて確認する。このサイトのページ内ビューアのような仕組みで、ブラウザで変形表示もできる</li>
+  </ol>
+  <p>ポイントは、モデルを「データ」としてではなく「生成スクリプト」として持つことです。直したい所があれば、スクリプトの数字を直して実行し直せます。このサイトのモデルは全てこの方法で作られていて、各モデルのカードから生成スクリプト（.py）もダウンロードできます。</p>
+
+  <h2>必要なもの</h2>
+  <ul>
+    <li>Python 3 と、ライブラリの numpy と pillow</li>
+    <li>（任意）.vox を開いて見るための MagicaVoxel（無料）</li>
+  </ul>
+  <p>実行は uv を使うと、ライブラリの用意まで一気にできます。</p>
+  <pre><code>uv run --with numpy --with pillow python3 sample_voxel.py</code></pre>
+
+  <h2>スクリプトの型</h2>
+  <p>最小のサンプルです。小さい車が小さいロボットに変形します。実行すると <code>car.vox</code> / <code>robot.vox</code> / <code>preview_sample.png</code> ができます。</p>
+  <p>
+    <a class="btn" href="sample_voxel.py" download>sample_voxel.py をダウンロード</a>
+  </p>
+  <img class="fig" src="howto-sample.png" alt="サンプルのプレビュー（車とロボット）">
+  <p class="cap">サンプルの実行結果。左が車、右がロボットです。</p>
+  <pre><code>&quot;&quot;&quot;変形ボクセルの最小サンプル: 小さい車 → 小さいロボット
+使い方: uv run --with numpy --with pillow python3 sample_voxel.py
+car.vox / robot.vox / preview_sample.png ができます。
+&quot;&quot;&quot;
+import struct
+import numpy as np
+from PIL import Image, ImageDraw
+
+# 色のパレット (番号 1..9、0 は空)
+PALETTE = {
+    1: (230, 235, 245, 255),  # 白っぽい装甲
+    2: (155, 165, 180, 255),  # グレーの装甲
+    3: (220, 45, 50, 255),    # 赤のアクセント
+    4: (55, 60, 70, 255),     # 暗い金属・関節
+    5: (35, 175, 240, 255),   # 水色の窓・バイザー
+}
+
+
+def fill_box(grid, x0, x1, y0, y1, z0, z1, col):
+    &quot;&quot;&quot;(x, y, z) の範囲を色 col で埋める。x=幅, y=奥行き, z=高さ&quot;&quot;&quot;
+    X, Y, Z = grid.shape
+    x0, x1 = max(0, min(x0, x1)), min(X - 1, max(x0, x1))
+    y0, y1 = max(0, min(y0, y1)), min(Y - 1, max(y0, y1))
+    z0, z1 = max(0, min(z0, z1)), min(Z - 1, max(z0, z1))
+    grid[x0:x1 + 1, y0:y1 + 1, z0:z1 + 1] = col
+
+
+def build_a():
+    &quot;&quot;&quot;形態A: 小さい車 (24 x 24 x 16)&quot;&quot;&quot;
+    g = np.zeros((24, 24, 16), dtype=np.uint8)
+    fill_box(g, 4, 19, 3, 20, 3, 6, 3)      # 車体
+    fill_box(g, 7, 16, 7, 15, 7, 10, 3)     # キャビン
+    fill_box(g, 8, 15, 8, 14, 8, 9, 5)      # 窓
+    for wx in (5, 16):                       # タイヤ (変形後は脚の部品になる)
+        for wy in (3, 18):
+            fill_box(g, wx, wx + 2, wy, wy + 2, 0, 2, 4)
+    return g
+
+
+def build_b():
+    &quot;&quot;&quot;形態B: 小さいロボット (24 x 24 x 16)。車体が胴、タイヤが脚になる&quot;&quot;&quot;
+    g = np.zeros((24, 24, 16), dtype=np.uint8)
+    fill_box(g, 8, 15, 9, 14, 6, 12, 3)     # 胴体 (車体)
+    fill_box(g, 9, 14, 10, 13, 13, 15, 2)   # 頭
+    fill_box(g, 10, 13, 10, 10, 14, 14, 5)  # バイザー (窓)
+    fill_box(g, 5, 7, 9, 14, 6, 11, 2)      # 左腕
+    fill_box(g, 16, 18, 9, 14, 6, 11, 2)    # 右腕
+    for wx in (8, 13):                       # 脚 (タイヤの位置の部品)
+        fill_box(g, wx, wx + 2, 10, 13, 0, 5, 4)
+    return g
+
+
+def export_vox(grid, filename):
+    &quot;&quot;&quot;MagicaVoxel 形式 (.vox) で書き出す&quot;&quot;&quot;
+    X, Y, Z = grid.shape
+    voxels = [(x, y, z, int(grid[x, y, z]))
+              for x in range(X) for y in range(Y) for z in range(Z)
+              if grid[x, y, z] &gt; 0]
+    size_chunk = b&#x27;SIZE&#x27; + struct.pack(&#x27;&lt;II&#x27;, 12, 0) + struct.pack(&#x27;&lt;III&#x27;, X, Y, Z)
+    xyzi_content = struct.pack(&#x27;&lt;I&#x27;, len(voxels))
+    for vx, vy, vz, vc in voxels:
+        xyzi_content += struct.pack(&#x27;&lt;BBBB&#x27;, vx, vy, vz, vc)
+    xyzi_chunk = b&#x27;XYZI&#x27; + struct.pack(&#x27;&lt;II&#x27;, len(xyzi_content), 0) + xyzi_content
+    rgba_content = bytearray(256 * 4)
+    for idx, (r, gg, b, a) in PALETTE.items():
+        rgba_content[(idx - 1) * 4:(idx - 1) * 4 + 4] = struct.pack(&#x27;&lt;BBBB&#x27;, r, gg, b, a)
+    rgba_chunk = b&#x27;RGBA&#x27; + struct.pack(&#x27;&lt;II&#x27;, len(rgba_content), 0) + bytes(rgba_content)
+    children = size_chunk + xyzi_chunk + rgba_chunk
+    main_chunk = b&#x27;MAIN&#x27; + struct.pack(&#x27;&lt;II&#x27;, 0, len(children)) + children
+    with open(filename, &#x27;wb&#x27;) as f:
+        f.write(b&#x27;VOX &#x27; + struct.pack(&#x27;&lt;I&#x27;, 150) + main_chunk)
+    return len(voxels)
+
+
+def render_iso(grid, scale=8):
+    &quot;&quot;&quot;等角投影のプレビュー画像を描く (簡易版)&quot;&quot;&quot;
+    img = Image.new(&#x27;RGB&#x27;, (420, 320), (10, 14, 23))
+    d = ImageDraw.Draw(img)
+    vox = [(x, y, z) for x in range(grid.shape[0]) for y in range(grid.shape[1])
+           for z in range(grid.shape[2]) if grid[x, y, z] &gt; 0]
+    vox.sort(key=lambda v: v[0] + v[1] + v[2])
+    cx, cy = 210, 90
+    for x, y, z in vox:
+        r, g, b, _ = PALETTE[int(grid[x, y, z])]
+        sx = cx + (x - y) * scale * 0.866
+        sy = cy + (x + y) * scale * 0.5 - z * scale
+        s = scale
+        d.polygon([(sx, sy - s), (sx + s * 0.866, sy - s * 0.5), (sx, sy), (sx - s * 0.866, sy - s * 0.5)],
+                  fill=(min(255, int(r * 1.15)), min(255, int(g * 1.15)), min(255, int(b * 1.15))))
+        d.polygon([(sx - s * 0.866, sy - s * 0.5), (sx, sy), (sx, sy + s), (sx - s * 0.866, sy + s * 0.5)],
+                  fill=(int(r * 0.65), int(g * 0.65), int(b * 0.65)))
+        d.polygon([(sx, sy), (sx + s * 0.866, sy - s * 0.5), (sx + s * 0.866, sy + s * 0.5), (sx, sy + s)],
+                  fill=(int(r * 0.85), int(g * 0.85), int(b * 0.85)))
+    return img
+
+
+if __name__ == &#x27;__main__&#x27;:
+    ga, gb = build_a(), build_b()
+    print(&#x27;car :&#x27;, export_vox(ga, &#x27;car.vox&#x27;), &#x27;voxels&#x27;)
+    print(&#x27;robot:&#x27;, export_vox(gb, &#x27;robot.vox&#x27;), &#x27;voxels&#x27;)
+    sheet = Image.new(&#x27;RGB&#x27;, (840, 320), (10, 14, 23))
+    sheet.paste(render_iso(ga), (0, 0))
+    sheet.paste(render_iso(gb), (420, 0))
+    sheet.save(&#x27;preview_sample.png&#x27;)
+    print(&#x27;preview_sample.png を書きました&#x27;)
+</code></pre>
+  <p>型の要点は4つです。</p>
+  <ul>
+    <li><code>PALETTE</code> — 色は番号で持ちます。0 が空、1〜9 が色です。パレットは全形態で共通にします</li>
+    <li><code>fill_box</code> — 直方体を置く道具です。形作りは基本これの積み重ねです（座標は x=幅、y=奥行き、z=高さ）</li>
+    <li><code>build_a()</code> / <code>build_b()</code> — 形態ごとに分けて作ります。部品と色を使い回すと「変形した」ように見えます</li>
+    <li><code>export_vox()</code> — .vox の書き出しです。このまま使えます</li>
+  </ul>
+
+  <h2>仕様とコツ</h2>
+  <ul>
+    <li>大きさは最長辺で64ボクセル以内が目安です</li>
+    <li>ボクセル数は、元の姿で 800〜2,500、ロボットで 1,500〜4,000 くらいが、軽くて見栄えのする範囲です</li>
+    <li>全体を1つにつなげて、宙に浮いたボクセルを作らないようにします</li>
+    <li>変形らしく見せるコツは、部品の再利用です。タイヤは脚に、車体は胴体に、翼は腕に、という対応を先に決めてから作ると、2形態に統一感が出ます</li>
+    <li>左右対称の題材は、片側を作って反転させると楽です</li>
+  </ul>
+
+  <h2>AI に書かせる場合</h2>
+  <p>このサイトのモデルは、生成 AI（Antigravity / Gemini）に指示書を渡して作らせたものです。見本のスクリプトと一緒に、次のような指示書を渡すと、同じ流儀で量産できます。</p>
+  <pre><code># 変形ボクセルモデルの生成指示書
+
+見本のスクリプト（sample_voxel.py）の流儀で、次の題材の変形ボクセルモデルを作ってください。
+
+## 題材
+- &lt;題材キー&gt; — &lt;元の姿&gt; → &lt;変形先&gt;（部品の再利用のヒント：例「車体が胴体、タイヤが脚になる」）
+
+## 仕様
+- 題材ごとに Python スクリプト1本（&lt;題材キー&gt;.py）。numpy の 3D グリッド（uint8、0=空、1〜9=パレット番号）に fill_box で形を作り、形態ごとに build_a() / build_b() を分ける。
+- export_vox() で MagicaVoxel 形式の .vox を書き出し、等角投影のプレビュー画像も描く。
+- 大きさは最長辺64ボクセル以内。ボクセル数は元の姿 800〜2,500、ロボット 1,500〜4,000 が目安。
+- すべて単一の連結成分にし、浮いたボクセルを作らない。
+- 2形態で部品と色を使い回し、「別のものを新規に作る」のではなく「変形した」と見えることが大事です。
+
+## 成果物
+&lt;題材キー&gt;.py / &lt;題材キー&gt;_a.vox / &lt;題材キー&gt;_b.vox / preview_&lt;題材キー&gt;.png</code></pre>
+
+  <h2>完成例を読みたいとき</h2>
+  <p><a href="index.html">モデル集</a>と<a href="warlords.html">武将ロボシリーズ</a>の各カードから、そのモデルの生成スクリプト（.py）と .vox がダウンロードできます。大きいモデルの作り方は、実物を読むのがいちばん早いです。</p>
+</main>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script>
+</body>
+</html>
