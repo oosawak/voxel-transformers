@@ -103,10 +103,19 @@
     <div class="row" id="form-btns"></div>
     <div class="row">
       <button class="btn" id="btn-rotate">回転: オン</button>
+      <button class="btn" id="btn-anim">アニメ: なし</button>
+    </div>
+    <div class="row" id="pivot-row" style="align-items:center; color:#9bb3d8; font-size:12.5px">
+      <span>関節の位置（ブロック）:</span>
+      <span>股</span><button class="btn" data-pv="hip" data-d="-1">−</button><button class="btn" data-pv="hip" data-d="1">＋</button>
+      <span>肩</span><button class="btn" data-pv="shoulder" data-d="-1">−</button><button class="btn" data-pv="shoulder" data-d="1">＋</button>
+      <span>肘</span><button class="btn" data-pv="elbow" data-d="-1">−</button><button class="btn" data-pv="elbow" data-d="1">＋</button>
+      <span>腕の幅</span><button class="btn" data-pv="armX" data-d="-1">−</button><button class="btn" data-pv="armX" data-d="1">＋</button>
+      <span id="pivot-state"></span>
     </div>
   </div>
   <canvas id="viewer-canvas"></canvas>
-  <div class="viewer-note">ドラッグで回転できます。カードの「このページで変形を見る」からも、そのモデルがここに開きます。</div>
+  <div class="viewer-note">ドラッグで回転できます。カードの「このページで変形を見る」からも、そのモデルがここに開きます。ロボット形態では「アニメ」ボタンで関節アニメ（歩行・構え・敬礼・L字）が再生でき、「関節の位置」で回転中心を1ブロックずつ調整できます。</div>
 </section>
 
 <div class="grid" id="grid"></div>
@@ -213,10 +222,91 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
 
   const WARLORD_KEYS = ['masamune','shigezane','yoshiaki','hideyoshi','kenshin','shingen','ieyasu','dosan','ujiyasu','tadakatsu'];
   const ALL_MODELS = window.EXTRA_MODELS.filter(m => WARLORD_KEYS.includes(m.key));
+  const MODELS = ALL_MODELS;
   const SURFACES = {};
-  for (const m of ALL_MODELS) {
+  for (const m of MODELS) {
     SURFACES[m.key] = m.forms.map(f => extractSurfaceVoxels(gridFromQuads(f.dims, f.data), m.palette));
   }
+
+  // --- 関節アニメ: ロボット形態のボクセルを位置から脚・腕・前腕に分ける ---
+  function computeParts(list, pivot) {
+    let minY = 1e9, maxY = -1e9, minX = 1e9, maxX = -1e9;
+    for (const v of list) {
+      if (v.y < minY) minY = v.y;
+      if (v.y > maxY) maxY = v.y;
+      if (v.x < minX) minX = v.x;
+      if (v.x > maxX) maxX = v.x;
+    }
+    const H = maxY - minY, W = maxX - minX;
+    const pv = pivot || {};
+    const hipY = minY + H * 0.40 + (pv.hip || 0);
+    const shoulderY = minY + H * 0.80 + (pv.shoulder || 0);
+    const elbowY = minY + H * 0.58 + (pv.elbow || 0);
+    const armX = W * 0.30 + (pv.armX || 0);
+    return list.map(v => {
+      if (v.y < hipY) return { part: v.x < 0 ? 'legL' : 'legR', py: hipY };
+      if (Math.abs(v.x) > armX && v.y < shoulderY) {
+        const side = v.x < 0 ? 'L' : 'R';
+        if (v.y >= elbowY) return { part: 'arm' + side, py: shoulderY };
+        return { part: 'fore' + side, py: shoulderY, ey: elbowY };
+      }
+      return null;
+    });
+  }
+  const PARTS = {};
+  const PIVOT_OFF = {};
+  function buildParts(key) {
+    const m = MODELS.find(e => e.key === key);
+    const base = m.pivot || {}, off = PIVOT_OFF[key] || {};
+    const pv = {
+      hip: (base.hip || 0) + (off.hip || 0),
+      shoulder: (base.shoulder || 0) + (off.shoulder || 0),
+      elbow: (base.elbow || 0) + (off.elbow || 0),
+      armX: (base.armX || 0) + (off.armX || 0)
+    };
+    PARTS[key] = m.forms.map((f, i) => (m.robotForms || [1]).includes(i) ? computeParts(SURFACES[key][i], pv) : null);
+    const st = document.getElementById('pivot-state');
+    if (st && key === unitKey) {
+      const fmt = n => (n >= 0 ? '+' : '') + n;
+      st.textContent = `股${fmt(pv.hip)} 肩${fmt(pv.shoulder)} 肘${fmt(pv.elbow)} 幅${fmt(pv.armX)}`;
+    }
+  }
+
+  let animMode = 0, animW = 0;
+  const ANIM_LABELS = ['アニメ: なし', 'アニメ: 歩行', 'アニメ: 構え', 'アニメ: 敬礼', 'アニメ: L字'];
+  function rotXAround(y, z, py, pz, ang) {
+    const c = Math.cos(ang), s = Math.sin(ang);
+    const dy = y - py, dz = z - pz;
+    return [py + dy * c - dz * s, pz + dy * s + dz * c];
+  }
+  function posePoint(p, part, w, ph) {
+    let y = p.y, z = p.z;
+    if (part.part === 'legL' || part.part === 'legR') {
+      if (animMode !== 1) return p;
+      const ang = (part.part === 'legL' ? Math.sin(ph) : -Math.sin(ph)) * 0.45 * w;
+      [y, z] = rotXAround(y, z, part.py, 0, ang);
+      return { x: p.x, y, z };
+    }
+    const side = part.part.endsWith('L') ? 1 : -1;
+    let swing = 0;
+    if (animMode === 1) swing = -side * Math.sin(ph) * 0.30 * w;
+    else if (animMode === 2) swing = 1.35 * w;
+    else if (animMode === 3) swing = side < 0 ? 1.35 * w : 0;
+    else if (animMode === 4) swing = 0.12 * w;
+    [y, z] = rotXAround(y, z, part.py, 0, swing);
+    if (part.part.startsWith('fore')) {
+      let bend = 0;
+      if (animMode === 1) bend = (0.55 + 0.15 * side * Math.sin(ph)) * w;
+      else if (animMode === 2) bend = 0.10 * w;
+      else if (animMode === 3) bend = side < 0 ? 2.30 * w : 0;
+      else if (animMode === 4) bend = 1.5 * w;
+      let ey = part.ey, ez = 0;
+      [ey, ez] = rotXAround(ey, ez, part.py, 0, swing);
+      [y, z] = rotXAround(y, z, ey, ez, bend);
+    }
+    return { x: p.x, y, z };
+  }
+
 
   // --- THREE 描画 ---
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -261,6 +351,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     currentForm = form; targetForm = form; morphT = 1.0;
     fromList = SURFACES[key][form];
     toList = SURFACES[key][form];
+    buildParts(key);
     fitCamera(key);
     buildFormButtons();
   }
@@ -302,6 +393,23 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
   });
   rotateBtn.classList.add('active');
 
+  const animBtn = document.getElementById('btn-anim');
+  animBtn.addEventListener('click', () => {
+    animMode = (animMode + 1) % ANIM_LABELS.length;
+    animBtn.textContent = ANIM_LABELS[animMode];
+    animBtn.classList.toggle('active', animMode > 0);
+  });
+  document.querySelectorAll('#pivot-row button[data-pv]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (!unitKey) return;
+      const off = PIVOT_OFF[unitKey] || (PIVOT_OFF[unitKey] = {});
+      const k = b.dataset.pv;
+      off[k] = Math.max(-8, Math.min(8, (off[k] || 0) + Number(b.dataset.d)));
+      buildParts(unitKey);
+    });
+  });
+
+
   let lastX = 0, lastY = 0;
   canvas.addEventListener('pointerdown', e => {
     dragging = true; lastX = e.clientX; lastY = e.clientY;
@@ -336,6 +444,11 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     if (morphT < 1.0) morphT = Math.min(1.0, morphT + dt * 2.2);
     const t = morphT * morphT * (3 - 2 * morphT);
     const count = Math.max(fromList.length, toList.length);
+    const curModel = MODELS.find(e => e.key === unitKey);
+    const isRobot = curModel && (curModel.robotForms || [1]).includes(targetForm);
+    animW = Math.max(0, Math.min(1, animW + ((animMode > 0 && isRobot) ? dt * 3 : -dt * 3)));
+    const ph = now / 1000 * 7.0;
+    const bob = animMode === 1 ? Math.abs(Math.sin(ph)) * 0.8 * animW * t : 0;
     for (let i = 0; i < MAX_INSTANCES; i++) {
       if (i >= count) {
         dummy.position.set(0, 0, 0);
@@ -349,10 +462,18 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
       const scA = i < fromList.length ? 1 : 0.01;
       const scB = i < toList.length ? 1 : 0.01;
       const sc = scA + (scB - scA) * t;
+      let bx = b.x, by = b.y, bz = b.z;
+      if (animW > 0) {
+        const plist = PARTS[unitKey] ? PARTS[unitKey][targetForm] : null;
+        if (plist) {
+          const part = plist[i % toList.length];
+          if (part) { const pp = posePoint(b, part, animW * t, ph); bx = pp.x; by = pp.y; bz = pp.z; }
+        }
+      }
       dummy.position.set(
-        a.x + (b.x - a.x) * t,
-        a.y + (b.y - a.y) * t,
-        a.z + (b.z - a.z) * t
+        a.x + (bx - a.x) * t,
+        a.y + (by - a.y) * t + bob,
+        a.z + (bz - a.z) * t
       );
       dummy.scale.set(sc, sc, sc);
       dummy.updateMatrix();
