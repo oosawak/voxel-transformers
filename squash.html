@@ -14,11 +14,13 @@
   .wrap { max-width: 1080px; margin: 0 auto; padding: 8px 16px 28px; }
   #viewer-canvas { width: 100%; height: 62vh; display: block; background: #0b1324; border: 1px solid #1e293b; border-radius: 10px; touch-action: none; }
   .panel { margin-top: 12px; background: #111c33; border: 1px solid #1e293b; border-radius: 10px; padding: 14px 16px; }
-  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  label { font-size: 14px; }
-  input[type="range"] { flex: 1; min-width: 160px; }
-  .val { font-size: 18px; font-weight: bold; min-width: 64px; text-align: right; }
-  .presets { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  .row:first-child { margin-top: 0; }
+  label { font-size: 14px; min-width: 52px; }
+  input[type="range"] { flex: 1; min-width: 140px; }
+  .val { font-size: 16px; font-weight: bold; min-width: 52px; text-align: right; }
+  .presets { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .presets span { font-size: 13px; color: #94a3b8; }
   button { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 8px; padding: 7px 14px; font-size: 14px; cursor: pointer; }
   button.on { background: #2563eb; border-color: #2563eb; }
   .note { color: #94a3b8; font-size: 13px; line-height: 1.7; margin-top: 10px; }
@@ -27,26 +29,45 @@
 <body>
 <header>
   <h1>縦つぶし実験 ― 赤い子竜</h1>
-  <p class="lead">データは正立方体のボクセルのまま一切変えず、<strong>表示のときだけ箱の縦を縮める</strong>実験です。縦を薄くしていくと、薄い板を積んだスプライトスタックの見た目に近づきます。ドラッグで回せます。</p>
+  <p class="lead">データは正立方体のボクセルのまま一切変えず、<strong>表示のときだけ箱の大きさを軸ごとに変える</strong>実験です。縦を薄くすると薄い板を積んだスプライトスタックの見た目に近づき、横や奥行きも独立に伸ばしたり縮めたりできます。ドラッグで回せます。</p>
   <p class="lead"><a href="index.html">← ギャラリーへ戻る</a></p>
 </header>
 <div class="wrap">
   <canvas id="viewer-canvas"></canvas>
   <div class="panel">
     <div class="row">
-      <label for="squash">縦の長さ</label>
-      <input type="range" id="squash" min="0.1" max="1" step="0.01" value="1">
-      <span class="val" id="squash-val">1.00</span>
+      <label for="sx">横</label>
+      <input type="range" id="sx" min="0.1" max="2" step="0.01" value="1">
+      <span class="val" id="sx-val">1.00</span>
+    </div>
+    <div class="row">
+      <label for="sy">縦</label>
+      <input type="range" id="sy" min="0.1" max="2" step="0.01" value="1">
+      <span class="val" id="sy-val">1.00</span>
+    </div>
+    <div class="row">
+      <label for="sz">奥行き</label>
+      <input type="range" id="sz" min="0.1" max="2" step="0.01" value="1">
+      <span class="val" id="sz-val">1.00</span>
+    </div>
+    <div class="row">
+      <label for="link">連動</label>
+      <input type="checkbox" id="link" style="width:20px;height:20px">
+      <span style="font-size:13px;color:#94a3b8">チェックすると、どれか1つのスライダーで全部の軸が同じ倍率になります（均等に大きく・小さく）</span>
     </div>
     <div class="presets">
+      <span>縦のプリセット:</span>
+      <button data-s="2">2.00 背高</button>
+      <button data-s="1.5">1.50</button>
       <button data-s="1">1.00 そのまま</button>
       <button data-s="0.5">0.50</button>
       <button data-s="0.3">0.30</button>
       <button data-s="0.2">0.20</button>
       <button data-s="0.12">0.12 板みたいに薄く</button>
+      <button id="reset">全部 1.00 に戻す</button>
     </div>
     <p class="note" id="info">読み込み中…</p>
-    <p class="note">仕組み: ボクセルの位置と箱の高さの両方に、縦の倍率を掛けているだけです。元のデータ（表面18,464個、高さ98層）はそのままなので、倍率を戻せば元の姿に戻ります。作る側で大きく作っておいて、見せる機械に合わせて表示で落とす、という使い方の確認用です。</p>
+    <p class="note">仕組み: ボクセルの位置と箱の大きさに、軸ごとの倍率を掛けているだけです。元のデータ（表面18,464個、高さ98層）はそのままなので、倍率を戻せば元の姿に戻ります。作る側で大きく作っておいて、見せる機械や見せ方に合わせて表示で調整する、という使い方の確認用です。</p>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -54,8 +75,6 @@
 <script>
 (function () {
   const canvas = document.getElementById('viewer-canvas');
-  const slider = document.getElementById('squash');
-  const valEl = document.getElementById('squash-val');
   const infoEl = document.getElementById('info');
   if (!window.THREE || !window.EXTRA_MODELS) { infoEl.textContent = 'ビューアを読み込めませんでした'; return; }
   const m = window.EXTRA_MODELS.find(e => e.key === 'babydragon');
@@ -99,11 +118,11 @@
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0b1324);
-  const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 3000);
+  const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 4000);
   scene.add(new THREE.AmbientLight(0xffffff, 0.72));
   const dir = new THREE.DirectionalLight(0xfff5e6, 0.95); dir.position.set(60, 120, 70); scene.add(dir);
   const rim = new THREE.DirectionalLight(0x4da6ff, 0.45); rim.position.set(-70, 30, -80); scene.add(rim);
-  const grid = new THREE.GridHelper(220, 44, 0x3b82f6, 0x1e293b); scene.add(grid);
+  const grid = new THREE.GridHelper(260, 52, 0x3b82f6, 0x1e293b); scene.add(grid);
 
   const mesh = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.96, 0.96, 0.96),
@@ -117,30 +136,47 @@
   for (let i = 0; i < surface.length; i++) mesh.setColorAt(i, tmpColor.setHex(surface[i].color || 0xcccccc));
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 
-  let squash = parseFloat(new URLSearchParams(location.search).get('s')) || 1;
-  squash = Math.min(1, Math.max(0.1, squash));
-  slider.value = squash;
-  let yaw = 0.65, pitch = 0.30, dragging = false, px = 0, py = 0, auto = true;
+  const q = new URLSearchParams(location.search);
+  function param(name, fallback) {
+    const v = parseFloat(q.get(name));
+    return isNaN(v) ? fallback : Math.min(2, Math.max(0.1, v));
+  }
+  const S = { x: param('sx', 1), y: param('sy', param('s', 1)), z: param('sz', 1) };
+  const sliders = { x: document.getElementById('sx'), y: document.getElementById('sy'), z: document.getElementById('sz') };
+  const vals = { x: document.getElementById('sx-val'), y: document.getElementById('sy-val'), z: document.getElementById('sz-val') };
+  sliders.x.value = S.x; sliders.y.value = S.y; sliders.z.value = S.z;
 
-  function applySquash() {
+  function applyScales() {
     for (let i = 0; i < surface.length; i++) {
       const v = surface[i];
-      dummy.position.set(v.x, (v.y + H / 2) * squash, v.z);
-      dummy.scale.set(1, squash, 1);
+      dummy.position.set(v.x * S.x, (v.y + H / 2) * S.y, v.z * S.z);
+      dummy.scale.set(S.x, S.y, S.z);
       dummy.rotation.set(0, 0, 0);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     }
     mesh.instanceMatrix.needsUpdate = true;
-    valEl.textContent = squash.toFixed(2);
-    infoEl.textContent = '表面 ' + surface.length.toLocaleString() + ' 個 ／ 高さ ' + H + ' 層 → 表示の高さ 約' + Math.round(H * squash) + ' ／ 縦の倍率 ' + squash.toFixed(2);
-    document.querySelectorAll('.presets button').forEach(b =>
-      b.classList.toggle('on', Math.abs(parseFloat(b.dataset.s) - squash) < 0.005));
+    vals.x.textContent = S.x.toFixed(2); vals.y.textContent = S.y.toFixed(2); vals.z.textContent = S.z.toFixed(2);
+    infoEl.textContent = '表面 ' + surface.length.toLocaleString() + ' 個 ／ 倍率 横 ' + S.x.toFixed(2) + ' ・ 縦 ' + S.y.toFixed(2) + ' ・ 奥行き ' + S.z.toFixed(2) + ' ／ 表示の高さ 約' + Math.round(H * S.y);
+    document.querySelectorAll('.presets button[data-s]').forEach(b =>
+      b.classList.toggle('on', Math.abs(parseFloat(b.dataset.s) - S.y) < 0.005));
   }
-  slider.addEventListener('input', () => { squash = parseFloat(slider.value); applySquash(); });
-  document.querySelectorAll('.presets button').forEach(b =>
-    b.addEventListener('click', () => { squash = parseFloat(b.dataset.s); slider.value = squash; applySquash(); }));
+  const linkEl = document.getElementById('link');
+  for (const ax of ['x', 'y', 'z']) {
+    sliders[ax].addEventListener('input', () => {
+      const v = parseFloat(sliders[ax].value);
+      if (linkEl.checked) { S.x = S.y = S.z = v; sliders.x.value = sliders.y.value = sliders.z.value = v; }
+      else S[ax] = v;
+      applyScales();
+    });
+  }
+  document.querySelectorAll('.presets button[data-s]').forEach(b =>
+    b.addEventListener('click', () => { S.y = parseFloat(b.dataset.s); sliders.y.value = S.y; applyScales(); }));
+  document.getElementById('reset').addEventListener('click', () => {
+    S.x = S.y = S.z = 1; sliders.x.value = sliders.y.value = sliders.z.value = 1; applyScales();
+  });
 
+  let yaw = 0.65, pitch = 0.30, dragging = false, px = 0, py = 0, auto = true;
   canvas.addEventListener('pointerdown', e => { dragging = true; auto = false; px = e.clientX; py = e.clientY; });
   window.addEventListener('pointerup', () => { dragging = false; });
   window.addEventListener('pointermove', e => {
@@ -156,17 +192,18 @@
       camera.aspect = w / h; camera.updateProjectionMatrix();
     }
   }
-  const DIST = 190;
   function tick() {
     requestAnimationFrame(tick);
     resize();
     if (auto) yaw += 0.004;
-    const ty = 26 * squash + 8;
-    camera.position.set(Math.sin(yaw) * Math.cos(pitch) * DIST, Math.sin(pitch) * DIST + ty, Math.cos(yaw) * Math.cos(pitch) * DIST);
+    const ms = Math.max(S.x, S.y, S.z, 1);
+    const dist = 190 * ms;
+    const ty = (H / 2) * S.y * 0.55;
+    camera.position.set(Math.sin(yaw) * Math.cos(pitch) * dist, Math.sin(pitch) * dist + ty, Math.cos(yaw) * Math.cos(pitch) * dist);
     camera.lookAt(0, ty, 0);
     renderer.render(scene, camera);
   }
-  applySquash();
+  applyScales();
   tick();
 })();
 </script>
