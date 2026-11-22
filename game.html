@@ -186,6 +186,7 @@ function makeUnit(entry) {
   const beast = entry.forms.map((f, i) => buildBeast(surfaces[i], f.dims));
   const maxCount = Math.max(...surfaces.map(sv => sv.length), 1);
   const mesh = new THREE.InstancedMesh(boxGeo, boxMat, maxCount);
+  mesh.rotation.y = Math.PI / 2;
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   mesh.frustumCulled = false;
   const u = { entry, surfaces, parts, beast, mesh, form: 0, targetForm: 0, t: 1, phase: Math.random() * 6, animW: 0, bobY: 0 };
@@ -240,14 +241,14 @@ function updateUnit(u, dt, poseKind) {
   u.baseY = (dA[2] / 2) * (1 - tt) + (dB[2] / 2) * tt;
 }
 function formH(entry, i) { return entry.forms[i].dims[2]; }
-function formW(entry, i) { return entry.forms[i].dims[0]; }
+function formW(entry, i) { return entry.forms[i].dims[1]; }
 function isRobotForm(entry, i) { return (entry.robotForms || [1]).includes(i); }
 
 // ---------- シーン ----------
 const wrap = document.getElementById('wrap');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0e17);
-scene.fog = new THREE.Fog(0x0a0e17, 110, 260);
+scene.fog = new THREE.Fog(0x0a0e17, 150, 340);
 const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 600);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -460,7 +461,7 @@ function tick() {
     // 敵
     for (const e of enemies) {
       const eu = e.u;
-      if (e.state === 'dormant' && player.x > e.x - 62) {
+      if (e.state === 'dormant' && player.x > e.x - 36) {
         e.state = 'morph';
         eu.targetForm = e.robotIdx;
       }
@@ -556,8 +557,9 @@ function tick() {
     shakeT = Math.max(0, shakeT - dt);
     const shx = shakeT > 0 ? (Math.random() - 0.5) * 2.2 : 0;
     const shy = shakeT > 0 ? (Math.random() - 0.5) * 2.2 : 0;
-    camera.position.set(player.x - 16 + shx, 21 + shy, 56);
-    camera.lookAt(player.x + 12, 11, 0);
+    const cs = Math.max(0.85, Math.min(1.75, formH(entry, u.targetForm) / 32));
+    camera.position.set(player.x - 20 * cs + shx, 26 * cs + shy, 76 * cs);
+    camera.lookAt(player.x + 16, 12 * cs, 0);
     grid.position.x = Math.floor(player.x / 5) * 5;
     groundPlane.position.x = player.x;
     for (const p of pillars) {
