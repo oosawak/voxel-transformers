@@ -1,0 +1,13 @@
+---
+key: gyumao
+name: 牛魔王
+order: 88
+forms:
+  - file: gyumao_a.vox
+    label: 牛魔王
+  - file: gyumao_b.vox
+    label: ロボ
+    robot: true
+---
+
+# 牛魔王
