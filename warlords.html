@@ -84,7 +84,7 @@
 <header>
   <h1>武将ロボシリーズ</h1>
   <div class="sub">
-    戦国武将のロボットが、ゆかりの獣へ変形するボクセルモデルのシリーズです。全20件のうち、現在10件を公開しています（残りは順次追加）。<br>
+    戦国武将のロボットが、ゆかりの獣へ変形するボクセルモデルのシリーズです。全20件を公開しています。<br>
     変形の様子は、このページのビューアでそのまま見られます。各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。
     ゲームの中で使う様子は
     <a href="https://oosawak.github.io/voxel-valkyrie/">Voxel Valkyrie</a>
@@ -419,7 +419,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
   const grid = new THREE.GridHelper(160, 32, 0x3b82f6, 0x1e293b);
   scene.add(grid);
 
-  const MAX_INSTANCES = 5200;
+  const MAX_INSTANCES = 11500;
   const mesh = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.96, 0.96, 0.96),
     new THREE.MeshLambertMaterial({ color: 0xffffff }),

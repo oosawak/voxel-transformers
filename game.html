@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>変形横スクロール（試作） | 変形ボクセルモデル集</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: #0a0e17; color: #e8eef7; font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; overflow: hidden; touch-action: none; overscroll-behavior: none; }
+  #wrap { position: fixed; inset: 0; }
+  canvas { display: block; }
+  #hud { position: fixed; top: 0; left: 0; right: 0; display: flex; gap: 14px; align-items: center; padding: 10px 14px; background: linear-gradient(rgba(10,14,23,.85), rgba(10,14,23,0)); font-size: 14px; z-index: 4; pointer-events: none; flex-wrap: wrap; }
+  #hud b { color: #ffd166; }
+  #hp { color: #ff6b81; letter-spacing: 2px; }
+  .overlay { position: fixed; inset: 0; background: rgba(6,9,16,.78); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 8; padding: 20px; text-align: center; }
+  .overlay h1 { font-size: clamp(22px, 5vw, 34px); letter-spacing: .04em; }
+  .overlay p { color: #9bb3d8; font-size: 14px; line-height: 1.7; max-width: 560px; }
+  .overlay select { background: #131c2e; color: #e8eef7; border: 1px solid #2b3d5f; border-radius: 8px; padding: 9px 12px; font-size: 15px; max-width: 90vw; }
+  .bigbtn { background: #2b6cb0; color: #fff; border: none; border-radius: 10px; padding: 13px 34px; font-size: 17px; cursor: pointer; }
+  .bigbtn:active { background: #3182ce; }
+  .hidden { display: none !important; }
+  .pad { position: fixed; bottom: 16px; display: flex; gap: 12px; z-index: 5; }
+  #pad-l { left: 14px; }
+  #pad-r { right: 14px; }
+  .pbtn { width: 62px; height: 62px; border-radius: 50%; border: 1px solid #3a507a; background: rgba(19,28,46,.72); color: #e8eef7; font-size: 13px; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .pbtn.on { background: rgba(49,130,206,.85); }
+  #load-status { position: fixed; left: 12px; bottom: 10px; color: #5f7896; font-size: 11px; z-index: 3; }
+  a.back { position: fixed; top: 52px; right: 14px; color: #7cc4ff; font-size: 12.5px; z-index: 4; text-decoration: none; }
+</style>
+</head>
+<body>
+<div id="wrap"></div>
+<div id="hud">
+  <span>HP <span id="hp">♥♥♥♥♥</span></span>
+  <span>スコア <b id="score">0</b></span>
+  <span>形態 <b id="form-name">-</b></span>
+  <span id="unit-name"></span>
+</div>
+<a class="back" href="./index.html">← モデル集へ</a>
+
+<div class="overlay" id="ov-start">
+  <h1>変形横スクロール（試作）</h1>
+  <p>モデル集のボクセルで遊ぶ横スクロールです。遊びは2D、描画は3Dで奥行きがあります。<br>
+  ロボット形態は射撃ができ、変形すると速く走れて背が低くなります（体当たりもできます）。敵と弾は正面からだけ来ます。</p>
+  <label style="color:#9bb3d8; font-size:13px">自機を選ぶ</label>
+  <select id="unit-select"></select>
+  <button class="bigbtn" id="btn-start">スタート</button>
+  <p>PC: ←→ 移動 / スペース ジャンプ / X 射撃 / C 変形<br>スマホ: 画面のボタンで操作できます</p>
+</div>
+
+<div class="overlay hidden" id="ov-over">
+  <h1>ゲームオーバー</h1>
+  <p id="final-score"></p>
+  <button class="bigbtn" id="btn-retry">もう一度</button>
+</div>
+
+<div class="pad" id="pad-l">
+  <div class="pbtn" id="btn-left">◀</div>
+  <div class="pbtn" id="btn-right">▶</div>
+</div>
+<div class="pad" id="pad-r">
+  <div class="pbtn" id="btn-shot">射撃</div>
+  <div class="pbtn" id="btn-jump">跳</div>
+  <div class="pbtn" id="btn-form">変形</div>
+</div>
+<div id="load-status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./models-extra.js"></script>
+<script>
+"use strict";
+// ---------- ボクセル読み込み（ビューアと同じ方式） ----------
+function gridFromQuads(dims, dataB64) {
+  const [X, Y, Z] = dims;
+  const bin = atob(dataB64);
+  const grid = new Uint8Array(X * Y * Z);
+  const idx = (x, y, z) => (z * Y + y) * X + x;
+  for (let i = 0; i + 3 < bin.length; i += 4) {
+    grid[idx(bin.charCodeAt(i), bin.charCodeAt(i + 1), bin.charCodeAt(i + 2))] = bin.charCodeAt(i + 3);
+  }
+  return { grid, X, Y, Z, get(x, y, z) { return (x < 0 || y < 0 || z < 0 || x >= X || y >= Y || z >= Z) ? 0 : grid[idx(x, y, z)]; } };
+}
+function extractSurfaceVoxels(g, palette) {
+  const list = [];
+  for (let z = 0; z < g.Z; z++) for (let y = 0; y < g.Y; y++) for (let x = 0; x < g.X; x++) {
+    const c = g.get(x, y, z);
+    if (!c) continue;
+    if (g.get(x + 1, y, z) && g.get(x - 1, y, z) && g.get(x, y + 1, z) && g.get(x, y - 1, z) && g.get(x, y, z + 1) && g.get(x, y, z - 1)) continue;
+    list.push([x - g.X / 2, z - g.Z / 2, -(y - g.Y / 2), palette[c] || 0xffffff]);
+  }
+  return list;
+}
+function computeParts(list) {
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  for (const v of list) { minX = Math.min(minX, v[0]); maxX = Math.max(maxX, v[0]); minY = Math.min(minY, v[1]); maxY = Math.max(maxY, v[1]); }
+  const H = maxY - minY, W = maxX - minX;
+  const hipY = minY + H * 0.40, shoulderY = minY + H * 0.80, elbowY = minY + H * 0.58, armX = W * 0.30;
+  const P = { legL: [], legR: [], armL: [], armR: [], foreL: [], foreR: [], body: [], hipY, shoulderY, elbowY, armX };
+  for (let i = 0; i < list.length; i++) {
+    const y = list[i][1], x = list[i][0];
+    if (y < hipY) (x < 0 ? P.legL : P.legR).push(i);
+    else if (y > shoulderY && Math.abs(x) > armX) (x < 0 ? P.armL : P.armR).push(i);
+    else if (y > elbowY && Math.abs(x) > armX) (x < 0 ? P.foreL : P.foreR).push(i);
+    else P.body.push(i);
+  }
+  P.map = new Map();
+  for (const k of ['legL', 'legR', 'armL', 'armR', 'foreL', 'foreR']) for (const i of P[k]) P.map.set(i, k);
+  return P;
+}
+const POSE_RUN = { leg: 0.62, arm: 0.42, fore: 0.85 };
+const POSE_WALK = { leg: 0.45, arm: 0.30, fore: 0.55 };
+function posePoint(P, kind, idx, x, y, z, ph, w) {
+  const part = P.map.get(idx);
+  if (!part || w <= 0) return [x, y, z];
+  const prm = kind === 'run' ? POSE_RUN : POSE_WALK;
+  const s = Math.sin(ph), c = Math.sin(ph + Math.PI);
+  function rot(y0, yy, zz, a) { const dy = yy - y0; return [y0 + dy * Math.cos(a), zz + dy * Math.sin(a)]; }
+  let r;
+  switch (part) {
+    case 'legL': r = rot(P.hipY, y, z, s * prm.leg * w); return [x, r[0], r[1]];
+    case 'legR': r = rot(P.hipY, y, z, c * prm.leg * w); return [x, r[0], r[1]];
+    case 'armL': r = rot(P.shoulderY, y, z, c * prm.arm * w); return [x, r[0], r[1]];
+    case 'armR': r = rot(P.shoulderY, y, z, s * prm.arm * w); return [x, r[0], r[1]];
+    case 'foreL': r = rot(P.shoulderY, y, z, c * prm.arm * w); r = rot(P.elbowY, r[0], r[1], prm.fore * w); return [x, r[0], r[1]];
+    case 'foreR': r = rot(P.shoulderY, y, z, s * prm.arm * w); r = rot(P.elbowY, r[0], r[1], prm.fore * w); return [x, r[0], r[1]];
+  }
+  return [x, y, z];
+}
+function buildBeast(list, dims) {
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, minZ = 1e9, maxZ = -1e9;
+  for (const v of list) { minX = Math.min(minX, v[0]); maxX = Math.max(maxX, v[0]); minY = Math.min(minY, v[1]); maxY = Math.max(maxY, v[1]); minZ = Math.min(minZ, v[2]); maxZ = Math.max(maxZ, v[2]); }
+  return { minX, maxX, minY, maxY, minZ, maxZ, H: maxY - minY, spanX: Math.max(Math.abs(minX), Math.abs(maxX)), midZ: (minZ + maxZ) / 2 };
+}
+const QUAD_PARAMS = {
+  quad_cat: { spd: 0.6, amp: 0.50, front: 1.0, roll: 0.02, bob: 0.15 },
+  quad_deer: { spd: 1.35, amp: 0.34, front: 1.0, roll: 0, bob: 0.5 },
+  quad_small: { spd: 1.2, amp: 0.38, front: 1.0, roll: 0.03, bob: 0.2 },
+  quad_monkey: { spd: 1.0, amp: 0.38, front: 1.7, roll: 0.07, bob: 0.2, pitch: 0.06, hindAmp: 1.35 }
+};
+function beastPoint(kind, B, x, y, z, ph, w) {
+  if (!kind || w <= 0) return [x, y, z, 0];
+  if (kind === 'wave') {
+    const alongX = (B.maxX - B.minX) >= (B.maxZ - B.minZ);
+    const coord = alongX ? x : z, norm = alongX ? (x - B.minX) / Math.max(1, B.maxX - B.minX) : (z - B.minZ) / Math.max(1, B.maxZ - B.minZ);
+    const off = Math.sin(ph * 1.4 - coord * 0.32) * 1.0 * w * (0.55 + 0.45 * norm);
+    const up = Math.cos(ph * 1.4 - coord * 0.32) * 0.22 * w;
+    return alongX ? [x, y + up, z + off, Math.abs(up)] : [x + off, y + up, z, Math.abs(up)];
+  }
+  if (kind === 'flap') {
+    if (y > B.minY + B.H * 0.5 && Math.abs(x) > B.spanX * 0.16) {
+      const side = x >= 0 ? 1 : -1;
+      const cx = side * B.spanX * 0.10, cy = B.minY + B.H * 0.52;
+      const a = side * Math.sin(ph * 1.5) * 0.5 * w;
+      const dx = x - cx, dy = y - cy;
+      return [cx + dx * Math.cos(a) - dy * Math.sin(a), cy + dx * Math.sin(a) + dy * Math.cos(a), z, 0];
+    }
+    return [x, y, z, 0];
+  }
+  if (QUAD_PARAMS[kind]) {
+    const q = QUAD_PARAMS[kind], qph = ph * 6 * q.spd;
+    let bobY = Math.abs(Math.sin(qph)) * q.bob * w;
+    if (y < B.minY + B.H * 0.38) {
+      let phase;
+      if (kind === 'quad_monkey') phase = (z < B.midZ) ? (x < 0 ? 0 : Math.PI) : 0.8;
+      else phase = ((x < 0) !== (z < 0)) ? 0 : Math.PI;
+      let amp = q.amp * (z < B.midZ ? q.front : 1);
+      if (kind === 'quad_monkey' && z >= B.midZ) amp *= q.hindAmp;
+      const a = Math.sin(qph + phase) * amp * w;
+      const py = B.minY + B.H * 0.38, dy = y - py;
+      return [x, py + dy * Math.cos(a), z + dy * Math.sin(a), bobY];
+    }
+    let yy = y + bobY;
+    if (q.roll) { const cx = 0, cy = B.minY + B.H * 0.45, a = Math.sin(qph) * q.roll * w; const dx = x - cx, dy = yy - cy; return [cx + dx * Math.cos(a) - dy * Math.sin(a), cy + dx * Math.sin(a) + dy * Math.cos(a), z, bobY]; }
+    if (kind === 'quad_monkey' && q.pitch) { const cy = B.minY + B.H * 0.42, a = Math.sin(qph + 0.6) * q.pitch * w; const dy = yy - cy, dz = z - B.midZ; return [x, cy + dy * Math.cos(a) - dz * Math.sin(a), B.midZ + dy * Math.sin(a) + dz * Math.cos(a), bobY]; }
+    return [x, yy, z, bobY];
+  }
+  return [x, y, z, 0];
+}
