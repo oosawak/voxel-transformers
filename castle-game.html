@@ -166,6 +166,7 @@ function makeUnit(entry) {
   const beast = entry.forms.map((f, i) => buildBeast(surfaces[i], f.dims));
   const maxCount = Math.max(...surfaces.map(sv => sv.length), 1);
   const mesh = new THREE.InstancedMesh(boxGeo, boxMat, maxCount);
+  mesh.material = boxMat.clone(); // 被弾フラッシュ（emissive）をユニットごとに光らせるため
   mesh.rotation.y = Math.PI / 2;
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   mesh.frustumCulled = false;
@@ -385,18 +386,25 @@ function barMesh(color, w) {
   scene.add(m);
   return m;
 }
+function barBgMesh(w) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, 0.85, 0.4), new THREE.MeshBasicMaterial({ color: 0x0b1120 }));
+  scene.add(m);
+  return m;
+}
 function makeHold(side, kind, x, z) {
   const entry = byKey[kind + '_' + side];
   const u = makeUnit(entry);
   const scale = kind === 'castle' ? 0.55 : 0.42;
   u.mesh.scale.setScalar(scale);
   u.mesh.rotation.y = Math.PI;
-  u.mesh.position.set(x, 0, z);
+  u.mesh.position.set(x, (entry.forms[0].dims[2] / 2) * scale, z);
   scene.add(u.mesh);
   const maxHp = kind === 'castle' ? 340 : 150;
-  const h = { side, kind, x, z, hp: maxHp, maxHp, u, scale, spawnT: Math.random() * 2,
-              bar: barMesh(SIDES[side].color, kind === 'castle' ? 15 : 9), barY: kind === 'castle' ? 24.5 : 14.5 };
+  const h = { side, kind, x, z, hp: maxHp, maxHp, u, scale, spawnT: Math.random() * 2, flash: 0,
+              bar: barMesh(SIDES[side].color, kind === 'castle' ? 15 : 9), barY: kind === 'castle' ? 24.5 : 14.5,
+              barBg: barBgMesh(kind === 'castle' ? 15 : 9) };
   h.bar.position.set(x, h.barY, z);
+  h.barBg.position.set(x, h.barY, z);
   holds.push(h);
   return h;
 }
@@ -425,7 +433,7 @@ function setHoldSide(h, side) {
   h.u = makeUnit(entry);
   h.u.mesh.scale.setScalar(h.scale);
   h.u.mesh.rotation.y = Math.PI;
-  h.u.mesh.position.set(h.x, 0, h.z);
+  h.u.mesh.position.set(h.x, (entry.forms[0].dims[2] / 2) * h.scale, h.z);
   scene.add(h.u.mesh);
   h.hp = Math.round(h.maxHp * 0.6);
   h.bar.material.color.setHex(SIDES[side].color);
@@ -442,7 +450,7 @@ function placeDeco(key, x, z, scale, rotY, y) {
   updateUnit(u, 0, null);
   u.mesh.scale.setScalar(scale);
   u.mesh.rotation.y = rotY || 0;
-  u.mesh.position.set(x, y || 0, z);
+  u.mesh.position.set(x, (y || 0) + (u.baseY || 0) * scale, z);
   scene.add(u.mesh);
 }
 placeDeco('bridge', 0, 0, 0.62, Math.PI / 2, 1.05);
@@ -487,7 +495,8 @@ function spawnUnit(side, hold) {
   const un = { side, kind: t.kind, general: null, u, entry,
     x: hold.x + Math.cos(a) * 7, z: hold.z + Math.sin(a) * 5,
     hp: t.hp, maxHp: t.hp, dmg: t.dmg, range: t.range, speed: t.speed * (0.9 + Math.random() * 0.2),
-    atkCd: 0, tx: 0, tz: 0, seed: Math.random() * 10 };
+    atkCd: 0, tx: 0, tz: 0, seed: Math.random() * 10, flash: 0, atkT: 0,
+    bar: barMesh(SIDES[side].color, 3), barBg: barBgMesh(3), barW: 3, barY: 6.0 };
   units.push(un);
   return un;
 }
@@ -505,8 +514,8 @@ function deployGeneral(key) {
   const un = { side: 'shu', kind: 'general', general: key, u, entry,
     x: home.x + 8, z: home.z + (Math.random() * 6 - 3),
     hp: 170, maxHp: 170, dmg: 9, range: 3.0, speed: 7.2,
-    atkCd: 0, tx: 0, tz: 0, seed: Math.random() * 10, transformed: false,
-    bar: barMesh(0xffd97a, 5) };
+    atkCd: 0, tx: 0, tz: 0, seed: Math.random() * 10, transformed: false, flash: 0, atkT: 0,
+    bar: barMesh(0xffd97a, 5), barBg: barBgMesh(5), barW: 5, barY: 7.6 };
   gs.alive = true;
   gs.unit = un;
   units.push(un);
@@ -583,8 +592,10 @@ function endGame(win, text) {
   document.getElementById('end-text').textContent = text;
   document.getElementById('ov-end').classList.remove('hidden');
 }
-function damageHold(h, dmg, bySide) {
+function damageHold(h, dmg, bySide, attacker) {
   h.hp -= dmg;
+  h.flash = 0.13;
+  if (attacker) spawnSparks(h.x + (attacker.x - h.x) * 0.72, 3.2, h.z + (attacker.z - h.z) * 0.72, 7, 0xffc46b);
   if (h.hp <= 0) {
     const old = h.side;
     setHoldSide(h, bySide);
@@ -613,6 +624,9 @@ function stepUnit(un, dt) {
     if (un.atkCd <= 0) {
       un.atkCd = 0.8;
       foe.hp -= un.dmg * (0.85 + Math.random() * 0.3);
+      foe.flash = 0.13;
+      spawnSparks(foe.x, 2.6, foe.z, 6, 0xffa53a);
+      if (fd < 9) un.atkT = 0.22; // 近接のときだけ踏み込む（fd は距離の二乗）
       if (foe.hp <= 0 && foe.side !== 'shu') { if (un.side === 'shu') { points += 3; kills++; } }
       if (foe.hp <= 0 && foe.general) {
         const gs = generalState[foe.general];
@@ -630,7 +644,7 @@ function stepUnit(un, dt) {
   const hRange = un.range + (target.kind === 'castle' ? 11 : 7.5);
   if (distT < hRange) {
     faceTo(un, target.x - un.x, target.z - un.z);
-    if (un.atkCd <= 0) { un.atkCd = 0.8; damageHold(target, un.dmg * 0.8 * (0.85 + Math.random() * 0.3), un.side); }
+    if (un.atkCd <= 0) { un.atkCd = 0.8; un.atkT = 0.22; damageHold(target, un.dmg * 0.8 * (0.85 + Math.random() * 0.3), un.side, un); }
     return 'siege';
   }
   // 川は橋でしか渡れない: 反対岸が目的地なら橋経由に回す
@@ -661,6 +675,50 @@ function stepUnit(un, dt) {
 function faceTo(un, dx, dz) {
   if (Math.abs(dx) + Math.abs(dz) < 0.001) return;
   un.u.mesh.rotation.y = Math.atan2(-dx, -dz);
+  const l = Math.hypot(dx, dz) || 1;
+  un.fx = dx / l; un.fz = dz / l;
+}
+
+// ---------- ヒットスパーク ----------
+const SPARK_N = 240;
+const sparkMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.55, 0.55, 0.55), new THREE.MeshBasicMaterial({ color: 0xffffff }), SPARK_N);
+sparkMesh.frustumCulled = false;
+sparkMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+scene.add(sparkMesh);
+const sparks = [];
+const _sc = new THREE.Color();
+function spawnSparks(x, y, z, n, colorHex) {
+  for (let i = 0; i < n; i++) {
+    if (sparks.length >= SPARK_N) sparks.shift();
+    const a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 4.5;
+    sparks.push({ x, y, z, vx: Math.cos(a) * sp, vy: 3.5 + Math.random() * 3.5, vz: Math.sin(a) * sp, life: 0.38, max: 0.38, c: colorHex });
+  }
+}
+function updateSparks(dt) {
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.life -= dt;
+    if (s.life <= 0) { sparks.splice(i, 1); continue; }
+    s.vy -= 16 * dt;
+    s.x += s.vx * dt; s.y = Math.max(0.3, s.y + s.vy * dt); s.z += s.vz * dt;
+  }
+  for (let i = 0; i < SPARK_N; i++) {
+    const s = sparks[i];
+    if (s) {
+      _dummy.position.set(s.x, s.y, s.z);
+      _dummy.scale.setScalar(0.4 + 0.6 * (s.life / s.max));
+      _sc.setHex(s.c);
+      sparkMesh.setColorAt(i, _sc);
+    } else {
+      _dummy.position.set(0, -500, 0);
+      _dummy.scale.setScalar(0.0001);
+    }
+    _dummy.rotation.set(0, 0, 0);
+    _dummy.updateMatrix();
+    sparkMesh.setMatrixAt(i, _dummy.matrix);
+  }
+  sparkMesh.instanceMatrix.needsUpdate = true;
+  if (sparkMesh.instanceColor) sparkMesh.instanceColor.needsUpdate = true;
 }
 
 // ---------- メインループ ----------
@@ -674,6 +732,7 @@ function frame(now) {
   ptsT += dt;
   if (ptsT > 1) { ptsT = 0; points += 1.2; }
   skyUpdate(dt);
+  updateSparks(dt);
   aiThink(dt);
   // 湧き
   for (const h of holds) {
@@ -683,6 +742,9 @@ function frame(now) {
       h.spawnT = interval;
       if (units.filter(u => u.side === h.side && u.hp > 0).length < UNIT_CAP) spawnUnit(h.side, h);
     }
+    const hk = Math.max(0, h.flash || 0) / 0.13;
+    h.flash = Math.max(0, (h.flash || 0) - dt);
+    h.u.mesh.material.emissive.setRGB(hk * 0.9, hk * 0.25, hk * 0.15);
     const f = Math.max(0, h.hp / h.maxHp);
     h.bar.scale.x = f;
     h.bar.position.x = h.x - (1 - f) * (h.kind === 'castle' ? 7.5 : 4.5);
@@ -695,6 +757,7 @@ function frame(now) {
     if (un.hp <= 0) {
       scene.remove(un.u.mesh);
       if (un.bar) scene.remove(un.bar);
+      if (un.barBg) scene.remove(un.barBg);
       units.splice(i, 1);
       continue;
     }
@@ -709,11 +772,23 @@ function frame(now) {
     const moving = st === 'move';
     updateUnit(un.u, dt, un.general && un.transformed && moving ? 'run' : null);
     const lift = (Math.abs(un.x) < 8.5 && Math.abs(un.z) < 6) ? 1.05 : 0;
-    un.u.mesh.position.set(un.x, (un.u.bobY || 0) + lift, un.z);
+    // 攻撃の踏み込み: 攻撃した直後だけ、向いている方向へ少し体を入れる
+    let lx = 0, lz = 0;
+    if (un.atkT > 0) {
+      un.atkT = Math.max(0, un.atkT - dt);
+      const off = Math.sin((1 - un.atkT / 0.22) * Math.PI) * 0.9;
+      lx = (un.fx || 0) * off; lz = (un.fz || 0) * off;
+    }
+    un.u.mesh.position.set(un.x + lx, (un.u.baseY || 0) * un.u.mesh.scale.y + (un.u.bobY || 0) + lift, un.z + lz);
+    // 被弾フラッシュ
+    const uk = Math.max(0, un.flash || 0) / 0.13;
+    un.flash = Math.max(0, (un.flash || 0) - dt);
+    un.u.mesh.material.emissive.setRGB(uk * 0.9, uk * 0.25, uk * 0.15);
     if (un.bar) {
       const f = Math.max(0, un.hp / un.maxHp);
-      un.bar.scale.x = f;
-      un.bar.position.set(un.x - (1 - f) * 2.5, 7.6, un.z);
+      un.bar.scale.x = Math.max(0.001, f);
+      un.bar.position.set(un.x - (1 - f) * (un.barW / 2), un.barY, un.z);
+      if (un.barBg) un.barBg.position.set(un.x, un.barY, un.z);
     }
   }
   // HUD
