@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>三国志 城取り（試作） | VOXEL TRANSFORMERS</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0f16; color: #e8eef7; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; }
+  #wrap { position: fixed; inset: 0; }
+  canvas { display: block; }
+  .bar { position: fixed; left: 0; right: 0; top: 0; display: flex; gap: 14px; align-items: center; padding: 8px 12px; background: rgba(8,12,20,.78); font-size: 14px; flex-wrap: wrap; z-index: 5; }
+  .bar b { color: #ffd97a; }
+  .shu { color: #7ddb8a; } .wei { color: #8ab6ff; } .wu { color: #ff9a8a; }
+  #msg { color: #ffd97a; }
+  .panel { position: fixed; left: 0; right: 0; bottom: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); background: rgba(8,12,20,.78); z-index: 5; }
+  .prow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .gbtn { background: #16233c; color: #e8eef7; border: 1px solid #35507c; border-radius: 9px; padding: 9px 12px; font-size: 14px; cursor: pointer; }
+  .gbtn:disabled { opacity: .38; cursor: default; }
+  .gbtn small { color: #9fb4d8; }
+  .help { font-size: 12px; color: #9fb4d8; margin-top: 6px; line-height: 1.6; }
+  .overlay { position: fixed; inset: 0; background: rgba(5,8,14,.72); display: flex; align-items: center; justify-content: center; z-index: 9; }
+  .overlay.hidden { display: none; }
+  .card { text-align: center; padding: 24px; }
+  .card h1 { font-size: 30px; margin: 0 0 10px; }
+  .bigbtn { background: #2f6fd0; color: #fff; border: 0; border-radius: 10px; padding: 12px 30px; font-size: 17px; cursor: pointer; }
+  a { color: #8ab6ff; }
+</style>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script>
+</head>
+<body>
+<div id="wrap"></div>
+<div class="bar">
+  <span>三国志 城取り（試作）</span>
+  <span>兵力 <b id="pts">0</b></span>
+  <span id="holds"></span>
+  <span id="msg"></span>
+  <span style="margin-left:auto"><a href="sangokushi.html">← 三国志ロボ</a></span>
+</div>
+<div class="panel">
+  <div class="prow" id="generals"></div>
+  <div class="help">遊び方: 兵は自動で湧いて、自動で進軍します。敵の城や砦をタップ（クリック）すると、自軍の進軍先がそこに変わります。武将は兵力を使って出撃でき、危なくなると自動でロボットに変形します。敵の城を全部落とせば勝ち、自城を全部落とされれば負けです。川と橋は今のところ飾りです。</div>
+</div>
+<div class="overlay hidden" id="ov-end"><div class="card">
+  <h1 id="end-title"></h1>
+  <p id="end-text"></p>
+  <button class="bigbtn" id="btn-retry">もう一度</button>
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./models-extra.js"></script>
+<script>
+"use strict";
+// ---------- ボクセル読み込み（ビューアと同じ方式） ----------
+function gridFromQuads(dims, dataB64) {
+  const [X, Y, Z] = dims;
+  const bin = atob(dataB64);
+  const grid = new Uint8Array(X * Y * Z);
+  const idx = (x, y, z) => (z * Y + y) * X + x;
+  for (let i = 0; i + 3 < bin.length; i += 4) {
+    grid[idx(bin.charCodeAt(i), bin.charCodeAt(i + 1), bin.charCodeAt(i + 2))] = bin.charCodeAt(i + 3);
+  }
+  return { grid, X, Y, Z, get(x, y, z) { return (x < 0 || y < 0 || z < 0 || x >= X || y >= Y || z >= Z) ? 0 : grid[idx(x, y, z)]; } };
+}
+function extractSurfaceVoxels(g, palette) {
+  const list = [];
+  for (let z = 0; z < g.Z; z++) for (let y = 0; y < g.Y; y++) for (let x = 0; x < g.X; x++) {
+    const c = g.get(x, y, z);
+    if (!c) continue;
+    if (g.get(x + 1, y, z) && g.get(x - 1, y, z) && g.get(x, y + 1, z) && g.get(x, y - 1, z) && g.get(x, y, z + 1) && g.get(x, y, z - 1)) continue;
+    list.push([x - g.X / 2, z - g.Z / 2, -(y - g.Y / 2), palette[c] || 0xffffff]);
+  }
+  return list;
+}
+function computeParts(list) {
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  for (const v of list) { minX = Math.min(minX, v[0]); maxX = Math.max(maxX, v[0]); minY = Math.min(minY, v[1]); maxY = Math.max(maxY, v[1]); }
+  const H = maxY - minY, W = maxX - minX;
+  const hipY = minY + H * 0.40, shoulderY = minY + H * 0.80, elbowY = minY + H * 0.58, armX = W * 0.30;
+  const P = { legL: [], legR: [], armL: [], armR: [], foreL: [], foreR: [], body: [], hipY, shoulderY, elbowY, armX };
+  for (let i = 0; i < list.length; i++) {
+    const y = list[i][1], x = list[i][0];
+    if (y < hipY) (x < 0 ? P.legL : P.legR).push(i);
+    else if (y > shoulderY && Math.abs(x) > armX) (x < 0 ? P.armL : P.armR).push(i);
+    else if (y > elbowY && Math.abs(x) > armX) (x < 0 ? P.foreL : P.foreR).push(i);
+    else P.body.push(i);
+  }
+  P.map = new Map();
+  for (const k of ['legL', 'legR', 'armL', 'armR', 'foreL', 'foreR']) for (const i of P[k]) P.map.set(i, k);
+  return P;
+}
+const POSE_RUN = { leg: 0.62, arm: 0.42, fore: 0.85 };
+const POSE_WALK = { leg: 0.45, arm: 0.30, fore: 0.55 };
+function posePoint(P, kind, idx, x, y, z, ph, w) {
+  const part = P.map.get(idx);
+  if (!part || w <= 0) return [x, y, z];
+  const prm = kind === 'run' ? POSE_RUN : POSE_WALK;
+  const s = Math.sin(ph), c = Math.sin(ph + Math.PI);
+  function rot(y0, yy, zz, a) { const dy = yy - y0; return [y0 + dy * Math.cos(a), zz + dy * Math.sin(a)]; }
+  let r;
+  switch (part) {
+    case 'legL': r = rot(P.hipY, y, z, s * prm.leg * w); return [x, r[0], r[1]];
+    case 'legR': r = rot(P.hipY, y, z, c * prm.leg * w); return [x, r[0], r[1]];
+    case 'armL': r = rot(P.shoulderY, y, z, c * prm.arm * w); return [x, r[0], r[1]];
+    case 'armR': r = rot(P.shoulderY, y, z, s * prm.arm * w); return [x, r[0], r[1]];
+    case 'foreL': r = rot(P.shoulderY, y, z, c * prm.arm * w); r = rot(P.elbowY, r[0], r[1], prm.fore * w); return [x, r[0], r[1]];
+    case 'foreR': r = rot(P.shoulderY, y, z, s * prm.arm * w); r = rot(P.elbowY, r[0], r[1], prm.fore * w); return [x, r[0], r[1]];
+  }
+  return [x, y, z];
+}
+function buildBeast(list, dims) {
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, minZ = 1e9, maxZ = -1e9;
+  for (const v of list) { minX = Math.min(minX, v[0]); maxX = Math.max(maxX, v[0]); minY = Math.min(minY, v[1]); maxY = Math.max(maxY, v[1]); minZ = Math.min(minZ, v[2]); maxZ = Math.max(maxZ, v[2]); }
+  return { minX, maxX, minY, maxY, minZ, maxZ, H: maxY - minY, spanX: Math.max(Math.abs(minX), Math.abs(maxX)), midZ: (minZ + maxZ) / 2 };
+}
+const QUAD_PARAMS = {
+  quad_cat: { spd: 0.6, amp: 0.50, front: 1.0, roll: 0.02, bob: 0.15 },
+  quad_deer: { spd: 1.35, amp: 0.34, front: 1.0, roll: 0, bob: 0.5 },
+  quad_small: { spd: 1.2, amp: 0.38, front: 1.0, roll: 0.03, bob: 0.2 },
+  quad_monkey: { spd: 1.0, amp: 0.38, front: 1.7, roll: 0.07, bob: 0.2, pitch: 0.06, hindAmp: 1.35 }
+};
+function beastPoint(kind, B, x, y, z, ph, w) {
+  if (!kind || w <= 0) return [x, y, z, 0];
+  if (kind === 'wave') {
+    const alongX = (B.maxX - B.minX) >= (B.maxZ - B.minZ);
+    const coord = alongX ? x : z, norm = alongX ? (x - B.minX) / Math.max(1, B.maxX - B.minX) : (z - B.minZ) / Math.max(1, B.maxZ - B.minZ);
+    const off = Math.sin(ph * 1.4 - coord * 0.32) * 1.0 * w * (0.55 + 0.45 * norm);
+    const up = Math.cos(ph * 1.4 - coord * 0.32) * 0.22 * w;
+    return alongX ? [x, y + up, z + off, Math.abs(up)] : [x + off, y + up, z, Math.abs(up)];
+  }
+  if (kind === 'flap') {
+    if (y > B.minY + B.H * 0.5 && Math.abs(x) > B.spanX * 0.16) {
+      const side = x >= 0 ? 1 : -1;
+      const cx = side * B.spanX * 0.10, cy = B.minY + B.H * 0.52;
+      const a = side * Math.sin(ph * 1.5) * 0.5 * w;
+      const dx = x - cx, dy = y - cy;
+      return [cx + dx * Math.cos(a) - dy * Math.sin(a), cy + dx * Math.sin(a) + dy * Math.cos(a), z, 0];
+    }
+    return [x, y, z, 0];
+  }
+  if (QUAD_PARAMS[kind]) {
+    const q = QUAD_PARAMS[kind], qph = ph * 6 * q.spd;
+    let bobY = Math.abs(Math.sin(qph)) * q.bob * w;
+    if (y < B.minY + B.H * 0.38) {
+      let phase;
+      if (kind === 'quad_monkey') phase = (z < B.midZ) ? (x < 0 ? 0 : Math.PI) : 0.8;
+      else phase = ((x < 0) !== (z < 0)) ? 0 : Math.PI;
+      let amp = q.amp * (z < B.midZ ? q.front : 1);
+      if (kind === 'quad_monkey' && z >= B.midZ) amp *= q.hindAmp;
+      const a = Math.sin(qph + phase) * amp * w;
+      const py = B.minY + B.H * 0.38, dy = y - py;
+      return [x, py + dy * Math.cos(a), z + dy * Math.sin(a), bobY];
+    }
+    let yy = y + bobY;
+    if (q.roll) { const cx = 0, cy = B.minY + B.H * 0.45, a = Math.sin(qph) * q.roll * w; const dx = x - cx, dy = yy - cy; return [cx + dx * Math.cos(a) - dy * Math.sin(a), cy + dx * Math.sin(a) + dy * Math.cos(a), z, bobY]; }
+    if (kind === 'quad_monkey' && q.pitch) { const cy = B.minY + B.H * 0.42, a = Math.sin(qph + 0.6) * q.pitch * w; const dy = yy - cy, dz = z - B.midZ; return [x, cy + dy * Math.cos(a) - dz * Math.sin(a), B.midZ + dy * Math.sin(a) + dz * Math.cos(a), bobY]; }
+    return [x, yy, z, bobY];
+  }
+  return [x, y, z, 0];
+}
+// ---------- ユニット（モーフ＋アニメ） ----------
+const boxGeo = new THREE.BoxGeometry(0.92, 0.92, 0.92);
+const boxMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+function makeUnit(entry) {
+  const surfaces = entry.forms.map(f => extractSurfaceVoxels(gridFromQuads(f.dims, f.data), entry.palette));
+  const parts = entry.forms.map((f, i) => (entry.robotForms || [1]).includes(i) ? computeParts(surfaces[i]) : null);
+  const beast = entry.forms.map((f, i) => buildBeast(surfaces[i], f.dims));
+  const maxCount = Math.max(...surfaces.map(sv => sv.length), 1);
+  const mesh = new THREE.InstancedMesh(boxGeo, boxMat, maxCount);
+  mesh.rotation.y = Math.PI / 2;
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  mesh.frustumCulled = false;
+  const u = { entry, surfaces, parts, beast, mesh, form: 0, targetForm: 0, t: 1, phase: Math.random() * 6, animW: 0, bobY: 0 };
+  const col = new THREE.Color();
+  surfaces[0].forEach((v, i) => { col.setHex(v[3]); mesh.setColorAt(i, col); });
+  return u;
+}
+const _dummy = new THREE.Object3D();
+const _col = new THREE.Color();
+function updateUnit(u, dt, poseKind) {
+  const target = u.targetForm;
+  if (u.form !== target) {
+    u.t += dt / 0.9;
+    if (u.t >= 1) { u.t = 1; u.form = target; }
+  }
+  const tt = u.t < 1 ? u.t * u.t * (3 - 2 * u.t) : 1;
+  const anims = u.entry.formAnim || [];
+  const isRobotT = (u.entry.robotForms || [1]).includes(target);
+  const wantAnim = isRobotT ? !!poseKind : !!anims[target];
+  u.animW = Math.max(0, Math.min(1, u.animW + (wantAnim ? dt * 3 : -dt * 3)));
+  if (u.animW > 0) u.phase += dt * (isRobotT ? (poseKind === 'run' ? 11.5 : 7) : 6);
+  const A = u.surfaces[u.form], B = u.surfaces[target];
+  const n = Math.max(A.length, B.length);
+  const PA = u.parts[u.form], PB = u.parts[target];
+  const BA = u.beast[u.form], BB = u.beast[target];
+  let bob = 0;
+  for (let i = 0; i < n; i++) {
+    const inA = i < A.length, inB = i < B.length;
+    const a0 = inA ? A[i] : B[i], b0 = inB ? B[i] : A[i];
+    let pa = [a0[0], a0[1], a0[2]], pb = [b0[0], b0[1], b0[2]];
+    if (u.animW > 0) {
+      if (inA && PA && poseKind) pa = posePoint(PA, poseKind, i, pa[0], pa[1], pa[2], u.phase, u.animW * (1 - tt));
+      if (inB && PB && poseKind) pb = posePoint(PB, poseKind, i, pb[0], pb[1], pb[2], u.phase, u.animW * tt);
+      if (inA && anims[u.form]) { const r = beastPoint(anims[u.form], BA, pa[0], pa[1], pa[2], u.phase, u.animW * (1 - tt)); pa = [r[0], r[1], r[2]]; if (u.form === target) bob = Math.max(bob, r[3]); }
+      if (inB && anims[target]) { const r = beastPoint(anims[target], BB, pb[0], pb[1], pb[2], u.phase, u.animW * tt); pb = [r[0], r[1], r[2]]; if (u.form === target) bob = Math.max(bob, r[3]); }
+    }
+    _dummy.position.set(pa[0] + (pb[0] - pa[0]) * tt, pa[1] + (pb[1] - pa[1]) * tt, pa[2] + (pb[2] - pa[2]) * tt);
+    let sc = 1;
+    if (inA && !inB) sc = 1 - tt; else if (!inA && inB) sc = tt;
+    _dummy.scale.setScalar(Math.max(0.01, sc));
+    _dummy.rotation.set(0, 0, 0);
+    _dummy.updateMatrix();
+    u.mesh.setMatrixAt(i, _dummy.matrix);
+    _col.setHex(tt < 0.5 ? a0[3] : b0[3]);
+    u.mesh.setColorAt(i, _col);
+  }
+  u.mesh.count = n;
+  u.mesh.instanceMatrix.needsUpdate = true;
+  if (u.mesh.instanceColor) u.mesh.instanceColor.needsUpdate = true;
+  u.bobY = bob;
+  const dA = u.entry.forms[u.form].dims, dB = u.entry.forms[target].dims;
+  u.baseY = (dA[2] / 2) * (1 - tt) + (dB[2] / 2) * tt;
+}
+function formH(entry, i) { return entry.forms[i].dims[2]; }
+function formW(entry, i) { return entry.forms[i].dims[1]; }
+function isRobotForm(entry, i) { return (entry.robotForms || [1]).includes(i); }
+
+// ---------- シーン ----------
+const wrap = document.getElementById('wrap');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0e1a12);
+scene.fog = new THREE.Fog(0x0e1a12, 190, 320);
+const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.1, 600);
+camera.position.set(0, 108, 92);
+camera.lookAt(0, 0, -2);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+wrap.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff, 0.72));
+const dl = new THREE.DirectionalLight(0xffffff, 0.75);
+dl.position.set(50, 90, 40);
+scene.add(dl);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(190, 140), new THREE.MeshLambertMaterial({ color: 0x2c4a26 }));
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+const river = new THREE.Mesh(new THREE.PlaneGeometry(11, 140), new THREE.MeshLambertMaterial({ color: 0x27567d }));
+river.rotation.x = -Math.PI / 2;
+river.position.y = 0.02;
+scene.add(river);
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ---------- データと定数 ----------
+const byKey = {};
+for (const m of window.EXTRA_MODELS) byKey[m.key] = m;
+const SIDES = {
+  shu: { name: '蜀', color: 0x58b368, css: 'shu' },
+  wei: { name: '魏', color: 0x5b8dd9, css: 'wei' },
+  wu:  { name: '呉', color: 0xd95b5b, css: 'wu' },
+};
+const SOLDIER_TYPES = [
+  { kind: 'hohei', w: 0.45, hp: 11, dmg: 1.15, range: 2.5, speed: 5.2 },
+  { kind: 'yarihei', w: 0.25, hp: 12, dmg: 1.35, range: 2.9, speed: 5.0 },
+  { kind: 'yumihei', w: 0.20, hp: 8, dmg: 0.95, range: 9.0, speed: 5.4 },
+  { kind: 'kihei', w: 0.10, hp: 15, dmg: 1.7, range: 2.6, speed: 8.6 },
+];
+const GENERAL_KEYS = ['guanyu', 'zhangfei', 'zhugeliang', 'zhaoyun', 'lubu'];
+const GENERAL_COST = 40;
+const UNIT_CAP = 34;
+
+// ---------- 拠点 ----------
+const holds = [];
+function barMesh(color, w) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.55, 0.55), new THREE.MeshBasicMaterial({ color }));
+  scene.add(m);
+  return m;
+}
+function makeHold(side, kind, x, z) {
+  const entry = byKey[kind + '_' + side];
+  const u = makeUnit(entry);
+  const scale = kind === 'castle' ? 0.55 : 0.42;
+  u.mesh.scale.setScalar(scale);
+  u.mesh.rotation.y = Math.PI;
+  u.mesh.position.set(x, 0, z);
+  scene.add(u.mesh);
+  const maxHp = kind === 'castle' ? 340 : 150;
+  const h = { side, kind, x, z, hp: maxHp, maxHp, u, scale, spawnT: Math.random() * 2,
+              bar: barMesh(SIDES[side].color, kind === 'castle' ? 15 : 9), barY: kind === 'castle' ? 24.5 : 14.5 };
+  h.bar.position.set(x, h.barY, z);
+  holds.push(h);
+  return h;
+}
+function setHoldSide(h, side) {
+  scene.remove(h.u.mesh);
+  h.side = side;
+  const entry = byKey[h.kind + '_' + side];
+  h.u = makeUnit(entry);
+  h.u.mesh.scale.setScalar(h.scale);
+  h.u.mesh.rotation.y = Math.PI;
+  h.u.mesh.position.set(h.x, 0, h.z);
+  scene.add(h.u.mesh);
+  h.hp = Math.round(h.maxHp * 0.6);
+  h.bar.material.color.setHex(SIDES[side].color);
+}
+makeHold('shu', 'castle', -64, 34);
+makeHold('wei', 'castle', -64, -34);
+makeHold('wu', 'castle', 64, 0);
+makeHold('shu', 'fort', -30, 17);
+makeHold('wei', 'fort', -30, -17);
+makeHold('wu', 'fort', 30, 0);
+// 飾り
+function placeDeco(key, x, z, scale, rotY) {
+  const u = makeUnit(byKey[key]);
+  u.mesh.scale.setScalar(scale);
+  u.mesh.rotation.y = rotY || 0;
+  u.mesh.position.set(x, 0, z);
+  scene.add(u.mesh);
+}
+placeDeco('bridge', 0, 0, 0.62, Math.PI / 2);
+placeDeco('flag', 12, -8, 0.4, 0.6);
+const DECO = [[-46, 52], [-14, -46], [18, 40], [44, -38], [-48, -6], [22, -18], [52, 30], [-20, 58], [8, -58], [40, 52]];
+DECO.forEach(([x, z], i) => {
+  if (i % 3 === 0) placeDeco('house', x, z, 0.34, (i * 1.3) % 3);
+  else if (i % 3 === 1) placeDeco('tree', x, z, 0.3, i);
+  else placeDeco('rock', x, z, 0.3, i * 2.1);
+});
+
+// ---------- ユニット ----------
+const units = [];
+let points = 40;
+let kills = 0;
+const sideTarget = { shu: null, wei: null, wu: null };
+function nearestEnemyHold(side, from) {
+  let best = null, bd = 1e9;
+  for (const h of holds) {
+    if (h.side === side) continue;
+    const d = (h.x - from.x) ** 2 + (h.z - from.z) ** 2;
+    if (d < bd) { bd = d; best = h; }
+  }
+  return best;
+}
+for (const sd of ['shu', 'wei', 'wu']) sideTarget[sd] = nearestEnemyHold(sd, { x: sd === 'wu' ? 64 : -64, z: 0 });
+function pickSoldier() {
+  let r = Math.random(), acc = 0;
+  for (const t of SOLDIER_TYPES) { acc += t.w; if (r <= acc) return t; }
+  return SOLDIER_TYPES[0];
+}
+function spawnUnit(side, hold) {
+  const t = pickSoldier();
+  const entry = byKey[t.kind + '_' + side] || byKey.hohei_shu;
+  const u = makeUnit(entry);
+  u.mesh.scale.setScalar(0.15);
+  scene.add(u.mesh);
+  const a = Math.random() * Math.PI * 2;
+  const un = { side, kind: t.kind, general: null, u, entry,
+    x: hold.x + Math.cos(a) * 7, z: hold.z + Math.sin(a) * 5,
+    hp: t.hp, maxHp: t.hp, dmg: t.dmg, range: t.range, speed: t.speed * (0.9 + Math.random() * 0.2),
+    atkCd: 0, tx: 0, tz: 0, seed: Math.random() * 10 };
+  units.push(un);
+  return un;
+}
+const generalState = {};
+function deployGeneral(key) {
+  const gs = generalState[key] || (generalState[key] = { alive: false, cd: 0 });
+  if (gs.alive || gs.cd > 0 || points < GENERAL_COST) return;
+  points -= GENERAL_COST;
+  const home = holds.find(h => h.side === 'shu' && h.kind === 'castle') || holds.find(h => h.side === 'shu');
+  if (!home) return;
+  const entry = byKey[key];
+  const u = makeUnit(entry);
+  u.mesh.scale.setScalar(0.17);
+  scene.add(u.mesh);
+  const un = { side: 'shu', kind: 'general', general: key, u, entry,
+    x: home.x + 8, z: home.z + (Math.random() * 6 - 3),
+    hp: 170, maxHp: 170, dmg: 9, range: 3.0, speed: 7.2,
+    atkCd: 0, tx: 0, tz: 0, seed: Math.random() * 10, transformed: false,
+    bar: barMesh(0xffd97a, 5) };
+  gs.alive = true;
+  gs.unit = un;
+  units.push(un);
+  setMsg(entry.name + ' が出撃しました');
+}
+function setMsg(t) { document.getElementById('msg').textContent = t; }
+
+// ---------- 入力（進軍先の指定） ----------
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+function onTap(cx, cy) {
+  mouse.x = (cx / innerWidth) * 2 - 1;
+  mouse.y = -(cy / innerHeight) * 2 + 1;
+  ray.setFromCamera(mouse, camera);
+  const pts = ray.intersectObjects(holds.map(h => h.u.mesh));
+  let target = null;
+  if (pts.length) {
+    target = holds.find(h => h.u.mesh === pts[0].object);
+  } else {
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const hit = new THREE.Vector3();
+    if (ray.ray.intersectPlane(plane, hit)) {
+      let bd = 1e9;
+      for (const h of holds) { const d = (h.x - hit.x) ** 2 + (h.z - hit.z) ** 2; if (d < bd) { bd = d; target = h; } }
+    }
+  }
+  if (target && target.side !== 'shu') {
+    sideTarget.shu = target;
+    setMsg('進軍先を ' + SIDES[target.side].name + 'の' + (target.kind === 'castle' ? '城' : '砦') + ' に変えました');
+  } else if (target) {
+    setMsg('自軍の拠点です。敵の城や砦を選んでください');
+  }
+}
+renderer.domElement.addEventListener('pointerdown', e => onTap(e.clientX, e.clientY));
+
+// ---------- 武将ボタン ----------
+const gwrap = document.getElementById('generals');
+const gbtns = {};
+for (const key of GENERAL_KEYS) {
+  const b = document.createElement('button');
+  b.className = 'gbtn';
+  b.innerHTML = byKey[key].name + ' <small>兵力' + GENERAL_COST + '</small>';
+  b.addEventListener('click', () => deployGeneral(key));
+  gwrap.appendChild(b);
+  gbtns[key] = b;
+}
+document.getElementById('btn-retry').addEventListener('click', () => location.reload());
+
+// ---------- AI ----------
+let aiT = 0;
+function aiThink(dt) {
+  aiT -= dt;
+  if (aiT > 0) return;
+  aiT = 6;
+  for (const sd of ['wei', 'wu']) {
+    const mine = holds.filter(h => h.side === sd);
+    if (!mine.length) continue;
+    let best = null, bs = 1e9;
+    for (const h of holds) {
+      if (h.side === sd) continue;
+      const score = h.hp + (h.side === 'shu' ? -40 : 0) + Math.random() * 60;
+      if (score < bs) { bs = score; best = h; }
+    }
+    if (best) sideTarget[sd] = best;
+  }
+}
+
+// ---------- 戦闘と移動 ----------
+let ended = false;
+function endGame(win, text) {
+  if (ended) return;
+  ended = true;
+  document.getElementById('end-title').textContent = win ? '勝利' : '敗北';
+  document.getElementById('end-text').textContent = text;
+  document.getElementById('ov-end').classList.remove('hidden');
+}
+function damageHold(h, dmg, bySide) {
+  h.hp -= dmg;
+  if (h.hp <= 0) {
+    const old = h.side;
+    setHoldSide(h, bySide);
+    setMsg(SIDES[old].name + 'の' + (h.kind === 'castle' ? '城' : '砦') + ' が ' + SIDES[bySide].name + ' の手に落ちました');
+    for (const sd of ['shu', 'wei', 'wu']) if (sideTarget[sd] === h) sideTarget[sd] = nearestEnemyHold(sd, h);
+    const castles = { shu: 0, wei: 0, wu: 0 };
+    for (const hh of holds) if (hh.kind === 'castle') castles[hh.side]++;
+    if (castles.shu === 3) endGame(true, '三国の城をすべて落としました。');
+    if (castles.shu === 0) endGame(false, '自城をすべて落とされました。');
+  }
+}
+const _v = new THREE.Vector3();
+function stepUnit(un, dt) {
+  un.atkCd = Math.max(0, un.atkCd - dt);
+  // 敵を探す
+  let foe = null, fd = 1e9;
+  for (const o of units) {
+    if (o.side === un.side || o.hp <= 0) continue;
+    const d = (o.x - un.x) ** 2 + (o.z - un.z) ** 2;
+    if (d < fd) { fd = d; foe = o; }
+  }
+  const target = sideTarget[un.side] && sideTarget[un.side].side !== un.side ? sideTarget[un.side] : nearestEnemyHold(un.side, un);
+  const fRange = un.range + 1.4;
+  if (foe && fd < fRange * fRange) {
+    faceTo(un, foe.x - un.x, foe.z - un.z);
+    if (un.atkCd <= 0) {
+      un.atkCd = 0.8;
+      foe.hp -= un.dmg * (0.85 + Math.random() * 0.3);
+      if (foe.hp <= 0 && foe.side !== 'shu') { if (un.side === 'shu') { points += 3; kills++; } }
+      if (foe.hp <= 0 && foe.general) {
+        const gs = generalState[foe.general];
+        if (gs) { gs.alive = false; gs.cd = 20; gs.unit = null; }
+        setMsg(byKey[foe.general].name + ' が倒れました');
+      }
+    }
+    return 'fight';
+  }
+  if (!target) return 'idle';
+  const gx = target.x + Math.cos(un.seed * 7.3) * (target.kind === 'castle' ? 13 : 9);
+  const gz = target.z + Math.sin(un.seed * 5.1) * (target.kind === 'castle' ? 10 : 7);
+  const dx = gx - un.x, dz = gz - un.z;
+  const distT = Math.hypot(dx, dz);
+  const hRange = un.range + (target.kind === 'castle' ? 11 : 7.5);
+  if (distT < hRange) {
+    faceTo(un, target.x - un.x, target.z - un.z);
+    if (un.atkCd <= 0) { un.atkCd = 0.8; damageHold(target, un.dmg * 0.8 * (0.85 + Math.random() * 0.3), un.side); }
+    return 'siege';
+  }
+  // 移動（分離つき）
+  let mx = dx / (distT || 1), mz = dz / (distT || 1);
+  for (const o of units) {
+    if (o === un || o.hp <= 0) continue;
+    const ox = un.x - o.x, oz = un.z - o.z;
+    const od = ox * ox + oz * oz;
+    if (od > 0.01 && od < 2.6) { mx += ox / od * 1.6; mz += oz / od * 1.6; }
+  }
+  const ml = Math.hypot(mx, mz) || 1;
+  un.x += (mx / ml) * un.speed * dt;
+  un.z += (mz / ml) * un.speed * dt;
+  un.x = Math.max(-88, Math.min(88, un.x));
+  un.z = Math.max(-62, Math.min(62, un.z));
+  faceTo(un, mx, mz);
+  return 'move';
+}
+function faceTo(un, dx, dz) {
+  if (Math.abs(dx) + Math.abs(dz) < 0.001) return;
+  un.u.mesh.rotation.y = Math.atan2(-dx, -dz);
+}
+
+// ---------- メインループ ----------
+let last = performance.now();
+let ptsT = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  let dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (ended) { renderer.render(scene, camera); return; }
+  ptsT += dt;
+  if (ptsT > 1) { ptsT = 0; points += 1.2; }
+  aiThink(dt);
+  // 湧き
+  for (const h of holds) {
+    h.spawnT -= dt * (h.side === 'shu' ? 1 : 1.12);
+    const interval = h.kind === 'castle' ? 2.4 : 3.8;
+    if (h.spawnT <= 0) {
+      h.spawnT = interval;
+      if (units.filter(u => u.side === h.side && u.hp > 0).length < UNIT_CAP) spawnUnit(h.side, h);
+    }
+    const f = Math.max(0, h.hp / h.maxHp);
+    h.bar.scale.x = f;
+    h.bar.position.x = h.x - (1 - f) * (h.kind === 'castle' ? 7.5 : 4.5);
+    updateUnit(h.u, 0, null);
+  }
+  // ユニット
+  for (let i = units.length - 1; i >= 0; i--) {
+    const un = units[i];
+    if (un.hp <= 0) {
+      scene.remove(un.u.mesh);
+      if (un.bar) scene.remove(un.bar);
+      units.splice(i, 1);
+      continue;
+    }
+    const st = stepUnit(un, dt);
+    if (un.general && !un.transformed && un.hp < un.maxHp * 0.55) {
+      un.transformed = true;
+      un.u.targetForm = 1;
+      un.dmg *= 1.5;
+      un.speed *= 0.82;
+      setMsg(byKey[un.general].name + ' がロボットに変形しました');
+    }
+    const moving = st === 'move';
+    updateUnit(un.u, dt, un.general && un.transformed && moving ? 'run' : null);
+    un.u.mesh.position.set(un.x, un.u.bobY || 0, un.z);
+    if (un.bar) {
+      const f = Math.max(0, un.hp / un.maxHp);
+      un.bar.scale.x = f;
+      un.bar.position.set(un.x - (1 - f) * 2.5, 7.6, un.z);
+    }
+  }
+  // HUD
+  document.getElementById('pts').textContent = Math.floor(points);
+  const c = { shu: 0, wei: 0, wu: 0 };
+  for (const h of holds) if (h.kind === 'castle') c[h.side]++;
+  document.getElementById('holds').innerHTML =
+    '<span class="shu">蜀 城' + c.shu + '</span> <span class="wei">魏 城' + c.wei + '</span> <span class="wu">呉 城' + c.wu + '</span>';
+  for (const key of GENERAL_KEYS) {
+    const gs = generalState[key];
+    const b = gbtns[key];
+    if (gs && gs.cd > 0) gs.cd -= dt;
+    const alive = gs && gs.alive;
+    const cd = gs ? Math.max(0, gs.cd) : 0;
+    b.disabled = alive || cd > 0 || points < GENERAL_COST;
+    b.innerHTML = byKey[key].name + (alive ? ' <small>出撃中</small>' : cd > 0 ? ' <small>再出撃まで ' + Math.ceil(cd) + '秒</small>' : ' <small>兵力' + GENERAL_COST + '</small>');
+  }
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
