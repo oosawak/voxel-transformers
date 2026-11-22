@@ -126,7 +126,7 @@
     return list;
   }
 
-  let surface = [], H = 0, mesh = null;
+  let surface = [], H = 0, mesh = null, fitR = 100;
   let parts = [], jaw = [], mouth = null, animOn = new URLSearchParams(location.search).get('anim') !== '0';
   // 火の粒子（口の開閉と連動して吹き出す）
   const FIRE_N = 150, FIRE_LIFE = 0.55;
@@ -169,6 +169,7 @@
       if (v.z < minZ) minZ = v.z; if (v.z > maxZ) maxZ = v.z;
     }
     const spanX = maxX - minX, HH = maxY - minY, spanZ = maxZ - minZ;
+    fitR = 0.5 * Math.hypot(spanX, HH, spanZ) + 2; // カメラ距離の計算用（モデルの外接球の半径）
     // 翼の判定: 翼膜の色（濃い赤紫2色）のボクセルを種にして、近くの赤い枠ボクセルへ広げる。
     // 頭が大きいチビ造形では「上半分で左右に張り出した部分」という汎用判定だと顔や角まで翼扱いになり、
     // 顔が左右に割れてしまうため、この2モデルでは色で翼を特定する（実データで膜色は翼だけに現れることを確認済み）。
@@ -353,8 +354,11 @@
     if (auto) yaw += 0.004;
     if (animOn && mesh) applyScales();
     const ms = Math.max(S.x, S.y, S.z, 1);
-    const dist = 190 * ms;
-    const ty = (H / 2) * S.y * 0.55;
+    // モデル全体が画面に収まる距離を、外接球と画角（縦・横の狭い方）から決める
+    const vF = camera.fov * Math.PI / 360;
+    const hF = Math.atan(Math.tan(vF) * (camera.aspect || 1));
+    const dist = fitR * ms / Math.sin(Math.min(vF, hF)) * 1.02;
+    const ty = (H / 2) * S.y;
     camera.position.set(Math.sin(yaw) * Math.cos(pitch) * dist, Math.sin(pitch) * dist + ty, Math.cos(yaw) * Math.cos(pitch) * dist);
     camera.lookAt(0, ty, 0);
     renderer.render(scene, camera);
