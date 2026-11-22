@@ -80,7 +80,7 @@
     <p class="note" style="margin-top:0">造形テスト1（2026-11-22）: 格子 84×94×98、表面 18,464 個、生成 約7秒。チビキャラ造形（頭が全体の4割）が問題なく出て、WebGL 表示も余裕でした。</p>
     <p class="note">造形テスト2・128版（2026-11-22）: 格子 124×124×128、シェル 46,530 個、表面 43,771 個、生成 1.45 秒、.vox 187,216 bytes。テスト1と同じデザインを大きくして、さらに滑らかになりました。当初計画の格子1024版は、指示書の改訂前に生成が始まったため未実施で、改めて実施予定です。</p>
     <p class="note">伸縮の所見: 縦 0.12 で板のように薄く、0.25 で平たく、1.5〜2.0 で背高になります。横・奥行きも同じ仕組みで、データは一切変えていません。</p>
-    <p class="note">アニメーション追加（2026-11-22）: ギャラリーの竜で使っている「はばたき」をこのページにも入れました。当初は「上半分で左右に張り出したボクセルを翼とみなす」汎用判定を流用しましたが、頭が大きいチビ造形では顔や角まで翼扱いになって顔が左右に割れてしまったため、翼膜の色（濃い赤紫2色）を種に近くの赤い枠へ広げる、この2モデル専用の判定に直しました。翼は付け根を軸に上下に回ります。はばたきは表示の計算の中で伸縮より先に効くので、潰したり伸ばしたりした姿のままで翼が動きます。あわせて口と火も入れました。下あごは頭の前面・中央の下の帯をあごとみなして軸で回し、火は口の位置から吹き出す小さな箱の粒子です。約5秒周期で、口が開く→火を吐く→閉じる、を繰り返します。</p>
+    <p class="note">アニメーション追加（2026-11-22）: ギャラリーの竜で使っている「はばたき」をこのページにも入れました。当初は「上半分で左右に張り出したボクセルを翼とみなす」汎用判定を流用しましたが、頭が大きいチビ造形では顔や角まで翼扱いになって顔が左右に割れてしまったため、翼膜の色（濃い赤紫2色）を種に近くの赤い枠へ広げる、この2モデル専用の判定に直しました。翼は付け根を軸に上下に回ります。はばたきは表示の計算の中で伸縮より先に効くので、潰したり伸ばしたりした姿のままで翼が動きます。あわせて口と火も入れました。下あごは頭の前面・中央の下の帯をあごとみなして軸で回し、火は口の位置から吹き出す小さな箱の粒子です。約5秒周期で、口が開く→火を吐く→閉じる、を繰り返します。関節は、付け根に近いボクセルほど回転を弱める「柔らかい関節」にしてあり、翼やあごを動かしても接続部に穴が開きません。</p>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -196,15 +196,25 @@
       if (!add.length) break;
       for (const i of add) { wing[i] = true; wadd(i); }
     }
-    parts = surface.map((v, i) => wing[i]
-      ? { side: v.x > 0 ? 1 : -1, cx: (v.x > 0 ? 1 : -1) * spanX * 0.11, cy: minY + HH * 0.44 } : null);
+    // 付け根に近いボクセルほど回転を弱める（柔らかい関節）。付け根が体に付いたまま先だけ動くので、接続部に穴が開かない。
+    parts = surface.map((v, i) => {
+      if (!wing[i]) return null;
+      const cx = (v.x > 0 ? 1 : -1) * spanX * 0.11, cy = minY + HH * 0.44;
+      const d = Math.hypot(v.x - cx, v.y - cy);
+      return { side: v.x > 0 ? 1 : -1, cx, cy, w: Math.min(1, Math.max(0, (d - 1.5) / 9)) };
+    });
     // 口（下あご）の判定: 頭の前面・中央・口の線より下の帯をあごとみなす（正面は -Z）
     mouth = {
       pivotY: minY + HH * 0.60, pivotZ: minZ + spanZ * 0.30,
       emitY: minY + HH * 0.565, emitZ: minZ - 1, len: spanZ * 0.95 + 26
     };
-    jaw = surface.map(v => (v.z < minZ + spanZ * 0.28 && Math.abs(v.x) < spanX * 0.30 &&
-      v.y <= mouth.pivotY && v.y > minY + HH * 0.46) ? true : null);
+    // あごも同じく、軸に近いほど動きを弱める。jaw には 0〜1 の重みを持つ。
+    jaw = surface.map(v => {
+      if (!(v.z < minZ + spanZ * 0.28 && Math.abs(v.x) < spanX * 0.30 &&
+        v.y <= mouth.pivotY && v.y > minY + HH * 0.46)) return 0;
+      const d = Math.hypot(v.y - mouth.pivotY, v.z - mouth.pivotZ);
+      return Math.min(1, Math.max(0, (d - 1.5) / 7));
+    });
     if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); }
     mesh = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.96, 0.96, 0.96),
@@ -280,14 +290,14 @@
       let vx = v.x, vy = v.y, vz = v.z;
       const part = parts[i];
       if (animOn && part) {
-        const a = part.side * Math.sin(ph * 1.5) * 0.5;
+        const a = part.side * Math.sin(ph * 1.5) * 0.5 * part.w;
         const c = Math.cos(a), s = Math.sin(a);
         const dx = vx - part.cx, dy = vy - part.cy;
         vx = part.cx + dx * c - dy * s;
         vy = part.cy + dx * s + dy * c;
       }
       if (open > 0 && jaw[i] && mouth) {
-        const ang = -open * 0.38;
+        const ang = -open * 0.38 * jaw[i];
         const c2 = Math.cos(ang), s2 = Math.sin(ang);
         const dy = vy - mouth.pivotY, dz = vz - mouth.pivotZ;
         vy = mouth.pivotY + dy * c2 - dz * s2;
