@@ -148,6 +148,16 @@ const MODELS = [
   { key: 'dosan', title: '斎藤道三ロボ → 蛇', forms: [['ロボット', 3999, 'a'], ['蛇', 3380, 'b']], note: '美濃の蝮。とぐろがロボの下半身に' },
   { key: 'ujiyasu', title: '北条氏康ロボ → 獅子', forms: [['ロボット', 3666, 'a'], ['獅子', 3492, 'b']], note: '相模の獅子。たてがみが兜と肩の装甲に' },
   { key: 'tadakatsu', title: '本多忠勝ロボ → 鹿', forms: [['ロボット', 3257, 'a'], ['鹿', 2274, 'b']], note: '鹿角の兜そのまま。立派な角と槍の意匠' },
+  { key: 'mitsunari', title: '石田三成ロボ → 狐', forms: [['ロボット', 2180, 'a'], ['狐', 1773, 'b']], note: '細身のロボ。白っぽい狐に変形する' },
+  { key: 'kiyomasa', title: '加藤清正ロボ → 虎', forms: [['ロボット', 2918, 'a'], ['虎', 2708, 'b']], note: '虎退治の清正。信玄の虎とは縞と色で変えてある' },
+  { key: 'tendo', title: '天童ロボ → 青いカラス', forms: [['ロボット', 2473, 'a'], ['中間形態', 2540, 'b'], ['カラス', 2787, 'c']], note: '三郎を助けて呪いを代わりに受けたカラス。光で青く見えるのは元の色の名残で、片翼に白が残る' },
+  { key: 'aobajo', title: '青葉城 → ロボット', forms: [['青葉城', 11224, 'a'], ['ロボット', 5495, 'b']], note: '天守のない城。石垣が脚と腰、物見櫓が肩と腕、本丸御殿が頭に。このシリーズ最大のモデル' },
+  { key: 'nihonmaru', title: '日本丸 → ロボット', forms: [['日本丸', 3878, 'a'], ['ロボット', 3780, 'b']], note: '秀吉の巨大な安宅船。楼が胸、幔幕と帆が背中の意匠に' },
+  { key: 'tekkosen', title: '鉄甲船 → ロボット', forms: [['鉄甲船', 3404, 'a'], ['ロボット', 3229, 'b']], note: '信長の鉄の軍船。鉄の装甲板がそのままロボットの鎧に' },
+  { key: 'abukuma', title: '阿武隈川の川船 → ロボット', forms: [['川船', 2307, 'a'], ['ロボット', 2326, 'b']], note: '白石城ゆかり。秀吉から拝領したと伝わる高速の川船' },
+  { key: 'itachi', title: 'イタチ → ロボット', forms: [['イタチ', 1320, 'a'], ['ロボット', 3041, 'b']], note: '細長い体が胴体になる、素早い小型ロボ' },
+  { key: 'yatagarasu', title: 'ヤタガラス → ロボット', forms: [['ヤタガラス', 3223, 'a'], ['ロボット', 2994, 'b']], note: '三本足の大きな烏。翼が背中と腕に' },
+  { key: 'komainu', title: '狛犬 → ロボット', forms: [['狛犬', 3710, 'a'], ['ロボット', 3541, 'b']], note: '阿形の狛犬。たてがみと牙がロボの頭と肩に' },
 ];
 document.getElementById('grid').innerHTML = MODELS.map(m => `
   <div class="card">
@@ -225,7 +235,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     return list;
   }
 
-  const WARLORD_KEYS = ['masamune','shigezane','yoshiaki','hideyoshi','kenshin','shingen','ieyasu','dosan','ujiyasu','tadakatsu'];
+  const WARLORD_KEYS = ['masamune','shigezane','yoshiaki','hideyoshi','kenshin','shingen','ieyasu','dosan','ujiyasu','tadakatsu','mitsunari','kiyomasa','tendo','aobajo','nihonmaru','tekkosen','abukuma','itachi','yatagarasu','komainu'];
   const ALL_MODELS = window.EXTRA_MODELS.filter(m => WARLORD_KEYS.includes(m.key));
   const MODELS = ALL_MODELS;
   const SURFACES = {};
