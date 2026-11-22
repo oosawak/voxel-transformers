@@ -103,6 +103,7 @@
     <div class="row" id="form-btns"></div>
     <div class="row" style="align-items:center">
       <button class="btn" id="btn-copy-url" type="button">このモデルのURLをコピー</button>
+      <a class="btn" id="btn-game-form" href="#" target="_blank" rel="noopener">この形態でゲームで開く</a>
       <span id="copy-state" style="color:#9bb3d8; font-size:12.5px"></span>
     </div>
     <div class="row">
@@ -461,7 +462,12 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     grid.position.y = -d / 2 - 1;
   }
   function syncUrl() {
-    if (!unitKey || unitKey === '__custom') return;
+    const gb = document.getElementById('btn-game-form');
+    if (!unitKey || unitKey === '__custom') { if (gb) gb.style.display = 'none'; return; }
+    if (gb) {
+      gb.style.display = '';
+      gb.href = 'https://oosawak.github.io/voxel-valkyrie/?unit=' + unitKey + '&form=' + targetForm;
+    }
     const q = '?unit=' + unitKey + (targetForm ? '&form=' + targetForm : '');
     history.replaceState(null, '', q);
   }
