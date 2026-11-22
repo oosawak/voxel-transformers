@@ -33,6 +33,11 @@
   <p class="lead"><a href="index.html">← ギャラリーへ戻る</a></p>
 </header>
 <div class="wrap">
+  <div class="presets" style="margin:0 0 10px">
+    <span>モデル:</span>
+    <button id="m-small" class="on">赤い子竜（テスト1）</button>
+    <button id="m-big">赤い子竜（大）（テスト2）</button>
+  </div>
   <canvas id="viewer-canvas"></canvas>
   <div class="panel">
     <div class="row">
@@ -67,7 +72,13 @@
       <button id="reset">全部 1.00 に戻す</button>
     </div>
     <p class="note" id="info">読み込み中…</p>
-    <p class="note">仕組み: ボクセルの位置と箱の大きさに、軸ごとの倍率を掛けているだけです。元のデータ（表面18,464個、高さ98層）はそのままなので、倍率を戻せば元の姿に戻ります。作る側で大きく作っておいて、見せる機械や見せ方に合わせて表示で調整する、という使い方の確認用です。</p>
+    <p class="note">仕組み: ボクセルの位置と箱の大きさに、軸ごとの倍率を掛けているだけです。元のデータはそのままなので、倍率を戻せば元の姿に戻ります。作る側で大きく作っておいて、見せる機械や見せ方に合わせて表示で調整する、という使い方の確認用です。</p>
+  </div>
+  <div class="panel">
+    <h2 style="font-size:16px;margin:0 0 8px">実験の記録</h2>
+    <p class="note" style="margin-top:0">造形テスト1（2026-11-22）: 格子 84×94×98、表面 18,464 個、生成 約7秒。チビキャラ造形（頭が全体の4割）が問題なく出て、WebGL 表示も余裕でした。</p>
+    <p class="note">造形テスト2・128版（2026-11-22）: 格子 124×124×128、シェル 46,530 個、表面 43,771 個、生成 1.45 秒、.vox 187,216 bytes。テスト1と同じデザインを大きくして、さらに滑らかになりました。当初計画の格子1024版は、指示書の改訂前に生成が始まったため未実施で、改めて実施予定です。</p>
+    <p class="note">伸縮の所見: 縦 0.12 で板のように薄く、0.25 で平たく、1.5〜2.0 で背高になります。横・奥行きも同じ仕組みで、データは一切変えていません。</p>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -77,8 +88,11 @@
   const canvas = document.getElementById('viewer-canvas');
   const infoEl = document.getElementById('info');
   if (!window.THREE || !window.EXTRA_MODELS) { infoEl.textContent = 'ビューアを読み込めませんでした'; return; }
-  const m = window.EXTRA_MODELS.find(e => e.key === 'babydragon');
-  if (!m) { infoEl.textContent = '子竜のデータが見つかりませんでした'; return; }
+  const MODELS = {
+    babydragon: window.EXTRA_MODELS.find(e => e.key === 'babydragon'),
+    babydragon_big: window.EXTRA_MODELS.find(e => e.key === 'babydragon_big')
+  };
+  if (!MODELS.babydragon) { infoEl.textContent = '子竜のデータが見つかりませんでした'; return; }
 
   function createGrid(X, Y, Z) { return { X, Y, Z, data: new Uint8Array(X * Y * Z) }; }
   function setVoxel(g, x, y, z, c) {
@@ -110,9 +124,7 @@
     return list;
   }
 
-  const f = m.forms[0];
-  const surface = extractSurfaceVoxels(gridFromQuads(f.dims, f.data), m.palette);
-  const H = f.dims[2];
+  let surface = [], H = 0, mesh = null;
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -124,17 +136,28 @@
   const rim = new THREE.DirectionalLight(0x4da6ff, 0.45); rim.position.set(-70, 30, -80); scene.add(rim);
   const grid = new THREE.GridHelper(260, 52, 0x3b82f6, 0x1e293b); scene.add(grid);
 
-  const mesh = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.96, 0.96, 0.96),
-    new THREE.MeshLambertMaterial({ color: 0xffffff }),
-    surface.length
-  );
-  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  scene.add(mesh);
   const dummy = new THREE.Object3D();
   const tmpColor = new THREE.Color();
-  for (let i = 0; i < surface.length; i++) mesh.setColorAt(i, tmpColor.setHex(surface[i].color || 0xcccccc));
-  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  function loadModel(key) {
+    const m = MODELS[key];
+    if (!m) return;
+    const f = m.forms[0];
+    surface = extractSurfaceVoxels(gridFromQuads(f.dims, f.data), m.palette);
+    H = f.dims[2];
+    if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); }
+    mesh = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.96, 0.96, 0.96),
+      new THREE.MeshLambertMaterial({ color: 0xffffff }),
+      surface.length
+    );
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    for (let i = 0; i < surface.length; i++) mesh.setColorAt(i, tmpColor.setHex(surface[i].color || 0xcccccc));
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    scene.add(mesh);
+    document.getElementById('m-small').classList.toggle('on', key === 'babydragon');
+    document.getElementById('m-big').classList.toggle('on', key === 'babydragon_big');
+    applyScales();
+  }
 
   const q = new URLSearchParams(location.search);
   function param(name, fallback) {
@@ -203,7 +226,9 @@
     camera.lookAt(0, ty, 0);
     renderer.render(scene, camera);
   }
-  applyScales();
+  document.getElementById('m-small').addEventListener('click', () => loadModel('babydragon'));
+  document.getElementById('m-big').addEventListener('click', () => loadModel('babydragon_big'));
+  loadModel(new URLSearchParams(location.search).get('unit') === 'babydragon_big' ? 'babydragon_big' : 'babydragon');
   tick();
 })();
 </script>
