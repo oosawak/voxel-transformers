@@ -101,6 +101,10 @@
   <div class="viewer-head">
     <select id="unit-select" aria-label="モデルを選ぶ"><option>読み込み中…</option></select>
     <div class="row" id="form-btns"></div>
+    <div class="row" style="align-items:center">
+      <button class="btn" id="btn-copy-url" type="button">このモデルのURLをコピー</button>
+      <span id="copy-state" style="color:#9bb3d8; font-size:12.5px"></span>
+    </div>
     <div class="row">
       <button class="btn" id="btn-rotate">回転: オン</button>
       <button class="btn" id="btn-anim">アニメ: なし</button>
@@ -168,6 +172,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
       <div class="row">
         <button class="btn main" onclick="showInViewer('${m.key}')">このページで変形を見る</button>
         <a class="btn" href="${VV}?unit=${m.key}">ゲームで開く</a>
+        <a class="btn" href="./warlords.html?unit=${m.key}" target="_blank" rel="noopener">このモデルのURL</a>
       </div>
       <div class="row" style="margin-top:8px">
         ${m.forms.map(f => `<a class="btn" href="models/${m.key}_${f[2]}.vox" download>${f[0]}.vox</a>`).join('')}
@@ -601,6 +606,16 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     }
   });
 
+  document.getElementById('btn-copy-url').addEventListener('click', async () => {
+    const st = document.getElementById('copy-state');
+    try {
+      await navigator.clipboard.writeText(location.href);
+      st.textContent = 'コピーしました';
+    } catch (e) {
+      st.textContent = location.href;
+    }
+    setTimeout(() => { st.textContent = ''; }, 2600);
+  });
   const animBtn = document.getElementById('btn-anim');
   function refreshAnimBtn() {
     const kind = animKind();
