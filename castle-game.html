@@ -33,6 +33,7 @@
   <span>三国志 城取り（試作）</span>
   <span>兵力 <b id="pts">0</b></span>
   <span id="holds"></span>
+  <span id="sky"></span>
   <span id="msg"></span>
   <span style="margin-left:auto"><a href="sangokushi.html">← 三国志ロボ</a></span>
 </div>
@@ -235,7 +236,8 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 wrap.appendChild(renderer.domElement);
-scene.add(new THREE.AmbientLight(0xffffff, 0.72));
+const amb = new THREE.AmbientLight(0xffffff, 0.72);
+scene.add(amb);
 const dl = new THREE.DirectionalLight(0xffffff, 0.75);
 dl.position.set(50, 90, 40);
 scene.add(dl);
@@ -244,8 +246,108 @@ ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 const river = new THREE.Mesh(new THREE.PlaneGeometry(11, 140), new THREE.MeshLambertMaterial({ color: 0x27567d }));
 river.rotation.x = -Math.PI / 2;
-river.position.y = 0.02;
+river.position.y = 0.06;
 scene.add(river);
+// 舞台の台座（ジオラマ風）
+const base1 = new THREE.Mesh(new THREE.BoxGeometry(200, 7, 150), new THREE.MeshLambertMaterial({ color: 0x4a3826 }));
+base1.position.y = -3.6;
+scene.add(base1);
+const base2 = new THREE.Mesh(new THREE.BoxGeometry(214, 3.5, 164), new THREE.MeshLambertMaterial({ color: 0x2e2119 }));
+base2.position.y = -8.8;
+scene.add(base2);
+// 奥と両脇の山並み
+{
+  const cols = [0x55705e, 0x6d7f8c, 0x5f7a66];
+  const peaks = [[-150, -158, 44, 40], [-98, -168, 58, 48], [-48, -160, 38, 34], [2, -170, 52, 44], [56, -161, 40, 36], [104, -168, 56, 47], [152, -158, 42, 39], [-168, -34, 38, 33], [168, -30, 40, 35]];
+  peaks.forEach(([x, z, hgt, rad], i) => {
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(rad, hgt, 7), new THREE.MeshLambertMaterial({ color: cols[i % 3], flatShading: true }));
+    cone.position.set(x, hgt / 2 - 1, z);
+    cone.rotation.y = i * 1.7;
+    scene.add(cone);
+    if (hgt >= 50) {
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(rad * 0.38, hgt * 0.3, 7), new THREE.MeshLambertMaterial({ color: 0xe8eef2, flatShading: true }));
+      cap.position.set(x, hgt - 1 - hgt * 0.15, z);
+      cap.rotation.y = i * 1.7;
+      scene.add(cap);
+    }
+  });
+}
+// 太陽と月
+const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(4.2, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffd76a, fog: false }));
+scene.add(sunMesh);
+const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(3.2, 16, 12), new THREE.MeshBasicMaterial({ color: 0xdfe9f5, fog: false }));
+scene.add(moonMesh);
+// 雨
+const RAIN_N = 700;
+const rainPos = new Float32Array(RAIN_N * 3);
+for (let i = 0; i < RAIN_N; i++) { rainPos[i * 3] = (Math.random() - 0.5) * 190; rainPos[i * 3 + 1] = Math.random() * 60; rainPos[i * 3 + 2] = (Math.random() - 0.5) * 140; }
+const rainGeo = new THREE.BufferGeometry();
+rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+const rain = new THREE.Points(rainGeo, new THREE.PointsMaterial({ color: 0xaaccee, size: 1.5, transparent: true, opacity: 0 }));
+rain.frustumCulled = false;
+scene.add(rain);
+// 空の移ろい（1周240秒）と天気
+let skyT = 0.32, wxState = 'clear', wxT = 50, cloudF = 0, rainF = 0, skyHudT = 0;
+const SKY_STOPS = [[0, 0xe9a06b], [0.25, 0xa5d8e6], [0.5, 0xe07a4e], [0.75, 0x101c26], [1, 0xe9a06b]];
+const _c1 = new THREE.Color(), _c2 = new THREE.Color(), _c3 = new THREE.Color();
+function skyColorAt(t) {
+  for (let i = 0; i < SKY_STOPS.length - 1; i++) {
+    const [t0, c0] = SKY_STOPS[i], [t1, c1] = SKY_STOPS[i + 1];
+    if (t >= t0 && t <= t1) { _c1.setHex(c0); _c2.setHex(c1); _c1.lerp(_c2, (t - t0) / (t1 - t0)); return _c1; }
+  }
+  _c1.setHex(0xa5d8e6); return _c1;
+}
+function skyUpdate(dt) {
+  skyT = (skyT + dt / 240) % 1;
+  const th = skyT * Math.PI * 2;
+  const elev = Math.sin(th);
+  const dayF = Math.max(0, elev);
+  const sx = Math.cos(th) * 150, sy = elev * 105;
+  sunMesh.position.set(sx, sy, -60);
+  moonMesh.position.set(-sx, -elev * 90, -60);
+  sunMesh.visible = elev > -0.12;
+  moonMesh.visible = elev < 0.12;
+  _c3.copy(skyColorAt(skyT));
+  if (cloudF > 0.02) _c3.lerp(_c2.setHex(0x8a97a3), cloudF * 0.45);
+  scene.background.copy(_c3);
+  scene.fog.color.copy(_c3);
+  dl.position.set(sx * 0.6, Math.max(18, sy), 40);
+  dl.intensity = (0.22 + 0.68 * dayF) * (1 - 0.5 * cloudF);
+  dl.color.setHex(elev < 0.25 ? 0xffc98a : 0xffffff);
+  if (elev <= 0) dl.color.setHex(0x8fb4ff);
+  amb.intensity = (0.36 + 0.38 * dayF) * (1 - 0.25 * cloudF);
+  scene.fog.near = 190 - 60 * cloudF - 40 * rainF;
+  scene.fog.far = 320 - 90 * cloudF - 70 * rainF;
+  // 天気の遷移
+  wxT -= dt;
+  if (wxT <= 0) {
+    wxT = 45 + Math.random() * 30;
+    const r = Math.random();
+    wxState = r < 0.55 ? 'clear' : (r < 0.82 ? 'cloud' : 'rain');
+  }
+  const cloudGoal = wxState === 'clear' ? 0 : (wxState === 'cloud' ? 0.6 : 0.9);
+  const rainGoal = wxState === 'rain' ? 1 : 0;
+  cloudF += (cloudGoal - cloudF) * Math.min(1, dt * 0.25);
+  rainF += (rainGoal - rainF) * Math.min(1, dt * 0.25);
+  rain.material.opacity = rainF * 0.75;
+  rain.visible = rainF > 0.03;
+  if (rain.visible) {
+    const p = rainGeo.attributes.position.array;
+    for (let i = 0; i < RAIN_N; i++) {
+      p[i * 3 + 1] -= 58 * dt;
+      p[i * 3] += 6 * dt;
+      if (p[i * 3 + 1] < 0) { p[i * 3 + 1] = 55 + Math.random() * 5; p[i * 3] = (Math.random() - 0.5) * 190; p[i * 3 + 2] = (Math.random() - 0.5) * 140; }
+    }
+    rainGeo.attributes.position.needsUpdate = true;
+  }
+  skyHudT -= dt;
+  if (skyHudT <= 0) {
+    skyHudT = 0.5;
+    const phase = elev <= 0 ? '夜' : (dayF > 0.55 ? '昼' : (Math.cos(th) > 0 ? '朝' : '夕'));
+    const wxName = wxState === 'clear' ? '晴れ' : (wxState === 'cloud' ? '曇り' : '雨');
+    document.getElementById('sky').textContent = phase + '・' + wxName;
+  }
+}
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
@@ -292,6 +394,24 @@ function makeHold(side, kind, x, z) {
   holds.push(h);
   return h;
 }
+// 城・砦はHPが減ると上の方からボクセルが消えて崩れていく（最低でも土台は残る）
+function crumbleHold(h) {
+  const surf = h.u.surfaces[0];
+  if (h.orderU !== h.u) {
+    h.orderU = h.u;
+    h.order = surf.map((v, i) => i).sort((a, b) => surf[b][1] - surf[a][1]);
+  }
+  const n = surf.length;
+  const keep = Math.floor(n * Math.max(0.12, h.hp / h.maxHp));
+  for (let k = keep; k < n; k++) {
+    _dummy.position.set(0, -500, 0);
+    _dummy.rotation.set(0, 0, 0);
+    _dummy.scale.setScalar(0.0001);
+    _dummy.updateMatrix();
+    h.u.mesh.setMatrixAt(h.order[k], _dummy.matrix);
+  }
+  h.u.mesh.instanceMatrix.needsUpdate = true;
+}
 function setHoldSide(h, side) {
   scene.remove(h.u.mesh);
   h.side = side;
@@ -311,15 +431,15 @@ makeHold('shu', 'fort', -30, 17);
 makeHold('wei', 'fort', -30, -17);
 makeHold('wu', 'fort', 30, 0);
 // 飾り
-function placeDeco(key, x, z, scale, rotY) {
+function placeDeco(key, x, z, scale, rotY, y) {
   const u = makeUnit(byKey[key]);
   updateUnit(u, 0, null);
   u.mesh.scale.setScalar(scale);
   u.mesh.rotation.y = rotY || 0;
-  u.mesh.position.set(x, 0, z);
+  u.mesh.position.set(x, y || 0, z);
   scene.add(u.mesh);
 }
-placeDeco('bridge', 0, 0, 0.62, Math.PI / 2);
+placeDeco('bridge', 0, 0, 0.62, Math.PI / 2, 0.55);
 placeDeco('flag', 12, -8, 0.4, 0.6);
 const DECO = [[-46, 52], [-14, -46], [18, 40], [44, -38], [-48, -6], [22, -18], [52, 30], [-20, 58], [8, -58], [40, 52]];
 DECO.forEach(([x, z], i) => {
@@ -544,6 +664,7 @@ function frame(now) {
   if (ended) { renderer.render(scene, camera); return; }
   ptsT += dt;
   if (ptsT > 1) { ptsT = 0; points += 1.2; }
+  skyUpdate(dt);
   aiThink(dt);
   // 湧き
   for (const h of holds) {
@@ -557,6 +678,7 @@ function frame(now) {
     h.bar.scale.x = f;
     h.bar.position.x = h.x - (1 - f) * (h.kind === 'castle' ? 7.5 : 4.5);
     updateUnit(h.u, 0, null);
+    crumbleHold(h);
   }
   // ユニット
   for (let i = units.length - 1; i >= 0; i--) {
