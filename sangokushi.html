@@ -161,7 +161,18 @@ const MODELS = [
   { key: 'kihei_shu', title: '騎兵（蜀）', forms: [['騎兵（蜀）', 1471, 'a']], note: '緑。栗毛の馬と旗つきの騎槍' },
   { key: 'kihei_wu', title: '騎兵（呉）', forms: [['騎兵（呉）', 1459, 'a']], note: '赤。白い馬と旗つきの騎槍' },
   { key: 'koukin', title: '黄巾賊', forms: [['黄巾賊', 848, 'a']], note: '黄色い頭巾と曲刀、粗末な板盾' },
-  { key: 'ikki', title: '一揆衆', forms: [['一揆衆', 996, 'a']], note: '菅笠と竹槍と鍬。背中にむしろの旗' }
+  { key: 'ikki', title: '一揆衆', forms: [['一揆衆', 996, 'a']], note: '菅笠と竹槍と鍬。背中にむしろの旗' },
+  { key: 'castle_wei', title: '城（魏）', forms: [['城（魏）', 5466, 'a']], note: '石垣と白壁、3層の天守に青い大旗' },
+  { key: 'castle_shu', title: '城（蜀）', forms: [['城（蜀）', 5466, 'a']], note: '石垣と白壁、3層の天守に緑の大旗' },
+  { key: 'castle_wu', title: '城（呉）', forms: [['城（呉）', 5466, 'a']], note: '石垣と白壁、朱柱の天守に紅い大旗' },
+  { key: 'fort_wei', title: '砦（魏）', forms: [['砦（魏）', 1621, 'a']], note: '木柵と櫓、青い陣幕' },
+  { key: 'fort_shu', title: '砦（蜀）', forms: [['砦（蜀）', 1621, 'a']], note: '木柵と櫓、緑の陣幕' },
+  { key: 'fort_wu', title: '砦（呉）', forms: [['砦（呉）', 1621, 'a']], note: '木柵と櫓、紅い陣幕' },
+  { key: 'house', title: '村の家', forms: [['村の家', 979, 'a']], note: '茅葺き屋根と土壁の民家' },
+  { key: 'tree', title: '木', forms: [['木', 430, 'a']], note: '幹と葉の塊' },
+  { key: 'rock', title: '岩', forms: [['岩', 432, 'a']], note: '灰色の岩塊' },
+  { key: 'bridge', title: '橋', forms: [['橋', 862, 'a']], note: '緩やかな弧の木の橋' },
+  { key: 'flag', title: '陣旗', forms: [['陣旗', 324, 'a']], note: '白地の大きな旗' }
 ];
 document.getElementById('grid').innerHTML = MODELS.map(m => `
   <div class="card">
@@ -240,7 +251,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     return list;
   }
 
-  const PAGE_KEYS = ['guanyu','zhangfei','zhugeliang','zhaoyun','lubu','hohei_wei','hohei_shu','hohei_wu','yumihei_wei','yumihei_shu','yumihei_wu','yarihei_wei','yarihei_shu','yarihei_wu','kihei_wei','kihei_shu','kihei_wu','koukin','ikki'];
+  const PAGE_KEYS = ['guanyu','zhangfei','zhugeliang','zhaoyun','lubu','hohei_wei','hohei_shu','hohei_wu','yumihei_wei','yumihei_shu','yumihei_wu','yarihei_wei','yarihei_shu','yarihei_wu','kihei_wei','kihei_shu','kihei_wu','koukin','ikki','castle_wei','castle_shu','castle_wu','fort_wei','fort_shu','fort_wu','house','tree','rock','bridge','flag'];
   const ALL_MODELS = window.EXTRA_MODELS.filter(m => PAGE_KEYS.includes(m.key));
   const MODELS = ALL_MODELS;
   const SURFACES = {};
