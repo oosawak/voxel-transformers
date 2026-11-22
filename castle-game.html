@@ -39,7 +39,7 @@
 </div>
 <div class="panel">
   <div class="prow" id="generals"></div>
-  <div class="help">遊び方: 兵は自動で湧いて、自動で進軍します。敵の城や砦をタップ（クリック）すると、自軍の進軍先がそこに変わります。武将は兵力を使って出撃でき、危なくなると自動でロボットに変形します。敵の城を全部落とせば勝ち、自城を全部落とされれば負けです。川は橋でしか渡れないので、橋の取り合いになります。</div>
+  <div class="help">遊び方: 兵は自動で湧いて、自動で進軍します。敵の城や砦をタップ（クリック）すると、自軍の進軍先がそこに変わります。武将は兵力を使って出撃でき、危なくなると自動でロボットに変形します。敵の城を全部落とせば勝ち、自城を全部落とされれば負けです。川は橋でしか渡れないので、橋の取り合いになります。空は4分で1周し、夜のあいだは兵の補充が止まります。</div>
 </div>
 <div class="overlay hidden" id="ov-end"><div class="card">
   <h1 id="end-title"></h1>
@@ -230,8 +230,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0e1a12);
 scene.fog = new THREE.Fog(0x0e1a12, 190, 320);
 const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.1, 600);
-camera.position.set(0, 108, 92);
-camera.lookAt(0, 0, -2);
+camera.position.set(0, 84, 108);
+camera.lookAt(0, 3, -10);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
@@ -255,10 +255,15 @@ scene.add(base1);
 const base2 = new THREE.Mesh(new THREE.BoxGeometry(214, 3.5, 164), new THREE.MeshLambertMaterial({ color: 0x2e2119 }));
 base2.position.y = -8.8;
 scene.add(base2);
+const outer = new THREE.Mesh(new THREE.PlaneGeometry(700, 560), new THREE.MeshLambertMaterial({ color: 0x243d20 }));
+outer.rotation.x = -Math.PI / 2;
+outer.position.y = -0.25;
+scene.add(outer);
 // 奥と両脇の山並み
 {
   const cols = [0x55705e, 0x6d7f8c, 0x5f7a66];
-  const peaks = [[-150, -158, 44, 40], [-98, -168, 58, 48], [-48, -160, 38, 34], [2, -170, 52, 44], [56, -161, 40, 36], [104, -168, 56, 47], [152, -158, 42, 39], [-168, -34, 38, 33], [168, -30, 40, 35]];
+  const peaks = [[-168, -150, 36, 34], [-138, -164, 48, 42], [-104, -156, 40, 36], [-72, -170, 56, 47], [-38, -160, 42, 38], [-6, -172, 50, 43], [26, -161, 38, 34], [58, -171, 54, 46], [90, -159, 41, 37], [122, -169, 49, 42], [156, -156, 44, 39], [178, -164, 37, 33],
+    [-176, -96, 40, 35], [-184, -40, 34, 30], [-178, 16, 38, 33], [176, -100, 42, 36], [185, -44, 35, 31], [179, 12, 39, 34]];
   peaks.forEach(([x, z, hgt, rad], i) => {
     const cone = new THREE.Mesh(new THREE.ConeGeometry(rad, hgt, 7), new THREE.MeshLambertMaterial({ color: cols[i % 3], flatShading: true }));
     cone.position.set(x, hgt / 2 - 1, z);
@@ -287,7 +292,7 @@ const rain = new THREE.Points(rainGeo, new THREE.PointsMaterial({ color: 0xaacce
 rain.frustumCulled = false;
 scene.add(rain);
 // 空の移ろい（1周240秒）と天気
-let skyT = 0.32, wxState = 'clear', wxT = 50, cloudF = 0, rainF = 0, skyHudT = 0;
+let skyT = 0.32, wxState = 'clear', wxT = 50, cloudF = 0, rainF = 0, skyHudT = 0, isNight = false;
 const SKY_STOPS = [[0, 0xe9a06b], [0.25, 0xa5d8e6], [0.5, 0xe07a4e], [0.75, 0x101c26], [1, 0xe9a06b]];
 const _c1 = new THREE.Color(), _c2 = new THREE.Color(), _c3 = new THREE.Color();
 function skyColorAt(t) {
@@ -301,6 +306,7 @@ function skyUpdate(dt) {
   skyT = (skyT + dt / 240) % 1;
   const th = skyT * Math.PI * 2;
   const elev = Math.sin(th);
+  isNight = elev <= -0.02;
   const dayF = Math.max(0, elev);
   const sx = Math.cos(th) * 150, sy = elev * 105;
   sunMesh.position.set(sx, sy, -60);
@@ -439,7 +445,10 @@ function placeDeco(key, x, z, scale, rotY, y) {
   u.mesh.position.set(x, y || 0, z);
   scene.add(u.mesh);
 }
-placeDeco('bridge', 0, 0, 0.62, Math.PI / 2, 0.55);
+placeDeco('bridge', 0, 0, 0.62, Math.PI / 2, 1.05);
+const deck = new THREE.Mesh(new THREE.BoxGeometry(25, 0.9, 10.5), new THREE.MeshLambertMaterial({ color: 0x8a6844 }));
+deck.position.set(0, 0.6, 0);
+scene.add(deck);
 placeDeco('flag', 12, -8, 0.4, 0.6);
 const DECO = [[-46, 52], [-14, -46], [18, 40], [44, -38], [-48, -6], [22, -18], [52, 30], [-20, 58], [8, -58], [40, 52]];
 DECO.forEach(([x, z], i) => {
@@ -668,7 +677,7 @@ function frame(now) {
   aiThink(dt);
   // 湧き
   for (const h of holds) {
-    h.spawnT -= dt;
+    if (!isNight) h.spawnT -= dt;
     const interval = h.kind === 'castle' ? 2.4 : 3.8;
     if (h.spawnT <= 0) {
       h.spawnT = interval;
@@ -699,7 +708,8 @@ function frame(now) {
     }
     const moving = st === 'move';
     updateUnit(un.u, dt, un.general && un.transformed && moving ? 'run' : null);
-    un.u.mesh.position.set(un.x, un.u.bobY || 0, un.z);
+    const lift = (Math.abs(un.x) < 8.5 && Math.abs(un.z) < 6) ? 1.05 : 0;
+    un.u.mesh.position.set(un.x, (un.u.bobY || 0) + lift, un.z);
     if (un.bar) {
       const f = Math.max(0, un.hp / un.maxHp);
       un.bar.scale.x = f;

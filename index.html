@@ -204,15 +204,16 @@ const MODELS = [
   { key: 'piano', name: 'グランドピアノ', a: 2173, b: 3599, note: '鍵盤が胸、開いた蓋が背中の翼に' },
   { key: 'vending', name: '自動販売機', a: 2025, b: 3445, note: '箱の体が胴体、陳列窓が胸に' },
   { key: 'battleship', name: '戦艦', a: 2286, b: 3632, note: '艦橋が頭、主砲が両肩のキャノンに' },
+  { key: 'babydragon', name: '赤い子竜（造形テスト）', a: 19739, b: 19739, note: '84×94×98格子の高解像度SDF造形。頭が全体の4割のチビキャラ' },
 ];
 document.getElementById('grid').innerHTML = MODELS.map(m => `
   <div class="card">
     <img src="models/preview_${m.key}.png" alt="${m.name}の変形プレビュー">
     <div class="body">
-      <h2>${m.name} → ロボット</h2>
-      <div class="counts">ボクセル数 ${m.a.toLocaleString()} → ${m.b.toLocaleString()} ／ ${m.note}</div>
+      <h2>${m.a === m.b ? m.name : m.name + ' → ロボット'}</h2>
+      <div class="counts">ボクセル数 ${m.a.toLocaleString()}${m.a === m.b ? "" : " → " + m.b.toLocaleString()} ／ ${m.note}</div>
       <div class="row">
-        <button class="btn main" onclick="showInViewer('${m.key}')">このページで変形を見る</button>
+        <button class="btn main" onclick="showInViewer('${m.key}')">${m.a === m.b ? "このページで見る" : "このページで変形を見る"}</button>
         <a class="btn" href="${VV}?unit=${m.key}">ゲームで開く</a>
         <a class="btn" href="./index.html?unit=${m.key}" target="_blank" rel="noopener">このモデルのURL</a>
       </div>
