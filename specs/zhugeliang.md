@@ -8,6 +8,9 @@ forms:
   - file: zhugeliang_b.vox
     label: ロボ
     robot: true
+  - file: zhugeliang_c.vox
+    label: 白い竜
+    anim: wave
 ---
 
 # 諸葛亮

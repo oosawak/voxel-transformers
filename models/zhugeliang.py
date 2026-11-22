@@ -4,8 +4,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 # Color Palette (Index 1..9, 0 is empty)
-# Zhuge Liang (諸葛亮) -> Strategist Strategos Robot!
-# White Taoist robe (白い道服), crane-feather fan (羽扇), wooden 4-wheel chariot (四輪車) -> wheel & fan armor!
+# Zhuge Liang (諸葛亮) -> Strategist Robot -> White Sleeping Dragon (臥龍: 白い細身の竜)!
 PALETTE = {
     1: (244, 246, 250, 255),  # Crisp Pure-White Taoist Robe, Feather Fan & Armor
     2: (196, 206, 222, 255),  # Cool Silver-White Shading & Feather Ribs
@@ -128,7 +127,7 @@ def count_components_6(grid):
 
 
 # ============================================================
-# FORM A: ZHUGE LIANG IN HIS FOUR-WHEEL CHARIOT WITH FEATHER FAN (30 x 34 x 38)
+# FORM A: ZHUGE LIANG IN FOUR-WHEEL CHARIOT (30 x 34 x 38) [UNCHANGED]
 # ============================================================
 def build_a():
     grid = np.zeros((30, 34, 38), dtype=np.uint8)
@@ -136,63 +135,50 @@ def build_a():
     cx_l = X // 2 - 1  # 14
     cx_r = X // 2      # 15
 
-    # --- 1. ICONIC WOODEN & GOLD FOUR-WHEEL CHARIOT (四輪車!) (Z: 0..17) ---
-    # Four Spoked Wheels grounded at z=0 (2 front + 2 rear!)
     for wy in (9, 23):
         draw_wheel_yz(grid, cx_r + 8, wy, 4, radius=4)
         draw_wheel_yz(grid, cx_l - 8, wy, 4, radius=4)
-        # Solid wooden axles connecting both wheels into chassis!
         fill_sym_box(grid, 0, 8, wy, wy, 4, 4, 6)
-    # Chariot Deck, Armrests & Ornate Seat Backrest (Y: 6..27, Z: 5..17)
-    fill_sym_box(grid, 0, 7, 7, 26, 5, 6, 5)      # Wooden chariot platform
-    fill_sym_box(grid, 6, 7, 7, 25, 7, 13, 5)     # Side armrests/railings
-    fill_sym_box(grid, 6, 7, 7, 25, 13, 13, 7)    # Gold rail trim
-    fill_sym_box(grid, 0, 6, 7, 9, 7, 18, 5)      # High wooden backrest
-    fill_sym_box(grid, 0, 5, 7, 7, 18, 19, 7)     # Gold backrest crest
-    fill_sym_box(grid, 4, 5, 25, 29, 6, 7, 6)     # Front chariot shafts!
+    fill_sym_box(grid, 0, 7, 7, 26, 5, 6, 5)
+    fill_sym_box(grid, 6, 7, 7, 25, 7, 13, 5)
+    fill_sym_box(grid, 6, 7, 7, 25, 13, 13, 7)
+    fill_sym_box(grid, 0, 6, 7, 9, 7, 18, 5)
+    fill_sym_box(grid, 0, 5, 7, 7, 18, 19, 7)
+    fill_sym_box(grid, 4, 5, 25, 29, 6, 7, 6)
 
-    # --- 2. ZHUGE LIANG SEATED SERENELY IN WHITE TAOIST ROBE (白い道服) (Z: 7..37) ---
-    # Seated draped white Taoist robe & knees
-    fill_sym_box(grid, 0, 5, 10, 21, 7, 13, 1)    # Crisp white Taoist robe lap
-    fill_sym_box(grid, 0, 5, 21, 22, 7, 11, 1)    # Draped lower robe
-    fill_sym_box(grid, 0, 5, 22, 22, 7, 7, 3)     # Indigo hem trim
-    # Upright torso in White Taoist Robe with Midnight-Indigo Bagua Trim! (Z: 13..25)
+    fill_sym_box(grid, 0, 5, 10, 21, 7, 13, 1)
+    fill_sym_box(grid, 0, 5, 21, 22, 7, 11, 1)
+    fill_sym_box(grid, 0, 5, 22, 22, 7, 7, 3)
     fill_sym_box(grid, 0, 4, 10, 16, 13, 25, 1)
-    fill_sym_box(grid, 0, 4, 16, 16, 13, 14, 3)   # Indigo waist sash
-    fill_sym_box(grid, 0, 1, 16, 17, 18, 22, 3)   # Indigo Bagua center lapel!
-    fill_sym_box(grid, 0, 0, 17, 17, 19, 21, 7)   # Gold yin-yang clasp!
-    fill_sym_box(grid, 1, 3, 15, 16, 23, 25, 3)   # Crossed Taoist collar
+    fill_sym_box(grid, 0, 4, 16, 16, 13, 14, 3)
+    fill_sym_box(grid, 0, 1, 16, 17, 18, 22, 3)
+    fill_sym_box(grid, 0, 0, 17, 17, 19, 21, 7)
+    fill_sym_box(grid, 1, 3, 15, 16, 23, 25, 3)
 
-    # Sleeved Arms & ICONIC WHITE CRANE-FEATHER FAN (羽扇!) (Z: 15..29)
-    fill_box(grid, cx_l - 6, cx_l - 4, 11, 16, 16, 24, 1)   # Left wide robe sleeve
-    fill_box(grid, cx_l - 6, cx_l - 5, 16, 18, 16, 18, 8)   # Left hand on armrest
-    fill_box(grid, cx_r + 4, cx_r + 6, 11, 16, 17, 24, 1)   # Right sleeve raised
-    fill_box(grid, cx_r + 5, cx_r + 7, 16, 19, 18, 20, 8)   # Right hand holding fan!
-    # White Crane-Feather Fan (羽扇) fanned gracefully upward!
+    fill_box(grid, cx_l - 6, cx_l - 4, 11, 16, 16, 24, 1)
+    fill_box(grid, cx_l - 6, cx_l - 5, 16, 18, 16, 18, 8)
+    fill_box(grid, cx_r + 4, cx_r + 6, 11, 16, 17, 24, 1)
+    fill_box(grid, cx_r + 5, cx_r + 7, 16, 19, 18, 20, 8)
     fx = cx_r + 7
-    fill_box(grid, fx, fx, 19, 19, 16, 20, 7)     # Gold fan handle
+    fill_box(grid, fx, fx, 19, 19, 16, 20, 7)
     for dx_f, dz_f in [(-2, 7), (-1, 9), (0, 10), (1, 9), (2, 7), (3, 5)]:
         draw_6conn_line(grid, (fx, 19, 20), (fx + dx_f, 20, 20 + dz_f), 1)
-    fill_box(grid, fx - 1, fx + 2, 20, 20, 22, 25, 2)  # Soft silver feather texture
+    fill_box(grid, fx - 1, fx + 2, 20, 20, 22, 25, 2)
 
-    # Refined Strategist Head, Short Goatee & Tall Black Guan-Jin Strategist Cap (綸巾)! (Z: 25..37)
-    fill_sym_box(grid, 0, 2, 11, 16, 25, 31, 8)   # Scholarly face
-    fill_sym_box(grid, 0, 0, 16, 17, 23, 26, 3)   # Neat scholarly goatee!
-    fill_sym_box(grid, 1, 2, 16, 16, 29, 29, 9)   # Wise calm eyes
-    # Tall Black-Indigo Guan-Jin Hat (綸巾) with gold gem! (Z: 31..37)
+    fill_sym_box(grid, 0, 2, 11, 16, 25, 31, 8)
+    fill_sym_box(grid, 0, 0, 16, 17, 23, 26, 3)
+    fill_sym_box(grid, 1, 2, 16, 16, 29, 29, 9)
     fill_sym_box(grid, 0, 3, 10, 16, 31, 34, 3)
     fill_sym_box(grid, 0, 2, 10, 15, 35, 37, 3)
-    fill_sym_box(grid, 0, 1, 16, 16, 32, 34, 7)   # Gold hat ornament!
-    fill_sym_box(grid, 0, 2, 9, 10, 26, 32, 3)    # Trailing rear cap ribbon
+    fill_sym_box(grid, 0, 1, 16, 16, 32, 34, 7)
+    fill_sym_box(grid, 0, 2, 9, 10, 26, 32, 3)
 
     hollow_interior_26(grid, 1, Z - 2)
     return grid
 
 
 # ============================================================
-# FORM B: ZHUGE LIANG STRATEGIST ROBOT (50 x 26 x 48)
-# Chariot Wheels -> Armored Shoulder Wheels & Ankle Rollers,
-# Feather Fan -> Grand Back Crane-Feather Wing-Fan & Handheld Feather Fan!
+# FORM B: ZHUGE LIANG STRATEGIST ROBOT (50 x 26 x 48) [UNCHANGED]
 # ============================================================
 def build_b():
     grid = np.zeros((50, 26, 48), dtype=np.uint8)
@@ -200,38 +186,32 @@ def build_b():
     cx_l = X // 2 - 1  # 24
     cx_r = X // 2      # 25
 
-    # --- 1. WHEELED-ANKLE STRATEGIST LEGS & WHITE ROBE GREAVES (Z: 0..16) ---
-    fill_sym_box(grid, 2, 5, 10, 17, 0, 2, 3)     # Indigo boots
-    fill_sym_box(grid, 2, 5, 11, 16, 3, 14, 1)    # Crisp white Taoist greaves
-    fill_sym_box(grid, 3, 4, 16, 16, 4, 13, 4)    # Celestial blue shin inlay
-    fill_sym_box(grid, 2, 5, 15, 17, 12, 15, 3)   # Indigo knee shields
-    fill_sym_box(grid, 3, 4, 17, 17, 13, 14, 7)   # Gold knee seal
-    # LOWER CHARIOT WHEELS mounted cleanly onto outer ankles! (四輪車の車輪!)
+    fill_sym_box(grid, 2, 5, 10, 17, 0, 2, 3)
+    fill_sym_box(grid, 2, 5, 11, 16, 3, 14, 1)
+    fill_sym_box(grid, 3, 4, 16, 16, 4, 13, 4)
+    fill_sym_box(grid, 2, 5, 15, 17, 12, 15, 3)
+    fill_sym_box(grid, 3, 4, 17, 17, 13, 14, 7)
     draw_wheel_yz(grid, cx_r + 6, 12, 4, radius=4)
     draw_wheel_yz(grid, cx_l - 6, 12, 4, radius=4)
 
-    # --- 2. THIGHS & LONG WHITE TAOIST ROBE SKIRT-TASSETS (Z: 15..23) ---
     fill_sym_box(grid, 2, 4, 11, 15, 15, 19, 3)
     fill_sym_box(grid, 0, 5, 11, 15, 19, 22, 3)
-    fill_sym_box(grid, 1, 5, 15, 16, 14, 21, 1)   # Long flowing white robe front tassets!
-    fill_sym_box(grid, 1, 5, 16, 16, 14, 14, 3)   # Indigo bottom robe hem
-    fill_sym_box(grid, 5, 6, 11, 15, 15, 21, 1)   # Side white robe plates
-    fill_sym_box(grid, 0, 5, 10, 11, 15, 21, 1)   # Rear robe skirt
-    fill_sym_box(grid, 0, 1, 15, 17, 16, 22, 3)   # Indigo center Bagua sash
-    fill_sym_box(grid, 0, 1, 17, 17, 20, 21, 7)   # Gold waist emblem
+    fill_sym_box(grid, 1, 5, 15, 16, 14, 21, 1)
+    fill_sym_box(grid, 1, 5, 16, 16, 14, 14, 3)
+    fill_sym_box(grid, 5, 6, 11, 15, 15, 21, 1)
+    fill_sym_box(grid, 0, 5, 10, 11, 15, 21, 1)
+    fill_sym_box(grid, 0, 1, 15, 17, 16, 22, 3)
+    fill_sym_box(grid, 0, 1, 17, 17, 20, 21, 7)
 
-    # --- 3. WHITE TAOIST BAGUA CHEST ARMOR (Z: 22..34) ---
     fill_sym_box(grid, 0, 4, 11, 15, 22, 24, 3)
-    fill_sym_box(grid, 0, 6, 10, 16, 25, 33, 1)   # Crisp white Taoist cuirass!
-    fill_sym_box(grid, 0, 3, 16, 17, 26, 32, 3)   # Midnight-indigo Bagua breastplate!
-    fill_sym_box(grid, 0, 2, 17, 17, 27, 31, 7)   # Gold octagonal Bagua border!
-    fill_sym_box(grid, 0, 1, 17, 18, 28, 30, 9)   # Glowing azure strategist core!
-    fill_sym_box(grid, 1, 4, 11, 15, 33, 34, 3)   # High indigo Taoist collar
+    fill_sym_box(grid, 0, 6, 10, 16, 25, 33, 1)
+    fill_sym_box(grid, 0, 3, 16, 17, 26, 32, 3)
+    fill_sym_box(grid, 0, 2, 17, 17, 27, 31, 7)
+    fill_sym_box(grid, 0, 1, 17, 18, 28, 30, 9)
+    fill_sym_box(grid, 1, 4, 11, 15, 33, 34, 3)
 
-    # --- 4. GRAND BACK MOTIF: FANNED WHITE CRANE-FEATHER FAN WING-HALO! (羽扇が意匠!) (Z: 20..45) ---
-    fill_sym_box(grid, 0, 4, 7, 10, 24, 32, 5)    # Cedar chariot-frame backpack
-    fill_sym_box(grid, 0, 2, 6, 7, 26, 30, 7)     # Gold Bagua backpack hub
-    # 7 Dramatic Radiating White Crane-Feather Fan Blades fanning out behind shoulders!
+    fill_sym_box(grid, 0, 4, 7, 10, 24, 32, 5)
+    fill_sym_box(grid, 0, 2, 6, 7, 26, 30, 7)
     fan_tips = [
         (0,  45), (7,  44), (-7,  44), (14, 40), (-14, 40), (19, 34), (-19, 34)
     ]
@@ -243,38 +223,104 @@ def build_b():
         if abs(dx_w) in (0, 14):
             draw_6conn_line(grid, (ox_w, 7, 29), (int(round((ox_w + bx_w) * 0.5)), 6, int(round((29 + z_w) * 0.5))), 7)
 
-    # --- 5. UPPER CHARIOT-WHEEL SHOULDER PAULDRONS & FEATHER-FAN ARMS! (車輪が肩意匠!) (Z: 15..36) ---
     fill_sym_box(grid, 6, 8, 12, 15, 29, 32, 6)
-    fill_sym_box(grid, 7, 10, 11, 16, 28, 33, 1)  # White shoulder armor
-    # UPPER TWO SPOKED CHARIOT WHEELS mounted proudly on outer shoulders! (四輪車!)
+    fill_sym_box(grid, 7, 10, 11, 16, 28, 33, 1)
     draw_wheel_yz(grid, cx_r + 11, 13, 31, radius=4)
     draw_wheel_yz(grid, cx_l - 11, 13, 31, radius=4)
-    # Arms
     fill_sym_box(grid, 7, 9, 12, 15, 22, 28, 3)
     fill_box(grid, cx_l - 10, cx_l - 7, 12, 16, 16, 21, 1)
     fill_box(grid, cx_l - 10, cx_l - 7, 13, 16, 16, 16, 7)
     fill_box(grid, cx_l - 9, cx_l - 7, 13, 15, 14, 15, 3)
-    # Right Arm (+X): Holding an armored Crane-Feather Energy Fan!
     fill_box(grid, cx_r + 7, cx_r + 10, 12, 16, 17, 22, 1)
     fill_box(grid, cx_r + 9, cx_r + 12, 15, 18, 17, 20, 7)
     fill_box(grid, cx_r + 11, cx_r + 12, 17, 19, 16, 18, 3)
     fx = cx_r + 13
-    fill_box(grid, fx, fx, 18, 19, 15, 19, 7)     # Gold fan handle
+    fill_box(grid, fx, fx, 18, 19, 15, 19, 7)
     for dx_f, dz_f in [(-2, 8), (0, 10), (2, 9), (4, 6)]:
         draw_6conn_line(grid, (fx, 19, 19), (fx + dx_f, 20, 19 + dz_f), 1, pad=(0, 0, 0))
     fill_box(grid, fx - 1, fx + 3, 19, 20, 21, 25, 1)
-    fill_box(grid, fx, fx + 2, 20, 20, 22, 24, 9) # Glowing azure feather-fan energy!
+    fill_box(grid, fx, fx + 2, 20, 20, 22, 24, 9)
 
-    # --- 6. STRATEGIST HEAD & GUAN-JIN CROWN HELM (Z: 34..46) ---
     fill_sym_box(grid, 0, 1, 12, 15, 34, 35, 3)
-    fill_sym_box(grid, 0, 2, 11, 16, 35, 41, 1)   # White helm core
-    fill_sym_box(grid, 0, 2, 16, 17, 35, 36, 2)   # Silver jaw plate
-    fill_sym_box(grid, 0, 2, 16, 17, 37, 38, 3)   # Indigo eye recess
-    fill_sym_box(grid, 1, 2, 17, 17, 37, 38, 9)   # Luminous azure strategist eyes!
-    # Tall Armored Midnight-Indigo Guan-Jin Crown (綸巾!) (Z: 39..46)
+    fill_sym_box(grid, 0, 2, 11, 16, 35, 41, 1)
+    fill_sym_box(grid, 0, 2, 16, 17, 35, 36, 2)
+    fill_sym_box(grid, 0, 2, 16, 17, 37, 38, 3)
+    fill_sym_box(grid, 1, 2, 17, 17, 37, 38, 9)
     fill_sym_box(grid, 0, 3, 11, 17, 39, 42, 3)
     fill_sym_box(grid, 0, 2, 11, 16, 43, 46, 3)
-    fill_sym_box(grid, 0, 1, 17, 18, 40, 43, 7)   # Gold forehead Bagua crest!
+    fill_sym_box(grid, 0, 1, 17, 18, 40, 43, 7)
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
+# ============================================================
+# FORM C: WHITE SLEEPING DRAGON (臥龍: 白い細身の竜) (32 x 32 x 42)
+# ============================================================
+def build_c():
+    grid = np.zeros((32, 32, 42), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx, cy = 16, 16
+
+    # Graceful Celestial Cloud Pedestal (Z: 0..3, grounded at minZ=0)
+    fill_box(grid, 8, 24, 9, 23, 0, 1, 4)      # Celestial blue cloud base
+    fill_box(grid, 10, 22, 11, 21, 1, 2, 1)    # Crisp white cloud top
+    fill_box(grid, 12, 20, 13, 19, 2, 2, 7)    # Gold Bagua ring
+
+    # Slender Pure-White S-Coiled "Sleeping Dragon" (臥龍) rising gracefully!
+    pts = []
+    n_steps = 52
+    for i in range(n_steps + 1):
+        t = i / n_steps
+        ang = t * 2.25 * np.pi - 0.35 * np.pi
+        rad = 9.0 * (1.0 - 0.50 * t)
+        z = 2.0 + 31.5 * t
+        x = cx + rad * np.cos(ang)
+        y = cy + rad * np.sin(ang)
+        pts.append((x, y, z))
+
+    for i in range(len(pts) - 1):
+        t = i / len(pts)
+        # Sleeker & slenderer dragon body!
+        pad_r = (1, 1, 1)
+        col = 1 if (i % 3 != 0) else 2
+        draw_6conn_line(grid, pts[i], pts[i + 1], col, pad=pad_r)
+        # Celestial indigo & gold dorsal crest along slender spine
+        if i % 3 == 0:
+            px_, py_, pz_ = int(round(pts[i][0])), int(round(pts[i][1])), int(round(pts[i][2]))
+            fill_box(grid, px_, px_, py_, py_, pz_ + 2, pz_ + 2, 4 if (i % 6 == 0) else 7)
+
+    # White Crane-Feather Fan Tail Tip!
+    t0 = pts[0]
+    for dx_f, dy_f in ((3, -3), (5, -2), (4, -5)):
+        draw_6conn_line(grid, t0, (t0[0] + dx_f, t0[1] + dy_f, 3), 1)
+    draw_6conn_line(grid, (t0[0], t0[1], 2), (16, 16, 2), 1)
+
+    # Delicate Dragon Claws clasping a Glowing Azure Bagua Pearl (Z: 18..24)
+    draw_6conn_line(grid, (12, 19, 20), (10, 25, 22), 1)
+    draw_6conn_line(grid, (20, 19, 20), (22, 25, 22), 1)
+    fill_box(grid, 9, 11, 25, 26, 21, 23, 7)
+    fill_box(grid, 21, 23, 25, 26, 21, 23, 7)
+    draw_6conn_line(grid, (11, 25, 22), (14, 26, 22), 7)
+    draw_6conn_line(grid, (21, 25, 22), (18, 26, 22), 7)
+    fill_box(grid, 14, 18, 24, 28, 20, 24, 9)  # Luminous azure pearl!
+    fill_box(grid, 15, 17, 25, 27, 21, 23, 1)
+
+    # Refined White Dragon Head with Indigo Guan-Jin Crest, Gold Antlers & Flowing Whiskers (Z: 32..41)
+    draw_6conn_line(grid, pts[-1], (16, 18, 34), 1, pad=(1, 1, 1))
+    fill_box(grid, 14, 18, 17, 24, 33, 37, 1)  # Sleek white dragon head
+    fill_box(grid, 15, 17, 24, 28, 34, 36, 1)  # Refined snout
+    fill_box(grid, 15, 17, 23, 27, 32, 33, 2)  # Lower jaw
+    fill_box(grid, 14, 14, 21, 22, 35, 36, 9)  # Luminous azure eyes
+    fill_box(grid, 18, 18, 21, 22, 35, 36, 9)
+    fill_box(grid, 15, 17, 19, 22, 37, 38, 3)  # Indigo strategist crown crest!
+    fill_box(grid, 16, 16, 22, 22, 38, 38, 7)  # Gold Bagua brow gem
+    # Sweeping Golden Antlers & White Whiskers
+    draw_6conn_line(grid, (14, 18, 37), (11, 13, 41), 7)
+    draw_6conn_line(grid, (18, 18, 37), (21, 13, 41), 7)
+    draw_6conn_line(grid, (14, 27, 35), (9, 29, 32), 2)
+    draw_6conn_line(grid, (18, 27, 35), (23, 29, 32), 2)
+    draw_6conn_line(grid, (16, 26, 32), (16, 28, 28), 3)  # Indigo dragon goatee!
 
     hollow_interior_26(grid, 1, Z - 2)
     return grid
@@ -373,15 +419,16 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=38, pitch_a=22, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview_3(forms, title_banner, out_path):
+    cw, ch = 1274, 540
+    canvas = Image.new("RGBA", (cw, ch), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
-        draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
-    for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+    for gx in range(0, cw, 20):
+        draw.line([(gx, 0), (gx, ch)], fill=(28, 34, 48, 255), width=1)
+    for gy in range(0, ch, 20):
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(forms):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -395,7 +442,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -404,17 +451,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "zhugeliang_a.vox")
     v_b = export_vox(model_b, "zhugeliang_b.vox")
+    v_c = export_vox(model_c, "zhugeliang_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
-    render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #03: ZHUGE LIANG (THREE KINGDOMS) -> STRATEGIST ROBOT",
-        "1. ZHUGE LIANG (4-WHEEL CHARIOT)",
-        "2. ZHUGE LIANG ROBOT",
+    comp_c, minz_c = count_components_6(model_c)
+    render_preview_3(
+        [
+            ("1. ZHUGE LIANG (4-WHEEL CHARIOT)", model_a, v_a, 38, 22),
+            ("2. ZHUGE LIANG ROBOT", model_b, v_b, 28, 18),
+            ("3. WHITE DRAGON (WORYU)", model_c, v_c, 32, 20),
+        ],
+        "THREE KINGDOMS #03: ZHUGE LIANG - CHARACTER / ROBOT / WHITE DRAGON",
         "preview_zhugeliang.png",
-        yaw_a=38, pitch_a=22, yaw_b=28, pitch_b=18,
     )
-    print(f"zhugeliang: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"zhugeliang: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}) | "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}) | "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

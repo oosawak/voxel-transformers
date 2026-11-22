@@ -8,6 +8,9 @@ forms:
   - file: guanyu_b.vox
     label: ロボ
     robot: true
+  - file: guanyu_c.vox
+    label: 青龍
+    anim: wave
 ---
 
 # 関羽

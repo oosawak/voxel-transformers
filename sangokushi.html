@@ -84,7 +84,7 @@
 <header>
   <h1>三国志ロボ</h1>
   <div class="sub">
-    三国志の武将がロボットに変形するボクセルモデルのシリーズです。第7弾として全30人を予定していて、先にできた5人を公開しています。ゆかりの動物への第3形態も追加予定です。一般兵（魏・蜀・呉の歩兵／弓兵／槍兵／騎兵）と、黄巾賊・一揆衆もそろいました。この武将と兵と素材で遊べる試作ゲーム<a href="castle-game.html">三国志 城取り</a>と、<a href="parts.html">ゲーム部品一覧</a>もあります。<br>
+    三国志の武将がロボットに変形するボクセルモデルのシリーズです。第7弾の武将30人がそろいました。全員が「武将 → ロボ → ゆかりの動物・神獣」の3形態です。一般兵（魏・蜀・呉の歩兵／弓兵／槍兵／騎兵）と、黄巾賊・一揆衆もそろいました。この武将と兵と素材で遊べる試作ゲーム<a href="castle-game.html">三国志 城取り</a>と、<a href="parts.html">ゲーム部品一覧</a>もあります。<br>
     変形の様子は、このページのビューアでそのまま見られます。各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。
     ゲームの中で使う様子は
     <a href="https://oosawak.github.io/voxel-valkyrie/">Voxel Valkyrie</a>
@@ -143,11 +143,36 @@
 <script>
 const VV = 'https://oosawak.github.io/voxel-valkyrie/';
 const MODELS = [
-  { key: 'guanyu', title: '関羽 → ロボ', forms: [['関羽', 2000, 'a'], ['ロボ', 3317, 'b']], note: '緑の袍と長い髭、青龍偃月刀。ロボでは髭と刀が装甲の意匠に' },
-  { key: 'zhangfei', title: '張飛 → ロボ', forms: [['張飛', 2215, 'a'], ['ロボ', 3405, 'b']], note: '黒基調と蛇矛。がっしりした体格' },
-  { key: 'zhugeliang', title: '諸葛亮 → ロボ', forms: [['諸葛亮', 2361, 'a'], ['ロボ', 3140, 'b']], note: '白い道服と羽扇、四輪車。ロボでは羽扇と車輪が意匠に' },
-  { key: 'zhaoyun', title: '趙雲 → ロボ', forms: [['趙雲', 1916, 'a'], ['ロボ', 2824, 'b']], note: '白銀の鎧と銀の槍。すらりとした立ち姿' },
-  { key: 'lubu', title: '呂布 → ロボ', forms: [['呂布', 2406, 'a'], ['ロボ', 3748, 'b']], note: '方天画戟と赤い飾り羽。強そうな大柄' },
+  { key: 'guanyu', title: '関羽 → ロボ → 青龍', forms: [['関羽', 2000, 'a'], ['ロボ', 3317, 'b'], ['青龍', 2134, 'c']], note: '緑の袍と長い髭、青龍偃月刀。第3形態は青龍' },
+  { key: 'zhangfei', title: '張飛 → ロボ → 大蛇', forms: [['張飛', 2215, 'a'], ['ロボ', 3405, 'b'], ['大蛇', 2489, 'c']], note: '黒基調と蛇矛。がっしりした体格。第3形態は大蛇' },
+  { key: 'zhugeliang', title: '諸葛亮 → ロボ → 白い竜', forms: [['諸葛亮', 2361, 'a'], ['ロボ', 3140, 'b'], ['白い竜', 1755, 'c']], note: '白い道服と羽扇、四輪車。第3形態は臥龍＝白い竜' },
+  { key: 'zhaoyun', title: '趙雲 → ロボ → 白馬', forms: [['趙雲', 1916, 'a'], ['ロボ', 2824, 'b'], ['白馬', 1922, 'c']], note: '白銀の鎧と銀の槍。第3形態は白馬' },
+  { key: 'lubu', title: '呂布 → ロボ → 赤兎馬', forms: [['呂布', 2406, 'a'], ['ロボ', 3748, 'b'], ['赤兎馬', 2040, 'c']], note: '方天画戟と赤い飾り羽。第3形態は赤兎馬' },
+  { key: 'liubei', title: '劉備 → ロボ → 的盧', forms: [['劉備', 1879, 'a'], ['ロボ', 3259, 'b'], ['的盧', 2208, 'c']], note: '双剣と仁徳の君主。第3形態は的盧' },
+  { key: 'caocao', title: '曹操 → ロボ → 梟', forms: [['曹操', 1938, 'a'], ['ロボ', 3550, 'b'], ['梟', 2400, 'c']], note: '治世の能臣、乱世の梟雄。第3形態は梟' },
+  { key: 'sunquan', title: '孫権 → ロボ → 虎', forms: [['孫権', 1872, 'a'], ['ロボ', 3204, 'b'], ['虎', 2016, 'c']], note: '紫の髭と碧い目。第3形態は虎' },
+  { key: 'zhouyu', title: '周瑜 → ロボ → 朱雀', forms: [['周瑜', 1927, 'a'], ['ロボ', 2874, 'b'], ['朱雀', 2262, 'c']], note: '呉の都督。第3形態は朱雀' },
+  { key: 'simayi', title: '司馬懿 → ロボ → 狼', forms: [['司馬懿', 1775, 'a'], ['ロボ', 2844, 'b'], ['狼', 1728, 'c']], note: '振り返る狼「狼顧」の相。第3形態は狼' },
+  { key: 'machao', title: '馬超 → ロボ → 獅子', forms: [['馬超', 2161, 'a'], ['ロボ', 3375, 'b'], ['獅子', 2377, 'c']], note: '白銀の鎧と槍。第3形態は獅子' },
+  { key: 'huangzhong', title: '黄忠 → ロボ → 鷹', forms: [['黄忠', 1821, 'a'], ['ロボ', 3082, 'b'], ['鷹', 2344, 'c']], note: '老いてますます盛んな弓の名手。第3形態は鷹' },
+  { key: 'diaochan', title: '貂蝉 → ロボ → 貂', forms: [['貂蝉', 1682, 'a'], ['ロボ', 2367, 'b'], ['貂', 1408, 'c']], note: '連環の計の舞姫。第3形態は貂（テン）' },
+  { key: 'xushu', title: '徐庶 → ロボ → 鶴', forms: [['徐庶', 1948, 'a'], ['ロボ', 2671, 'b'], ['鶴', 1849, 'c']], note: '蜀の軍師。第3形態は白い鶴' },
+  { key: 'dongzhuo', title: '董卓 → ロボ → 豺', forms: [['董卓', 2264, 'a'], ['ロボ', 3753, 'b'], ['豺', 2362, 'c']], note: '巨漢の暴君。第3形態は豺' },
+  { key: 'luxun', title: '陸遜 → ロボ → 白い狐', forms: [['陸遜', 2044, 'a'], ['ロボ', 3133, 'b'], ['白い狐', 1810, 'c']], note: '夷陵で火計を放った若き都督。第3形態は白い狐' },
+  { key: 'huanggai', title: '黄蓋 → ロボ → 海亀', forms: [['黄蓋', 2136, 'a'], ['ロボ', 3303, 'b'], ['海亀', 2380, 'c']], note: '苦肉の策の老将。第3形態は海亀' },
+  { key: 'ganning', title: '甘寧 → ロボ → 鮫', forms: [['甘寧', 1927, 'a'], ['ロボ', 3146, 'b'], ['鮫', 1694, 'c']], note: '金の鈴が目印の水軍。第3形態は鮫' },
+  { key: 'xiahoudun', title: '夏侯惇 → ロボ → 熊', forms: [['夏侯惇', 2054, 'a'], ['ロボ', 3367, 'b'], ['熊', 2180, 'c']], note: '隻眼・眼帯の将。第3形態は熊' },
+  { key: 'sunce', title: '孫策 → ロボ → 隼', forms: [['孫策', 2008, 'a'], ['ロボ', 3125, 'b'], ['隼', 1758, 'c']], note: '小覇王。第3形態は隼' },
+  { key: 'daqiao', title: '大喬 → ロボ → 孔雀', forms: [['大喬', 1585, 'a'], ['ロボ', 2629, 'b'], ['孔雀', 1762, 'c']], note: '孔雀扇が目印。第3形態は孔雀' },
+  { key: 'xiaoqiao', title: '小喬 → ロボ → 蝶', forms: [['小喬', 1568, 'a'], ['ロボ', 2836, 'b'], ['蝶', 2044, 'c']], note: 'お団子ヘアと双扇。第3形態は蝶' },
+  { key: 'zhangliao', title: '張遼 → ロボ → 豹', forms: [['張遼', 2095, 'a'], ['ロボ', 2967, 'b'], ['豹', 1647, 'c']], note: '逍遙津の勇将。第3形態は黒い豹' },
+  { key: 'xuchu', title: '許褚 → ロボ → 牛', forms: [['許褚', 2190, 'a'], ['ロボ', 3121, 'b'], ['牛', 2390, 'c']], note: '虎痴と呼ばれた巨漢。第3形態は牛' },
+  { key: 'dianwei', title: '典韋 → ロボ → 犀', forms: [['典韋', 2040, 'a'], ['ロボ', 3094, 'b'], ['犀', 2372, 'c']], note: '双鉄戟の豪傑。第3形態は犀' },
+  { key: 'xiahouyuan', title: '夏侯淵 → ロボ → 黒い駿馬', forms: [['夏侯淵', 2036, 'a'], ['ロボ', 3217, 'b'], ['黒い駿馬', 1971, 'c']], note: '速さ自慢の将。第3形態は黒い駿馬' },
+  { key: 'menghuo', title: '孟獲 → ロボ → 戦象', forms: [['孟獲', 2348, 'a'], ['ロボ', 3173, 'b'], ['戦象', 2404, 'c']], note: '南蛮王。第3形態は戦象' },
+  { key: 'zhurong', title: '祝融 → ロボ → 大鷲', forms: [['祝融', 1685, 'a'], ['ロボ', 2662, 'b'], ['大鷲', 1962, 'c']], note: '飛刀を使う南蛮の姫。第3形態は大鷲' },
+  { key: 'yuanshao', title: '袁紹 → ロボ → 牡鹿', forms: [['袁紹', 2173, 'a'], ['ロボ', 3000, 'b'], ['牡鹿', 1732, 'c']], note: '河北の名族。第3形態は牡鹿' },
+  { key: 'chengong', title: '陳宮 → ロボ → 白鷺', forms: [['陳宮', 1770, 'a'], ['ロボ', 3183, 'b'], ['白鷺', 1501, 'c']], note: '凛とした軍師。第3形態は白鷺' },
   { key: 'hohei_wei', title: '歩兵（魏）', forms: [['歩兵（魏）', 823, 'a']], note: '青の鎧と鉄の兜。剣と盾' },
   { key: 'hohei_shu', title: '歩兵（蜀）', forms: [['歩兵（蜀）', 790, 'a']], note: '緑の鎧と金の帯の兜。剣と盾' },
   { key: 'hohei_wu', title: '歩兵（呉）', forms: [['歩兵（呉）', 856, 'a']], note: '赤の鎧と白い羽根の兜。剣と盾' },
@@ -251,7 +276,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     return list;
   }
 
-  const PAGE_KEYS = ['guanyu','zhangfei','zhugeliang','zhaoyun','lubu','hohei_wei','hohei_shu','hohei_wu','yumihei_wei','yumihei_shu','yumihei_wu','yarihei_wei','yarihei_shu','yarihei_wu','kihei_wei','kihei_shu','kihei_wu','koukin','ikki','castle_wei','castle_shu','castle_wu','fort_wei','fort_shu','fort_wu','house','tree','rock','bridge','flag'];
+  const PAGE_KEYS = ['guanyu','zhangfei','zhugeliang','zhaoyun','lubu','liubei','caocao','sunquan','zhouyu','simayi','machao','huangzhong','diaochan','xushu','dongzhuo','luxun','huanggai','ganning','xiahoudun','sunce','daqiao','xiaoqiao','zhangliao','xuchu','dianwei','xiahouyuan','menghuo','zhurong','yuanshao','chengong','hohei_wei','hohei_shu','hohei_wu','yumihei_wei','yumihei_shu','yumihei_wu','yarihei_wei','yarihei_shu','yarihei_wu','kihei_wei','kihei_shu','kihei_wu','koukin','ikki','castle_wei','castle_shu','castle_wu','fort_wei','fort_shu','fort_wu','house','tree','rock','bridge','flag'];
   const ALL_MODELS = window.EXTRA_MODELS.filter(m => PAGE_KEYS.includes(m.key));
   const MODELS = ALL_MODELS;
   const SURFACES = {};

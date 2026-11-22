@@ -1,7 +1,7 @@
 ---
 key: rock
 name: 岩
-order: 132
+order: 157
 forms:
   - file: rock_a.vox
     label: 岩

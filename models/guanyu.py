@@ -4,8 +4,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 # Color Palette (Index 1..9, 0 is empty)
-# Guan Yu (関羽) -> Emerald-Gold General Robot!
-# Green battle robe, ruddy crimson face, long black beard & Green Dragon Crescent Blade -> armor motifs!
+# Guan Yu (関羽) -> Emerald-Gold General Robot -> Azure/Emerald Dragon (青龍)!
+# Green battle robe, ruddy crimson face, long black beard & Green Dragon Crescent Blade -> armor & dragon motifs!
 PALETTE = {
     1: (28, 128, 72, 255),    # Iconic Guan Yu Emerald-Green Battle Robe & Main Armor
     2: (18, 82, 48, 255),     # Deep Forest-Green Robe Shading & Inner Armor
@@ -131,7 +131,7 @@ def draw_crescent_glaive(grid, gx, gy, z_bot, z_top):
 
 
 # ============================================================
-# FORM A: GUAN YU CHARACTER FIGURE (36 x 22 x 44)
+# FORM A: GUAN YU CHARACTER FIGURE (36 x 22 x 44) [UNCHANGED]
 # ============================================================
 def build_a():
     grid = np.zeros((36, 22, 44), dtype=np.uint8)
@@ -191,9 +191,7 @@ def build_a():
 
 
 # ============================================================
-# FORM B: GUAN YU EMERALD-GOLD GENERAL ROBOT (46 x 26 x 48)
-# Beard -> Layered Dark-Steel Armored Chin-Plume & Chest Tasset,
-# Crescent Blade -> Massive Curved Shoulder Blades + Dragon Glaive!
+# FORM B: GUAN YU EMERALD-GOLD GENERAL ROBOT (46 x 26 x 48) [UNCHANGED]
 # ============================================================
 def build_b():
     grid = np.zeros((46, 26, 48), dtype=np.uint8)
@@ -267,6 +265,87 @@ def build_b():
     fill_sym_box(grid, 0, 1, 18, 19, 25, 31, 4)   # Flowing tapered armored beard spine!
     fill_sym_box(grid, 0, 1, 19, 19, 29, 29, 3)   # Gold armor clasp on beard!
     fill_sym_box(grid, 0, 1, 19, 19, 25, 25, 3)   # Gold beard finial tip!
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
+# ============================================================
+# FORM C: AZURE / EMERALD DRAGON (青龍: 緑と金の竜) (32 x 32 x 42)
+# ============================================================
+def build_c():
+    grid = np.zeros((32, 32, 42), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx, cy = 16, 16
+
+    # Sweeping Coiled Emerald-and-Gold Serpentine Dragon rising from Z=0!
+    pts = []
+    n_steps = 56
+    for i in range(n_steps + 1):
+        t = i / n_steps
+        ang = t * 2.55 * np.pi - 0.5 * np.pi
+        rad = 10.5 * (1.0 - 0.52 * t)
+        z = 1.5 + 31.0 * (t ** 1.05)
+        x = cx + rad * np.cos(ang)
+        y = cy + rad * np.sin(ang)
+        pts.append((x, y, z))
+
+    # Draw coiled emerald dragon body + gold belly plates + dorsal ridge spines
+    for i in range(len(pts) - 1):
+        t = i / len(pts)
+        pad_r = (2, 2, 1) if t < 0.55 else (1, 1, 1)
+        col_main = 1 if (i % 3 != 0) else 2
+        draw_6conn_line(grid, pts[i], pts[i + 1], col_main, pad=pad_r)
+        # Golden belly-scale stripe on underside/front
+        p_belly = (pts[i][0], pts[i][1] + 1, max(0, pts[i][2] - 1))
+        draw_6conn_line(grid, p_belly, (pts[i + 1][0], pts[i + 1][1] + 1, max(0, pts[i + 1][2] - 1)), 3, pad=(1, 0, 0))
+        # Golden dorsal fin ridge along upper spine
+        if i % 4 == 0 and t > 0.08:
+            px_, py_, pz_ = int(round(pts[i][0])), int(round(pts[i][1])), int(round(pts[i][2]))
+            fill_box(grid, px_, px_, py_, py_, pz_ + 1, pz_ + 2, 3)
+
+    # Ensure bottom coil rests solidly on Z=0 directly under the lower dragon spiral
+    for i in range(14):
+        px_, py_ = int(round(pts[i][0])), int(round(pts[i][1]))
+        fill_box(grid, px_ - 2, px_ + 2, py_ - 2, py_ + 2, 0, 1, 2)
+
+    # Tail tip with golden crescent-blade fin!
+    t0 = pts[0]
+    draw_6conn_line(grid, t0, (t0[0] + 4, t0[1] - 4, 2), 1, pad=(1, 1, 0))
+    fill_box(grid, int(t0[0]) + 4, int(t0[0]) + 6, int(t0[1]) - 6, int(t0[1]) - 3, 1, 4, 3)
+
+    # Front Dragon Claws anchored directly to spiral mid-body, holding Glowing Jade-Gold Dragon Pearl!
+    anchor = pts[32]
+    draw_6conn_line(grid, anchor, (10, 24, 22), 1, pad=(1, 1, 0))
+    draw_6conn_line(grid, anchor, (22, 24, 22), 1, pad=(1, 1, 0))
+    fill_box(grid, 9, 11, 24, 26, 21, 23, 3)     # Left golden claws
+    fill_box(grid, 21, 23, 24, 26, 21, 23, 3)   # Right golden claws
+    draw_6conn_line(grid, (11, 25, 22), (14, 26, 22), 3)
+    draw_6conn_line(grid, (21, 25, 22), (18, 26, 22), 3)
+    fill_box(grid, 14, 18, 24, 28, 20, 24, 9)   # Glowing Jade Dragon Pearl!
+    fill_box(grid, 15, 17, 25, 27, 21, 23, 8)
+
+    # Majestic Emerald Dragon Head facing +Y with Guan Yu's Long Black Whiskers & Gold Antlers! (Z: 31..41)
+    hx, hy, hz = int(round(pts[-1][0])), int(round(pts[-1][1])), int(round(pts[-1][2]))
+    draw_6conn_line(grid, (hx, hy, hz), (16, 18, 34), 1, pad=(2, 2, 1))
+    fill_box(grid, 13, 19, 17, 24, 33, 37, 1)   # Dragon cranium
+    fill_box(grid, 14, 18, 24, 28, 33, 36, 1)   # Upper dragon snout
+    fill_box(grid, 14, 18, 23, 27, 31, 32, 3)   # Golden lower jaw
+    fill_box(grid, 15, 17, 24, 26, 32, 32, 5)   # Crimson inner mouth!
+    fill_box(grid, 14, 14, 26, 26, 32, 33, 8)   # Ivory fangs
+    fill_box(grid, 18, 18, 26, 26, 32, 33, 8)
+    fill_box(grid, 13, 13, 21, 22, 35, 36, 9)   # Glowing jade dragon eyes!
+    fill_box(grid, 19, 19, 21, 22, 35, 36, 9)
+    fill_box(grid, 14, 18, 20, 23, 37, 37, 3)   # Gold brow ridge
+    # Sweeping Golden Antlers (Z: 37..41)
+    draw_6conn_line(grid, (14, 18, 37), (10, 13, 41), 3)
+    draw_6conn_line(grid, (18, 18, 37), (22, 13, 41), 3)
+    draw_6conn_line(grid, (11, 15, 39), (9, 16, 41), 3)
+    draw_6conn_line(grid, (21, 15, 39), (23, 16, 41), 3)
+    # Guan Yu's Signature Long Flowing Black Dragon Beard & Whiskers!
+    draw_6conn_line(grid, (16, 25, 31), (16, 28, 26), 4, pad=(1, 0, 0))
+    draw_6conn_line(grid, (14, 27, 34), (9, 29, 31), 4)
+    draw_6conn_line(grid, (18, 27, 34), (23, 29, 31), 4)
 
     hollow_interior_26(grid, 1, Z - 2)
     return grid
@@ -365,15 +444,16 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview_3(forms, title_banner, out_path):
+    cw, ch = 1274, 540
+    canvas = Image.new("RGBA", (cw, ch), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
-        draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
-    for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+    for gx in range(0, cw, 20):
+        draw.line([(gx, 0), (gx, ch)], fill=(28, 34, 48, 255), width=1)
+    for gy in range(0, ch, 20):
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(forms):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -387,7 +467,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -396,17 +476,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "guanyu_a.vox")
     v_b = export_vox(model_b, "guanyu_b.vox")
+    v_c = export_vox(model_c, "guanyu_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
-    render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #01: GUAN YU (THREE KINGDOMS) -> EMERALD GENERAL ROBOT",
-        "1. GUAN YU (CHARACTER)",
-        "2. GUAN YU ROBOT",
+    comp_c, minz_c = count_components_6(model_c)
+    render_preview_3(
+        [
+            ("1. GUAN YU (CHARACTER)", model_a, v_a, 28, 18),
+            ("2. GUAN YU ROBOT", model_b, v_b, 28, 18),
+            ("3. AZURE DRAGON (BEAST)", model_c, v_c, 32, 20),
+        ],
+        "THREE KINGDOMS #01: GUAN YU - CHARACTER / ROBOT / AZURE DRAGON",
         "preview_guanyu.png",
-        yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18,
     )
-    print(f"guanyu: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"guanyu: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}) | "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}) | "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

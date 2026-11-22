@@ -1,7 +1,7 @@
 ---
 key: bridge
 name: 橋
-order: 133
+order: 158
 forms:
   - file: bridge_a.vox
     label: 橋

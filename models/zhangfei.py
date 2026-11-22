@@ -4,8 +4,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 # Color Palette (Index 1..9, 0 is empty)
-# Zhang Fei (張飛) -> Burly Black-Iron Juggernaut Robot!
-# Black-dominant (黒基調), sturdy heavy build (がっしりした体格), wavy Serpent Spear (蛇矛)!
+# Zhang Fei (張飛) -> Burly Black-Iron Juggernaut Robot -> Giant Black Serpent (大蛇)!
 PALETTE = {
     1: (30, 32, 40, 255),     # Jet-Black Iron Armor & Wild Bristly Beard (黒基調)
     2: (68, 72, 86, 255),     # Forged Dark-Gunmetal Armor Bevels
@@ -117,7 +116,6 @@ def draw_serpent_spear(grid, sx, sy, z_bot, z_top):
     fill_box(grid, sx, sx, sy, sy, z_bot, z_bot + 1, 4)        # Brass butt-cap
     fill_box(grid, sx - 1, sx + 1, sy, sy, z_top - 13, z_top - 12, 4)  # Brass guard collar
     fill_box(grid, sx, sx, sy - 1, sy - 1, z_top - 16, z_top - 13, 3)  # Crimson spear tassel
-    # Iconic wavy zigzag serpent-blade!
     pts = [
         (sx,     sy, z_top - 12),
         (sx + 1, sy, z_top - 9),
@@ -130,7 +128,7 @@ def draw_serpent_spear(grid, sx, sy, z_bot, z_top):
 
 
 # ============================================================
-# FORM A: ZHANG FEI CHARACTER FIGURE (BURLY BLACK-ARMORED GENERAL) (40 x 24 x 44)
+# FORM A: ZHANG FEI CHARACTER FIGURE (40 x 24 x 44) [UNCHANGED]
 # ============================================================
 def build_a():
     grid = np.zeros((40, 24, 44), dtype=np.uint8)
@@ -138,55 +136,47 @@ def build_a():
     cx_l = X // 2 - 1  # 19
     cx_r = X // 2      # 20
 
-    # Heavy Wide Stance Boots & Thick Legs (がっしりした体格!) (Z: 0..15)
-    fill_sym_box(grid, 3, 6, 9, 16, 0, 2, 1)      # Heavy black boots
-    fill_sym_box(grid, 3, 6, 15, 16, 0, 1, 4)     # Brass toe trim
-    fill_sym_box(grid, 3, 5, 10, 15, 3, 14, 1)    # Thick black armored leggings
-    fill_sym_box(grid, 4, 5, 14, 15, 5, 12, 2)    # Gunmetal shin guards
-    fill_sym_box(grid, 3, 5, 14, 16, 11, 13, 4)   # Brass knee bosses
+    fill_sym_box(grid, 3, 6, 9, 16, 0, 2, 1)
+    fill_sym_box(grid, 3, 6, 15, 16, 0, 1, 4)
+    fill_sym_box(grid, 3, 5, 10, 15, 3, 14, 1)
+    fill_sym_box(grid, 4, 5, 14, 15, 5, 12, 2)
+    fill_sym_box(grid, 3, 5, 14, 16, 11, 13, 4)
 
-    # Broad Barrel Waist & Black Scale-Armor Skirt (Z: 14..21)
-    fill_sym_box(grid, 0, 6, 9, 15, 14, 20, 1)    # Broad black armor waist
-    fill_sym_box(grid, 0, 6, 15, 16, 14, 15, 4)   # Brass hem
-    fill_sym_box(grid, 0, 6, 15, 16, 18, 20, 3)   # Wide crimson battle sash!
-    fill_sym_box(grid, 0, 1, 16, 16, 18, 20, 4)   # Brass lion belt buckle
+    fill_sym_box(grid, 0, 6, 9, 15, 14, 20, 1)
+    fill_sym_box(grid, 0, 6, 15, 16, 14, 15, 4)
+    fill_sym_box(grid, 0, 6, 15, 16, 18, 20, 3)
+    fill_sym_box(grid, 0, 1, 16, 16, 18, 20, 4)
 
-    # Massive Burly Black-Scale Chest & Broad Shoulders (Z: 20..30)
-    fill_sym_box(grid, 0, 6, 9, 16, 20, 29, 1)    # Massive broad black cuirass!
-    fill_sym_box(grid, 1, 5, 16, 16, 22, 28, 2)   # Gunmetal scale plates
-    fill_sym_box(grid, 0, 2, 16, 17, 25, 27, 4)   # Brass beast-head breastplate boss!
-    fill_sym_box(grid, 2, 5, 10, 15, 29, 30, 3)   # Crimson collar trim
-    # Rear dark cape (Y: 7..9, Z: 8..29)
+    fill_sym_box(grid, 0, 6, 9, 16, 20, 29, 1)
+    fill_sym_box(grid, 1, 5, 16, 16, 22, 28, 2)
+    fill_sym_box(grid, 0, 2, 16, 17, 25, 27, 4)
+    fill_sym_box(grid, 2, 5, 10, 15, 29, 30, 3)
     fill_sym_box(grid, 0, 5, 7, 8, 8, 28, 1)
     fill_sym_box(grid, 0, 5, 7, 7, 8, 9, 3)
 
-    # Thick Burly Arms & Wavy Serpent Spear! (Z: 15..30)
-    fill_sym_box(grid, 6, 9, 10, 15, 25, 30, 1)   # Broad black shoulder pauldrons
-    fill_sym_box(grid, 8, 9, 11, 14, 29, 30, 4)   # Brass shoulder spikes
-    fill_box(grid, cx_l - 9, cx_l - 6, 10, 14, 17, 24, 2)  # Left thick arm
-    fill_box(grid, cx_l - 9, cx_l - 7, 11, 14, 15, 16, 7)  # Clenched fist
-    fill_box(grid, cx_r + 6, cx_r + 9, 10, 15, 18, 24, 2)  # Right thick arm
-    fill_box(grid, cx_r + 8, cx_r + 11, 14, 17, 17, 20, 7) # Gripping hand!
+    fill_sym_box(grid, 6, 9, 10, 15, 25, 30, 1)
+    fill_sym_box(grid, 8, 9, 11, 14, 29, 30, 4)
+    fill_box(grid, cx_l - 9, cx_l - 6, 10, 14, 17, 24, 2)
+    fill_box(grid, cx_l - 9, cx_l - 7, 11, 14, 15, 16, 7)
+    fill_box(grid, cx_r + 6, cx_r + 9, 10, 15, 18, 24, 2)
+    fill_box(grid, cx_r + 8, cx_r + 11, 14, 17, 17, 20, 7)
     draw_serpent_spear(grid, cx_r + 12, 16, z_bot=2, z_top=42)
 
-    # Fierce Head, Wild Bristly Black Beard & Horned Warrior Headband! (Z: 30..39)
-    fill_sym_box(grid, 0, 3, 10, 15, 30, 36, 7)   # Rugged face
-    # Wild flaring bristly black beard & fierce whiskers!
+    fill_sym_box(grid, 0, 3, 10, 15, 30, 36, 7)
     fill_sym_box(grid, 0, 4, 14, 17, 28, 32, 1)
-    fill_sym_box(grid, 3, 5, 13, 16, 30, 33, 1)   # Flaring side-whiskers!
-    fill_sym_box(grid, 1, 2, 15, 16, 33, 34, 1)   # Fierce thick black brows
-    fill_sym_box(grid, 1, 2, 16, 16, 33, 33, 9)   # Fiery glaring eyes!
-    # Wild spiky black hair & brass-crimson warrior headband!
+    fill_sym_box(grid, 3, 5, 13, 16, 30, 33, 1)
+    fill_sym_box(grid, 1, 2, 15, 16, 33, 34, 1)
+    fill_sym_box(grid, 1, 2, 16, 16, 33, 33, 9)
     fill_sym_box(grid, 0, 4, 9, 15, 35, 38, 1)
-    fill_sym_box(grid, 0, 3, 15, 16, 35, 36, 3)   # Crimson war headband
-    fill_sym_box(grid, 0, 1, 16, 16, 36, 38, 4)   # Brass brow badge
+    fill_sym_box(grid, 0, 3, 15, 16, 35, 36, 3)
+    fill_sym_box(grid, 0, 1, 16, 16, 36, 38, 4)
 
     hollow_interior_26(grid, 1, Z - 2)
     return grid
 
 
 # ============================================================
-# FORM B: ZHANG FEI BURLY BLACK-IRON JUGGERNAUT ROBOT (48 x 26 x 46)
+# FORM B: ZHANG FEI BURLY BLACK-IRON ROBOT (48 x 26 x 46) [UNCHANGED]
 # ============================================================
 def build_b():
     grid = np.zeros((48, 26, 46), dtype=np.uint8)
@@ -194,63 +184,127 @@ def build_b():
     cx_l = X // 2 - 1  # 23
     cx_r = X // 2      # 24
 
-    # Heavy Tank-Like Black-Iron Boots & Massive Legs (Z: 0..16)
-    fill_sym_box(grid, 3, 7, 9, 17, 0, 2, 1)      # Colossal black iron boots
-    fill_sym_box(grid, 4, 6, 17, 19, 0, 2, 2)     # Heavy ramming toes
-    fill_sym_box(grid, 4, 6, 18, 19, 2, 2, 4)     # Brass toe trim
-    fill_sym_box(grid, 3, 7, 10, 15, 3, 14, 1)    # Massive black greaves!
-    fill_sym_box(grid, 4, 6, 15, 16, 4, 13, 2)    # Gunmetal front armor
-    fill_sym_box(grid, 7, 7, 11, 14, 5, 12, 3)    # Crimson leg war-stripe
-    fill_sym_box(grid, 3, 7, 15, 18, 12, 15, 2)   # Spiked juggernaut knee armor!
+    fill_sym_box(grid, 3, 7, 9, 17, 0, 2, 1)
+    fill_sym_box(grid, 4, 6, 17, 19, 0, 2, 2)
+    fill_sym_box(grid, 4, 6, 18, 19, 2, 2, 4)
+    fill_sym_box(grid, 3, 7, 10, 15, 3, 14, 1)
+    fill_sym_box(grid, 4, 6, 15, 16, 4, 13, 2)
+    fill_sym_box(grid, 7, 7, 11, 14, 5, 12, 3)
+    fill_sym_box(grid, 3, 7, 15, 18, 12, 15, 2)
     fill_sym_box(grid, 4, 6, 18, 18, 13, 14, 4)
 
-    # Broad Armored Pelvis & Heavy Waist Skirt (Z: 15..23)
     fill_sym_box(grid, 3, 6, 10, 15, 15, 19, 2)
     fill_sym_box(grid, 0, 6, 10, 15, 19, 22, 1)
-    fill_sym_box(grid, 2, 7, 15, 17, 17, 21, 1)   # Heavy black front tassets
-    fill_sym_box(grid, 2, 7, 17, 17, 19, 19, 3)   # Crimson waist belt!
-    fill_sym_box(grid, 6, 8, 10, 15, 17, 21, 2)   # Bulky hip armor
-    fill_sym_box(grid, 0, 2, 16, 18, 18, 22, 3)   # Crimson codpiece
-    fill_sym_box(grid, 0, 1, 18, 18, 20, 21, 4)   # Brass buckle
+    fill_sym_box(grid, 2, 7, 15, 17, 17, 21, 1)
+    fill_sym_box(grid, 2, 7, 17, 17, 19, 19, 3)
+    fill_sym_box(grid, 6, 8, 10, 15, 17, 21, 2)
+    fill_sym_box(grid, 0, 2, 16, 18, 18, 22, 3)
+    fill_sym_box(grid, 0, 1, 18, 18, 20, 21, 4)
 
-    # Massive Broad-Chested Black-Iron Cuirass (Z: 22..34)
     fill_sym_box(grid, 0, 5, 10, 15, 22, 24, 2)
-    fill_sym_box(grid, 0, 8, 9, 17, 25, 33, 1)    # Massive juggernaut chest!
-    fill_sym_box(grid, 2, 7, 17, 18, 26, 32, 2)   # Heavy angled pectoral plates
-    fill_sym_box(grid, 0, 2, 17, 19, 27, 31, 3)   # Crimson center chest core!
-    fill_sym_box(grid, 0, 1, 19, 19, 28, 30, 4)   # Brass fierce beast-emblem
-    fill_sym_box(grid, 0, 0, 19, 19, 29, 29, 9)   # Glowing fiery chest eye!
-    fill_sym_box(grid, 0, 6, 6, 9, 24, 33, 1)     # Heavy rear booster backpack
+    fill_sym_box(grid, 0, 8, 9, 17, 25, 33, 1)
+    fill_sym_box(grid, 2, 7, 17, 18, 26, 32, 2)
+    fill_sym_box(grid, 0, 2, 17, 19, 27, 31, 3)
+    fill_sym_box(grid, 0, 1, 19, 19, 28, 30, 4)
+    fill_sym_box(grid, 0, 0, 19, 19, 29, 29, 9)
+    fill_sym_box(grid, 0, 6, 6, 9, 24, 33, 1)
     fill_sym_box(grid, 2, 5, 5, 6, 25, 31, 2)
 
-    # Colossal Spiked Black-Iron Shoulder Pauldrons & Heavy Arms + Serpent Spear! (Z: 14..38)
     fill_sym_box(grid, 8, 10, 11, 15, 28, 33, 2)
-    fill_sym_box(grid, 9, 14, 10, 16, 28, 35, 1)  # Massive black pauldrons!
+    fill_sym_box(grid, 9, 14, 10, 16, 28, 35, 1)
     fill_sym_box(grid, 10, 14, 10, 16, 34, 35, 2)
-    fill_sym_box(grid, 14, 14, 11, 15, 30, 32, 3) # Crimson side accent
-    # Twin brass shoulder spikes jutting outward!
+    fill_sym_box(grid, 14, 14, 11, 15, 30, 32, 3)
     draw_6conn_line(grid, (cx_r + 12, 13, 35), (cx_r + 15, 13, 38), 4)
     draw_6conn_line(grid, (cx_l - 12, 13, 35), (cx_l - 15, 13, 38), 4)
-    # Massive arms
     fill_sym_box(grid, 9, 11, 11, 15, 22, 27, 2)
-    fill_box(grid, cx_l - 13, cx_l - 9, 11, 16, 15, 21, 1)  # Heavy left gauntlet
-    fill_box(grid, cx_l - 13, cx_l - 13, 12, 15, 16, 20, 4) # Brass knuckle-guard
+    fill_box(grid, cx_l - 13, cx_l - 9, 11, 16, 15, 21, 1)
+    fill_box(grid, cx_l - 13, cx_l - 13, 12, 15, 16, 20, 4)
     fill_box(grid, cx_l - 12, cx_l - 9, 12, 15, 13, 15, 2)
-    fill_box(grid, cx_r + 9, cx_r + 13, 11, 16, 16, 21, 1)  # Right gauntlet
-    fill_box(grid, cx_r + 11, cx_r + 14, 15, 19, 15, 19, 2) # Gripping iron fist!
+    fill_box(grid, cx_r + 9, cx_r + 13, 11, 16, 16, 21, 1)
+    fill_box(grid, cx_r + 11, cx_r + 14, 15, 19, 15, 19, 2)
     draw_serpent_spear(grid, cx_r + 15, 18, z_bot=2, z_top=45)
 
-    # Fierce Black-Iron Horned Demon-General Head & Jagged Beard-Mask! (Z: 34..45)
     fill_sym_box(grid, 0, 2, 11, 15, 34, 35, 2)
-    fill_sym_box(grid, 0, 3, 10, 16, 35, 41, 1)   # Black iron helmet
-    # Jagged bristly black-iron beard-plate menpo!
+    fill_sym_box(grid, 0, 3, 10, 16, 35, 41, 1)
     fill_sym_box(grid, 0, 4, 15, 18, 34, 37, 1)
-    fill_sym_box(grid, 2, 4, 16, 18, 35, 36, 8)   # Steel jaw-fang vents!
-    fill_sym_box(grid, 1, 2, 17, 17, 38, 39, 9)   # Blazing fiery-orange fierce eyes!
-    fill_sym_box(grid, 0, 3, 15, 18, 40, 40, 3)   # Crimson fierce brow band!
-    # Sweeping brass war-horns on helmet!
+    fill_sym_box(grid, 2, 4, 16, 18, 35, 36, 8)
+    fill_sym_box(grid, 1, 2, 17, 17, 38, 39, 9)
+    fill_sym_box(grid, 0, 3, 15, 18, 40, 40, 3)
     draw_6conn_line(grid, (cx_r + 2, 16, 40), (cx_r + 6, 15, 45), 4)
     draw_6conn_line(grid, (cx_l - 2, 16, 40), (cx_l - 6, 15, 45), 4)
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
+# ============================================================
+# FORM C: GIANT BLACK SERPENT (大蛇: 黒い大きな蛇) (34 x 34 x 34)
+# ============================================================
+def build_c():
+    grid = np.zeros((34, 34, 34), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx, cy = 17, 16
+
+    # Massive Coiled Black Serpent Base (2 thick grounded coils, Z: 0..14)
+    pts = []
+    n_steps = 50
+    for i in range(n_steps + 1):
+        t = i / n_steps
+        ang = t * 2.15 * np.pi - 0.3 * np.pi
+        if t < 0.72:
+            rad = 11.2 - 3.5 * t
+            z = 2.0 + 13.0 * (t / 0.72)
+        else:
+            u = (t - 0.72) / 0.28
+            rad = 8.6 * (1.0 - 0.85 * u)
+            z = 15.0 + 13.5 * u
+        x = cx + rad * np.cos(ang)
+        y = cy + rad * np.sin(ang) - (2.0 * max(0.0, t - 0.72))
+        pts.append((x, y, z))
+
+    for i in range(len(pts) - 1):
+        t = i / len(pts)
+        pad_r = (2, 2, 2) if t < 0.65 else (2, 2, 1)
+        col = 1 if (i % 4 != 0) else 2
+        draw_6conn_line(grid, pts[i], pts[i + 1], col, pad=pad_r)
+        # Gunmetal & brass scale ribs along lower belly
+        if i % 3 == 0:
+            px_, py_, pz_ = int(round(pts[i][0])), int(round(pts[i][1])), int(round(pts[i][2]))
+            fill_box(grid, px_ - 1, px_ + 1, py_ + 2, py_ + 2, max(0, pz_ - 1), pz_, 4 if (i % 6 == 0) else 2)
+
+    # Ensure lower coil rests firmly at Z=0
+    for i in range(18):
+        px_, py_ = int(round(pts[i][0])), int(round(pts[i][1]))
+        fill_box(grid, px_ - 2, px_ + 2, py_ - 2, py_ + 2, 0, 1, 1)
+
+    # Tapered rattling tail curling out on the side
+    t0 = pts[0]
+    draw_6conn_line(grid, t0, (t0[0] + 4, t0[1] - 5, 1), 1, pad=(1, 1, 0))
+    draw_6conn_line(grid, (t0[0] + 4, t0[1] - 5, 1), (t0[0] + 6, t0[1] - 7, 3), 4)
+
+    # Flaring Crimson-and-Black Cobra/Viper Hood behind Upright Neck (Z: 17..28)
+    draw_6conn_line(grid, pts[-1], (cx, 15, 27), 1, pad=(2, 2, 1))
+    fill_box(grid, cx - 7, cx + 7, 13, 15, 19, 26, 1)    # Wide menacing black hood!
+    fill_box(grid, cx - 6, cx + 6, 15, 16, 20, 25, 3)    # Fierce crimson inner hood markings!
+    fill_box(grid, cx - 3, cx + 3, 16, 17, 19, 25, 4)    # Brass scale belly on neck
+    fill_box(grid, cx - 5, cx + 5, 14, 15, 27, 28, 1)
+
+    # Fierce Giant Serpent Head lunging forward (+Y, Z: 25..33)
+    fill_box(grid, cx - 4, cx + 4, 15, 22, 26, 31, 1)    # Broad triangular viper skull
+    fill_box(grid, cx - 3, cx + 3, 22, 27, 28, 30, 1)    # Upper jaw
+    fill_box(grid, cx - 3, cx + 3, 21, 26, 25, 26, 2)    # Open lower jaw!
+    fill_box(grid, cx - 2, cx + 2, 22, 25, 26, 27, 3)    # Crimson mouth interior
+    fill_box(grid, cx - 3, cx - 3, 25, 25, 26, 28, 5)    # Gleaming silver serpent fangs!
+    fill_box(grid, cx + 3, cx + 3, 25, 25, 26, 28, 5)
+    # Blazing fiery-orange eyes & brass horn-brows!
+    fill_box(grid, cx - 4, cx - 4, 20, 21, 29, 30, 9)
+    fill_box(grid, cx + 4, cx + 4, 20, 21, 29, 30, 9)
+    fill_box(grid, cx - 4, cx - 3, 19, 21, 31, 32, 4)    # Brass brow horns
+    fill_box(grid, cx + 3, cx + 4, 19, 21, 31, 32, 4)
+    # Iconic crimson forked tongue darting out!
+    draw_6conn_line(grid, (cx, 25, 26), (cx, 30, 25), 3)
+    draw_6conn_line(grid, (cx, 30, 25), (cx - 2, 32, 24), 3)
+    draw_6conn_line(grid, (cx, 30, 25), (cx + 2, 32, 24), 3)
 
     hollow_interior_26(grid, 1, Z - 2)
     return grid
@@ -349,15 +403,16 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview_3(forms, title_banner, out_path):
+    cw, ch = 1274, 540
+    canvas = Image.new("RGBA", (cw, ch), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
-        draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
-    for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+    for gx in range(0, cw, 20):
+        draw.line([(gx, 0), (gx, ch)], fill=(28, 34, 48, 255), width=1)
+    for gy in range(0, ch, 20):
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(forms):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -371,7 +426,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -380,17 +435,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "zhangfei_a.vox")
     v_b = export_vox(model_b, "zhangfei_b.vox")
+    v_c = export_vox(model_c, "zhangfei_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
-    render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #02: ZHANG FEI (THREE KINGDOMS) -> BLACK-IRON ROBOT",
-        "1. ZHANG FEI (CHARACTER)",
-        "2. ZHANG FEI ROBOT",
+    comp_c, minz_c = count_components_6(model_c)
+    render_preview_3(
+        [
+            ("1. ZHANG FEI (CHARACTER)", model_a, v_a, 28, 18),
+            ("2. ZHANG FEI ROBOT", model_b, v_b, 28, 18),
+            ("3. GIANT SERPENT (BEAST)", model_c, v_c, 32, 22),
+        ],
+        "THREE KINGDOMS #02: ZHANG FEI - CHARACTER / ROBOT / GIANT SERPENT",
         "preview_zhangfei.png",
-        yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18,
     )
-    print(f"zhangfei: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"zhangfei: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}) | "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}) | "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

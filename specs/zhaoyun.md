@@ -8,6 +8,9 @@ forms:
   - file: zhaoyun_b.vox
     label: ロボ
     robot: true
+  - file: zhaoyun_c.vox
+    label: 白馬
+    anim: quad_cat
 ---
 
 # 趙雲

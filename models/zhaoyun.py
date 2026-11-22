@@ -4,8 +4,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 # Color Palette (Index 1..9, 0 is empty)
-# Zhao Yun (趙雲) -> Sleek Silver-White Lancer Knight Robot!
-# Silver-white armor (白銀の鎧), gleaming silver spear (銀の槍), slender dashing stance (すらりとした立ち姿)!
+# Zhao Yun (趙雲) -> Silver Lancer Robot -> Noble White Warhorse (白馬)!
 PALETTE = {
     1: (234, 240, 248, 255),  # Gleaming Pure Silver-White Armor (白銀の鎧)
     2: (172, 186, 206, 255),  # Honed Steel-Silver Shading & Spear Shaft
@@ -113,18 +112,17 @@ def count_components_6(grid):
 
 def draw_silver_spear(grid, sx, sy, z_bot, z_top):
     """Draw Zhao Yun's gleaming Silver Dragon Spear (龍胆亮銀槍)."""
-    fill_box(grid, sx, sx, sy, sy, z_bot, z_top - 10, 2)       # Sleek silver spear shaft
-    fill_box(grid, sx, sx, sy, sy, z_bot, z_bot + 1, 5)        # Gold butt-tip
-    fill_box(grid, sx - 1, sx + 1, sy, sy, z_top - 11, z_top - 10, 5)  # Gold guard
-    fill_box(grid, sx - 1, sx + 1, sy - 1, sy, z_top - 14, z_top - 12, 6)  # Crimson tassel!
-    # Razor-sharp gleaming silver-white spearhead!
+    fill_box(grid, sx, sx, sy, sy, z_bot, z_top - 10, 2)
+    fill_box(grid, sx, sx, sy, sy, z_bot, z_bot + 1, 5)
+    fill_box(grid, sx - 1, sx + 1, sy, sy, z_top - 11, z_top - 10, 5)
+    fill_box(grid, sx - 1, sx + 1, sy - 1, sy, z_top - 14, z_top - 12, 6)
     fill_box(grid, sx - 1, sx + 1, sy, sy, z_top - 9, z_top - 6, 1)
     fill_box(grid, sx, sx, sy, sy, z_top - 5, z_top, 1)
-    fill_box(grid, sx, sx, sy + 1, sy + 1, z_top - 8, z_top - 3, 9)  # Ice-cyan shine!
+    fill_box(grid, sx, sx, sy + 1, sy + 1, z_top - 8, z_top - 3, 9)
 
 
 # ============================================================
-# FORM A: ZHAO YUN CHARACTER FIGURE (SLENDER SILVER-WHITE KNIGHT) (34 x 22 x 46)
+# FORM A: ZHAO YUN CHARACTER FIGURE (34 x 22 x 46) [UNCHANGED]
 # ============================================================
 def build_a():
     grid = np.zeros((34, 22, 46), dtype=np.uint8)
@@ -132,48 +130,41 @@ def build_a():
     cx_l = X // 2 - 1  # 16
     cx_r = X // 2      # 17
 
-    # Slender Tall Boots & Silver-White Greaves (すらりとした立ち姿!) (Z: 0..16)
-    fill_sym_box(grid, 2, 4, 10, 15, 0, 1, 8)     # Sleek soles
-    fill_sym_box(grid, 2, 4, 10, 16, 1, 2, 1)     # Silver boots
-    fill_sym_box(grid, 2, 3, 11, 14, 3, 15, 1)    # Slender silver greaves
-    fill_sym_box(grid, 3, 3, 14, 15, 4, 14, 2)    # Steel shin ridge
-    fill_sym_box(grid, 2, 4, 14, 15, 13, 15, 5)   # Gold knee guards
+    fill_sym_box(grid, 2, 4, 10, 15, 0, 1, 8)
+    fill_sym_box(grid, 2, 4, 10, 16, 1, 2, 1)
+    fill_sym_box(grid, 2, 3, 11, 14, 3, 15, 1)
+    fill_sym_box(grid, 3, 3, 14, 15, 4, 14, 2)
+    fill_sym_box(grid, 2, 4, 14, 15, 13, 15, 5)
 
-    # Slim Waist & Flowing White-and-Sapphire Tassets (Z: 15..22)
-    fill_sym_box(grid, 0, 4, 10, 14, 16, 21, 4)   # Cobalt under-tunic
-    fill_sym_box(grid, 1, 4, 14, 15, 13, 20, 1)   # Long slender silver-white tassets
-    fill_sym_box(grid, 1, 4, 15, 15, 13, 13, 3)   # Sky-blue hem
-    fill_sym_box(grid, 0, 4, 14, 15, 20, 21, 3)   # Sapphire waist sash
-    fill_sym_box(grid, 0, 1, 15, 16, 17, 21, 3)   # Flowing front sash
-    fill_sym_box(grid, 0, 0, 16, 16, 20, 21, 5)   # Gold buckle
+    fill_sym_box(grid, 0, 4, 10, 14, 16, 21, 4)
+    fill_sym_box(grid, 1, 4, 14, 15, 13, 20, 1)
+    fill_sym_box(grid, 1, 4, 15, 15, 13, 13, 3)
+    fill_sym_box(grid, 0, 4, 14, 15, 20, 21, 3)
+    fill_sym_box(grid, 0, 1, 15, 16, 17, 21, 3)
+    fill_sym_box(grid, 0, 0, 16, 16, 20, 21, 5)
 
-    # Sleek Silver-White Lamellar Chest & Flowing Sapphire Cloak (Z: 21..31)
-    fill_sym_box(grid, 0, 4, 10, 15, 22, 30, 1)   # Gleaming silver-white chest armor!
-    fill_sym_box(grid, 0, 3, 15, 15, 23, 29, 2)   # Steel chest plate detail
-    fill_sym_box(grid, 0, 1, 15, 16, 26, 28, 5)   # Gold dragon emblem
-    fill_sym_box(grid, 1, 3, 11, 15, 30, 31, 3)   # Sky-blue scarf collar
-    # Flowing Sky-Sapphire Warrior Cloak billowing cleanly down back! (Y: 6..9, Z: 5..30)
+    fill_sym_box(grid, 0, 4, 10, 15, 22, 30, 1)
+    fill_sym_box(grid, 0, 3, 15, 15, 23, 29, 2)
+    fill_sym_box(grid, 0, 1, 15, 16, 26, 28, 5)
+    fill_sym_box(grid, 1, 3, 11, 15, 30, 31, 3)
     fill_sym_box(grid, 0, 4, 8, 9, 16, 30, 3)
     fill_sym_box(grid, 0, 5, 7, 8, 5, 18, 3)
-    fill_sym_box(grid, 0, 5, 7, 7, 5, 6, 1)       # White cloak hem
+    fill_sym_box(grid, 0, 5, 7, 7, 5, 6, 1)
 
-    # Slender Armored Arms & Tall Gleaming Silver Spear! (Z: 16..31)
-    fill_sym_box(grid, 5, 7, 10, 14, 27, 31, 1)   # Swept silver shoulders
-    fill_sym_box(grid, 6, 7, 11, 14, 30, 31, 5)   # Gold trim
+    fill_sym_box(grid, 5, 7, 10, 14, 27, 31, 1)
+    fill_sym_box(grid, 6, 7, 11, 14, 30, 31, 5)
     fill_box(grid, cx_l - 7, cx_l - 5, 11, 14, 19, 26, 1)
     fill_box(grid, cx_l - 7, cx_l - 6, 12, 14, 17, 18, 7)
     fill_box(grid, cx_r + 5, cx_r + 7, 11, 15, 20, 26, 1)
-    fill_box(grid, cx_r + 6, cx_r + 8, 14, 17, 19, 21, 7)  # Gripping hand!
+    fill_box(grid, cx_r + 6, cx_r + 8, 14, 17, 19, 21, 7)
     draw_silver_spear(grid, cx_r + 9, 16, z_bot=2, z_top=44)
 
-    # Noble Youthful Head & White-Plumed Silver Helmet (Z: 31..43)
     fill_sym_box(grid, 0, 1, 11, 14, 31, 32, 7)
-    fill_sym_box(grid, 0, 2, 10, 15, 32, 37, 7)   # Face
-    fill_sym_box(grid, 1, 2, 15, 15, 34, 35, 9)   # Noble bright eyes
-    fill_sym_box(grid, 0, 3, 9, 15, 36, 39, 1)    # Silver-white helmet!
-    fill_sym_box(grid, 0, 2, 15, 16, 36, 37, 5)   # Gold brow band
-    fill_sym_box(grid, 0, 0, 11, 13, 40, 42, 5)   # Gold helm plume-holder
-    # Sweeping white horsehair helmet plume!
+    fill_sym_box(grid, 0, 2, 10, 15, 32, 37, 7)
+    fill_sym_box(grid, 1, 2, 15, 15, 34, 35, 9)
+    fill_sym_box(grid, 0, 3, 9, 15, 36, 39, 1)
+    fill_sym_box(grid, 0, 2, 15, 16, 36, 37, 5)
+    fill_sym_box(grid, 0, 0, 11, 13, 40, 42, 5)
     draw_6conn_line(grid, (cx_r, 12, 42), (cx_r, 7, 39), 1, pad=(1, 0, 0))
     draw_6conn_line(grid, (cx_r, 7, 39), (cx_r, 5, 34), 1, pad=(1, 0, 0))
 
@@ -182,7 +173,7 @@ def build_a():
 
 
 # ============================================================
-# FORM B: ZHAO YUN SLEEK SILVER-WHITE LANCER ROBOT (42 x 26 x 48)
+# FORM B: ZHAO YUN SLEEK SILVER LANCER ROBOT (42 x 26 x 48) [UNCHANGED]
 # ============================================================
 def build_b():
     grid = np.zeros((42, 26, 48), dtype=np.uint8)
@@ -190,67 +181,116 @@ def build_b():
     cx_l = X // 2 - 1  # 20
     cx_r = X // 2      # 21
 
-    # Sleek Long Athletic Lancer Legs (すらりとした立ち姿!) (Z: 0..17)
-    fill_sym_box(grid, 2, 4, 10, 17, 0, 2, 4)     # Sleek cobalt boot sole
-    fill_sym_box(grid, 2, 4, 11, 17, 1, 2, 1)     # Silver footplate
-    fill_sym_box(grid, 3, 3, 17, 19, 1, 2, 1)     # Sharp knight-greave toe!
-    fill_sym_box(grid, 2, 4, 11, 15, 3, 16, 1)    # Long slender silver-white greaves!
-    fill_sym_box(grid, 3, 3, 15, 16, 4, 15, 2)    # Steel front edge
-    fill_sym_box(grid, 4, 5, 11, 14, 7, 14, 3)    # Sky-sapphire aerodynamic calf fins!
-    fill_sym_box(grid, 2, 4, 15, 17, 13, 17, 1)   # Pointed silver knee armor
-    fill_sym_box(grid, 3, 3, 17, 17, 14, 16, 5)   # Gold knee trim
+    fill_sym_box(grid, 2, 4, 10, 17, 0, 2, 4)
+    fill_sym_box(grid, 2, 4, 11, 17, 1, 2, 1)
+    fill_sym_box(grid, 3, 3, 17, 19, 1, 2, 1)
+    fill_sym_box(grid, 2, 4, 11, 15, 3, 16, 1)
+    fill_sym_box(grid, 3, 3, 15, 16, 4, 15, 2)
+    fill_sym_box(grid, 4, 5, 11, 14, 7, 14, 3)
+    fill_sym_box(grid, 2, 4, 15, 17, 13, 17, 1)
+    fill_sym_box(grid, 3, 3, 17, 17, 14, 16, 5)
 
-    # Slim Thighs & Knight Waist Armor (Z: 16..24)
     fill_sym_box(grid, 2, 4, 11, 15, 16, 20, 4)
     fill_sym_box(grid, 2, 4, 13, 15, 17, 19, 1)
     fill_sym_box(grid, 0, 4, 11, 15, 20, 23, 4)
-    fill_sym_box(grid, 1, 5, 15, 16, 17, 22, 1)   # Tapered white knight tassets
-    fill_sym_box(grid, 1, 5, 16, 16, 17, 17, 3)   # Sapphire hem
-    fill_sym_box(grid, 4, 6, 11, 15, 18, 22, 3)   # Aerodynamic sapphire hip wings
+    fill_sym_box(grid, 1, 5, 15, 16, 17, 22, 1)
+    fill_sym_box(grid, 1, 5, 16, 16, 17, 17, 3)
+    fill_sym_box(grid, 4, 6, 11, 15, 18, 22, 3)
     fill_sym_box(grid, 0, 1, 15, 17, 18, 23, 1)
-    fill_sym_box(grid, 0, 1, 17, 17, 21, 22, 5)   # Gold waist seal
+    fill_sym_box(grid, 0, 1, 17, 17, 21, 22, 5)
 
-    # Sleek Silver-White Dragon-Lancer Torso (Z: 23..35)
     fill_sym_box(grid, 0, 3, 11, 15, 23, 25, 4)
-    fill_sym_box(grid, 0, 6, 10, 16, 26, 34, 1)   # Gleaming silver-white chest!
-    fill_sym_box(grid, 1, 5, 16, 17, 27, 33, 2)   # Steel chest bevels
-    fill_sym_box(grid, 0, 2, 17, 18, 28, 32, 3)   # Sapphire V-crest chest!
-    fill_sym_box(grid, 0, 1, 18, 18, 29, 31, 5)   # Gold trim
-    fill_sym_box(grid, 0, 0, 18, 19, 30, 30, 9)   # Luminous ice-cyan core!
-    fill_sym_box(grid, 1, 4, 11, 15, 34, 35, 3)   # High sapphire collar
-    # Rear Aerodynamic Winged Cloak-Thruster Pack (Y: 5..10, Z: 10..34)
+    fill_sym_box(grid, 0, 6, 10, 16, 26, 34, 1)
+    fill_sym_box(grid, 1, 5, 16, 17, 27, 33, 2)
+    fill_sym_box(grid, 0, 2, 17, 18, 28, 32, 3)
+    fill_sym_box(grid, 0, 1, 18, 18, 29, 31, 5)
+    fill_sym_box(grid, 0, 0, 18, 19, 30, 30, 9)
+    fill_sym_box(grid, 1, 4, 11, 15, 34, 35, 3)
     fill_sym_box(grid, 0, 4, 7, 10, 25, 33, 4)
-    fill_sym_box(grid, 0, 4, 6, 7, 10, 31, 3)     # Flowing armored sapphire cloak-wings!
+    fill_sym_box(grid, 0, 4, 6, 7, 10, 31, 3)
     fill_sym_box(grid, 0, 4, 6, 6, 10, 11, 1)
-    draw_6conn_line(grid, (cx_r + 3, 8, 31), (cx_r + 10, 5, 38), 1)  # Swept silver wing-fins!
+    draw_6conn_line(grid, (cx_r + 3, 8, 31), (cx_r + 10, 5, 38), 1)
     draw_6conn_line(grid, (cx_l - 3, 8, 31), (cx_l - 10, 5, 38), 1)
 
-    # Swept Silver-White Lancer Shoulder Wings & Arms + Silver Dragon Spear! (Z: 15..36)
     fill_sym_box(grid, 6, 8, 12, 15, 30, 33, 4)
-    fill_sym_box(grid, 7, 10, 11, 16, 29, 34, 1)  # Sleek silver pauldrons
-    fill_sym_box(grid, 9, 12, 12, 15, 33, 35, 1)  # Sharp upward-swept shoulder wingtips!
-    fill_sym_box(grid, 10, 12, 12, 15, 35, 35, 5) # Gold edge
-    fill_sym_box(grid, 7, 9, 12, 15, 23, 29, 4)   # Upper arms
+    fill_sym_box(grid, 7, 10, 11, 16, 29, 34, 1)
+    fill_sym_box(grid, 9, 12, 12, 15, 33, 35, 1)
+    fill_sym_box(grid, 10, 12, 12, 15, 35, 35, 5)
+    fill_sym_box(grid, 7, 9, 12, 15, 23, 29, 4)
     fill_box(grid, cx_l - 10, cx_l - 7, 12, 16, 17, 22, 1)
-    fill_box(grid, cx_l - 10, cx_l - 10, 13, 16, 18, 21, 3) # Sapphire forearm buckler
+    fill_box(grid, cx_l - 10, cx_l - 10, 13, 16, 18, 21, 3)
     fill_box(grid, cx_l - 9, cx_l - 7, 13, 15, 15, 16, 4)
     fill_box(grid, cx_r + 7, cx_r + 10, 12, 16, 18, 23, 1)
     fill_box(grid, cx_r + 9, cx_r + 12, 15, 18, 17, 20, 5)
     fill_box(grid, cx_r + 11, cx_r + 13, 17, 19, 16, 19, 4)
     draw_silver_spear(grid, cx_r + 14, 18, z_bot=2, z_top=47)
 
-    # Sleek Silver Dragon-Knight Helm & White Flowing Plume! (Z: 35..47)
     fill_sym_box(grid, 0, 1, 12, 15, 35, 36, 4)
-    fill_sym_box(grid, 0, 2, 11, 16, 36, 42, 1)   # Gleaming silver knight helm
-    fill_sym_box(grid, 0, 2, 16, 17, 36, 37, 2)   # Silver chin faceplate
-    fill_sym_box(grid, 0, 2, 16, 17, 38, 39, 4)   # Eye visor recess
-    fill_sym_box(grid, 1, 2, 17, 17, 38, 39, 9)   # Luminous ice-cyan eyes!
-    fill_sym_box(grid, 0, 2, 16, 18, 40, 40, 5)   # Gold brow V-crest!
+    fill_sym_box(grid, 0, 2, 11, 16, 36, 42, 1)
+    fill_sym_box(grid, 0, 2, 16, 17, 36, 37, 2)
+    fill_sym_box(grid, 0, 2, 16, 17, 38, 39, 4)
+    fill_sym_box(grid, 1, 2, 17, 17, 38, 39, 9)
+    fill_sym_box(grid, 0, 2, 16, 18, 40, 40, 5)
     draw_6conn_line(grid, (cx_r, 17, 41), (cx_r + 4, 15, 45), 5)
     draw_6conn_line(grid, (cx_l, 17, 41), (cx_l - 4, 15, 45), 5)
-    # Flowing white energy-plume streaming gracefully back from crown!
     draw_6conn_line(grid, (cx_r, 13, 42), (cx_r, 7, 46), 1, pad=(1, 0, 0))
     draw_6conn_line(grid, (cx_r, 7, 46), (cx_r, 4, 41), 1, pad=(1, 0, 0))
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
+# ============================================================
+# FORM C: NOBLE WHITE WARHORSE (白馬) (22 x 42 x 34)
+# ============================================================
+def build_c():
+    grid = np.zeros((22, 42, 34), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx_l = X // 2 - 1  # 10
+    cx_r = X // 2      # 11
+
+    # 4 Sleek Athletic White Horse Legs & Dark Hooves (Z: 0..14)
+    fill_sym_box(grid, 2, 3, 27, 29, 0, 1, 8)     # Front hooves
+    fill_sym_box(grid, 2, 3, 27, 29, 2, 13, 1)    # Front legs
+    fill_sym_box(grid, 3, 3, 28, 29, 5, 10, 2)    # Silver leg guards
+    fill_sym_box(grid, 2, 3, 11, 13, 0, 1, 8)     # Hind hooves
+    fill_sym_box(grid, 2, 3, 11, 13, 2, 12, 1)    # Hind legs
+    fill_sym_box(grid, 2, 4, 10, 15, 10, 16, 1)   # Muscular white hindquarters
+
+    # Sleek White Horse Barrel & Sky-Sapphire / Gold Saddle Caparison (Z: 12..21, Y: 9..31)
+    fill_sym_box(grid, 0, 4, 10, 30, 12, 20, 1)   # Pure silver-white horse body!
+    fill_sym_box(grid, 0, 3, 9, 31, 13, 19, 1)
+    # Sky-sapphire saddle cloth with gold border & crimson tassel
+    fill_sym_box(grid, 0, 4, 15, 25, 19, 21, 3)   # Sapphire saddle pad
+    fill_sym_box(grid, 4, 5, 16, 24, 13, 20, 3)   # Sapphire side barding
+    fill_sym_box(grid, 5, 5, 16, 24, 13, 13, 5)   # Gold lower trim
+    fill_sym_box(grid, 0, 3, 15, 16, 21, 22, 5)   # Gold cantle
+    fill_sym_box(grid, 0, 3, 24, 25, 21, 22, 5)   # Gold pommel
+    fill_sym_box(grid, 0, 3, 31, 32, 14, 18, 3)   # Sapphire chest band
+    fill_sym_box(grid, 0, 1, 32, 32, 15, 17, 5)   # Gold breastplate emblem
+
+    # Long Flowing Silver-White Horse Tail (Y: 2..10, Z: 6..19)
+    draw_6conn_line(grid, (cx_r, 9, 18), (cx_r, 5, 14), 1, pad=(1, 1, 1))
+    draw_6conn_line(grid, (cx_r, 5, 14), (cx_r, 3, 7), 2, pad=(1, 1, 0))
+    fill_sym_box(grid, 0, 1, 3, 5, 6, 13, 1)
+
+    # Proud Arched White Neck, Flowing Mane & Armored Head (Y: 27..40, Z: 18..33)
+    draw_6conn_line(grid, (cx_r, 29, 19), (cx_r, 33, 28), 1, pad=(3, 2, 2))
+    fill_sym_box(grid, 0, 2, 29, 34, 20, 29, 1)   # Arched white neck
+    # Flowing silver-white mane streaming along back of neck
+    for mz in range(20, 31):
+        my = 27 + (mz - 20) // 3
+        fill_sym_box(grid, 0, 0, my - 1, my, mz, mz, 2 if (mz % 2 == 0) else 1)
+    # Noble White Horse Head & Silver Chamfron (Y: 31..40, Z: 25..33)
+    fill_sym_box(grid, 0, 2, 31, 37, 26, 30, 1)   # Cranium
+    fill_sym_box(grid, 0, 1, 36, 40, 25, 28, 1)   # Tapered white muzzle
+    fill_sym_box(grid, 0, 1, 39, 40, 25, 26, 2)   # Silver nose tip
+    fill_sym_box(grid, 0, 0, 33, 39, 29, 30, 2)   # Silver chamfron armor plate!
+    fill_sym_box(grid, 0, 0, 34, 35, 30, 31, 5)   # Gold brow crest
+    fill_sym_box(grid, 2, 2, 34, 35, 28, 29, 9)   # Luminous cyan noble eyes!
+    fill_sym_box(grid, 1, 2, 31, 32, 31, 33, 1)   # Pointed white ears!
+    fill_sym_box(grid, 2, 2, 32, 38, 26, 26, 5)   # Gold bridle strap
+    fill_sym_box(grid, 0, 1, 34, 35, 23, 24, 6)   # Crimson throat tassel!
 
     hollow_interior_26(grid, 1, Z - 2)
     return grid
@@ -349,15 +389,16 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview_3(forms, title_banner, out_path):
+    cw, ch = 1274, 540
+    canvas = Image.new("RGBA", (cw, ch), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
-        draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
-    for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+    for gx in range(0, cw, 20):
+        draw.line([(gx, 0), (gx, ch)], fill=(28, 34, 48, 255), width=1)
+    for gy in range(0, ch, 20):
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(forms):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -371,7 +412,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -380,17 +421,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "zhaoyun_a.vox")
     v_b = export_vox(model_b, "zhaoyun_b.vox")
+    v_c = export_vox(model_c, "zhaoyun_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
-    render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #04: ZHAO YUN (THREE KINGDOMS) -> SILVER LANCER ROBOT",
-        "1. ZHAO YUN (CHARACTER)",
-        "2. ZHAO YUN ROBOT",
+    comp_c, minz_c = count_components_6(model_c)
+    render_preview_3(
+        [
+            ("1. ZHAO YUN (CHARACTER)", model_a, v_a, 28, 18),
+            ("2. ZHAO YUN ROBOT", model_b, v_b, 28, 18),
+            ("3. WHITE HORSE (BEAST)", model_c, v_c, 52, 20),
+        ],
+        "THREE KINGDOMS #04: ZHAO YUN - CHARACTER / ROBOT / WHITE HORSE",
         "preview_zhaoyun.png",
-        yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18,
     )
-    print(f"zhaoyun: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"zhaoyun: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}) | "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}) | "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

@@ -1,7 +1,7 @@
 ---
 key: hohei_shu
 name: 歩兵（蜀）
-order: 111
+order: 136
 forms:
   - file: hohei_shu_a.vox
     label: 歩兵（蜀）
