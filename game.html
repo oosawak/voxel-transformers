@@ -177,3 +177,406 @@ function beastPoint(kind, B, x, y, z, ph, w) {
   }
   return [x, y, z, 0];
 }
+// ---------- ユニット（モーフ＋アニメ） ----------
+const boxGeo = new THREE.BoxGeometry(0.92, 0.92, 0.92);
+const boxMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+function makeUnit(entry) {
+  const surfaces = entry.forms.map(f => extractSurfaceVoxels(gridFromQuads(f.dims, f.data), entry.palette));
+  const parts = entry.forms.map((f, i) => (entry.robotForms || [1]).includes(i) ? computeParts(surfaces[i]) : null);
+  const beast = entry.forms.map((f, i) => buildBeast(surfaces[i], f.dims));
+  const maxCount = Math.max(...surfaces.map(sv => sv.length), 1);
+  const mesh = new THREE.InstancedMesh(boxGeo, boxMat, maxCount);
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  mesh.frustumCulled = false;
+  const u = { entry, surfaces, parts, beast, mesh, form: 0, targetForm: 0, t: 1, phase: Math.random() * 6, animW: 0, bobY: 0 };
+  const col = new THREE.Color();
+  surfaces[0].forEach((v, i) => { col.setHex(v[3]); mesh.setColorAt(i, col); });
+  return u;
+}
+const _dummy = new THREE.Object3D();
+const _col = new THREE.Color();
+function updateUnit(u, dt, poseKind) {
+  const target = u.targetForm;
+  if (u.form !== target) {
+    u.t += dt / 0.9;
+    if (u.t >= 1) { u.t = 1; u.form = target; }
+  }
+  const tt = u.t < 1 ? u.t * u.t * (3 - 2 * u.t) : 1;
+  const anims = u.entry.formAnim || [];
+  const isRobotT = (u.entry.robotForms || [1]).includes(target);
+  const wantAnim = isRobotT ? !!poseKind : !!anims[target];
+  u.animW = Math.max(0, Math.min(1, u.animW + (wantAnim ? dt * 3 : -dt * 3)));
+  if (u.animW > 0) u.phase += dt * (isRobotT ? (poseKind === 'run' ? 11.5 : 7) : 6);
+  const A = u.surfaces[u.form], B = u.surfaces[target];
+  const n = Math.max(A.length, B.length);
+  const PA = u.parts[u.form], PB = u.parts[target];
+  const BA = u.beast[u.form], BB = u.beast[target];
+  let bob = 0;
+  for (let i = 0; i < n; i++) {
+    const inA = i < A.length, inB = i < B.length;
+    const a0 = inA ? A[i] : B[i], b0 = inB ? B[i] : A[i];
+    let pa = [a0[0], a0[1], a0[2]], pb = [b0[0], b0[1], b0[2]];
+    if (u.animW > 0) {
+      if (inA && PA && poseKind) pa = posePoint(PA, poseKind, i, pa[0], pa[1], pa[2], u.phase, u.animW * (1 - tt));
+      if (inB && PB && poseKind) pb = posePoint(PB, poseKind, i, pb[0], pb[1], pb[2], u.phase, u.animW * tt);
+      if (inA && anims[u.form]) { const r = beastPoint(anims[u.form], BA, pa[0], pa[1], pa[2], u.phase, u.animW * (1 - tt)); pa = [r[0], r[1], r[2]]; if (u.form === target) bob = Math.max(bob, r[3]); }
+      if (inB && anims[target]) { const r = beastPoint(anims[target], BB, pb[0], pb[1], pb[2], u.phase, u.animW * tt); pb = [r[0], r[1], r[2]]; if (u.form === target) bob = Math.max(bob, r[3]); }
+    }
+    _dummy.position.set(pa[0] + (pb[0] - pa[0]) * tt, pa[1] + (pb[1] - pa[1]) * tt, pa[2] + (pb[2] - pa[2]) * tt);
+    let sc = 1;
+    if (inA && !inB) sc = 1 - tt; else if (!inA && inB) sc = tt;
+    _dummy.scale.setScalar(Math.max(0.01, sc));
+    _dummy.rotation.set(0, 0, 0);
+    _dummy.updateMatrix();
+    u.mesh.setMatrixAt(i, _dummy.matrix);
+    _col.setHex(tt < 0.5 ? a0[3] : b0[3]);
+    u.mesh.setColorAt(i, _col);
+  }
+  u.mesh.count = n;
+  u.mesh.instanceMatrix.needsUpdate = true;
+  if (u.mesh.instanceColor) u.mesh.instanceColor.needsUpdate = true;
+  u.bobY = bob;
+  const dA = u.entry.forms[u.form].dims, dB = u.entry.forms[target].dims;
+  u.baseY = (dA[2] / 2) * (1 - tt) + (dB[2] / 2) * tt;
+}
+function formH(entry, i) { return entry.forms[i].dims[2]; }
+function formW(entry, i) { return entry.forms[i].dims[0]; }
+function isRobotForm(entry, i) { return (entry.robotForms || [1]).includes(i); }
+
+// ---------- シーン ----------
+const wrap = document.getElementById('wrap');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0e17);
+scene.fog = new THREE.Fog(0x0a0e17, 110, 260);
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 600);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+wrap.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xbcd3ff, 0x1a2436, 0.95));
+const dl = new THREE.DirectionalLight(0xffffff, 0.75);
+dl.position.set(30, 60, 40);
+scene.add(dl);
+const grid = new THREE.GridHelper(800, 160, 0x2b4a7a, 0x16263f);
+scene.add(grid);
+const groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(900, 300), new THREE.MeshBasicMaterial({ color: 0x0d1524 }));
+groundPlane.rotation.x = -Math.PI / 2;
+groundPlane.position.y = -0.2;
+scene.add(groundPlane);
+const pillars = [];
+{
+  const pg = new THREE.BoxGeometry(1, 1, 1);
+  const pm = new THREE.MeshLambertMaterial({ color: 0x14213c });
+  for (let i = 0; i < 26; i++) {
+    const m = new THREE.Mesh(pg, pm);
+    const fore = i % 6 === 0;
+    m.position.set(Math.random() * 500 - 60, 0, fore ? 20 + Math.random() * 12 : -70 + Math.random() * 45);
+    m.scale.set(6 + Math.random() * 9, 10 + Math.random() * 38, 6 + Math.random() * 9);
+    m.position.y = m.scale.y / 2;
+    scene.add(m);
+    pillars.push(m);
+  }
+}
+
+// ---------- ゲーム状態 ----------
+const PROP_KEYS = ['castle', 'torii', 'pagoda', 'lighthouse', 'windmill', 'tokyotower', 'pyramid', 'vending', 'daruma', 'snowman', 'ferriswheel', 'guitar', 'piano'];
+const byKey = {};
+for (const m of window.EXTRA_MODELS) byKey[m.key] = m;
+const PROP_MODELS = PROP_KEYS.map(k => byKey[k]).filter(Boolean);
+let state = 'ready';
+let player = null, enemies = [], obstacles = [], bullets = [], ebullets = [];
+let score = 0, nextX = 130, enemyCount = 0, shakeT = 0;
+const input = { left: false, right: false, shoot: false };
+let jumpQueued = false, formQueued = false;
+
+function makePlayer(key) {
+  if (player) { scene.remove(player.u.mesh); }
+  const entry = byKey[key];
+  const u = makeUnit(entry);
+  scene.add(u.mesh);
+  player = { u, entry, x: 0, y: 0, vy: 0, hp: 5, invulnT: 0, shootCd: 0, grounded: true };
+  document.getElementById('unit-name').textContent = entry.name;
+}
+function spawnProp(x, big) {
+  const entry = PROP_MODELS[Math.floor(Math.random() * PROP_MODELS.length)];
+  const u = makeUnit(entry);
+  const scale = big ? 1.75 : 1;
+  u.mesh.scale.setScalar(scale);
+  scene.add(u.mesh);
+  const robotIdx = (entry.robotForms || [1])[0];
+  enemies.push({ u, entry, x, robotIdx, scale, big, state: 'dormant', hp: big ? 10 : 3, shootT: 1 + Math.random(), ramT: 0, dieT: 0 });
+}
+function spawnBlock(x) {
+  const h = 6 + Math.random() * 3;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(6, h, 10), new THREE.MeshLambertMaterial({ color: 0x8a5a2b }));
+  m.position.set(x, h / 2, 0);
+  scene.add(m);
+  obstacles.push({ mesh: m, x, w: 6, h, kind: 'block', hit: false });
+}
+function spawnGate(x, clearance) {
+  const mat = new THREE.MeshLambertMaterial({ color: 0x3f6fb5 });
+  const g = new THREE.Group();
+  const p1 = new THREE.Mesh(new THREE.BoxGeometry(3, clearance + 16, 6), mat);
+  p1.position.set(-9, (clearance + 16) / 2, 0);
+  const p2 = p1.clone(); p2.position.x = 9;
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(21, 3.5, 6), mat);
+  bar.position.set(0, clearance + 1.75, 0);
+  g.add(p1, p2, bar);
+  g.position.set(x, 0, 0);
+  scene.add(g);
+  obstacles.push({ mesh: g, x, w: 4, h: clearance, kind: 'gate', clearance, hit: false });
+}
+function spawnAhead() {
+  while (nextX < player.x + 260) {
+    const r = Math.random();
+    if (r < 0.52) {
+      enemyCount++;
+      spawnProp(nextX, enemyCount % 5 === 0);
+      nextX += 85 + Math.random() * 60;
+    } else if (r < 0.78) {
+      spawnBlock(nextX);
+      nextX += 70 + Math.random() * 50;
+    } else {
+      const hs = player.entry.forms.map((f, i) => formH(player.entry, i));
+      const minH = Math.min(...hs), maxH = Math.max(...hs);
+      if (maxH > minH + 6) { spawnGate(nextX, minH + 3); nextX += 80 + Math.random() * 40; }
+      else { spawnBlock(nextX); nextX += 70 + Math.random() * 50; }
+    }
+  }
+}
+const bulletGeo = new THREE.SphereGeometry(0.75, 10, 10);
+const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffe066 });
+const ebulletGeo = new THREE.SphereGeometry(0.95, 10, 10);
+const ebulletMat = new THREE.MeshBasicMaterial({ color: 0xff5df2 });
+function shootBullet(x, y, vx, vy, enemy) {
+  const m = new THREE.Mesh(enemy ? ebulletGeo : bulletGeo, enemy ? ebulletMat : bulletMat);
+  m.position.set(x, y, 0);
+  scene.add(m);
+  (enemy ? ebullets : bullets).push({ mesh: m, vx, vy });
+}
+function damagePlayer() {
+  if (player.invulnT > 0 || state !== 'play') return;
+  player.hp--;
+  player.invulnT = 1.1;
+  shakeT = 0.25;
+  if (player.hp <= 0) gameOver();
+}
+function gameOver() {
+  state = 'over';
+  document.getElementById('final-score').textContent = 'スコア ' + score + '（進んだ距離 ' + Math.floor(player.x / 10) + 'm）';
+  document.getElementById('ov-over').classList.remove('hidden');
+}
+function reset(key) {
+  for (const e of enemies) scene.remove(e.u.mesh);
+  for (const o of obstacles) scene.remove(o.mesh);
+  for (const b of bullets) scene.remove(b.mesh);
+  for (const b of ebullets) scene.remove(b.mesh);
+  enemies = []; obstacles = []; bullets = []; ebullets = [];
+  score = 0; nextX = 130; enemyCount = 0;
+  makePlayer(key);
+  state = 'play';
+}
+
+// ---------- 入力 ----------
+const keys = {};
+addEventListener('keydown', e => {
+  if (e.repeat) return;
+  keys[e.code] = true;
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { jumpQueued = true; e.preventDefault(); }
+  if (e.code === 'KeyC') formQueued = true;
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+function bindBtn(id, on, off) {
+  const el = document.getElementById(id);
+  const start = e => { e.preventDefault(); el.classList.add('on'); on(); };
+  const end = e => { e.preventDefault(); el.classList.remove('on'); if (off) off(); };
+  el.addEventListener('pointerdown', start);
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('pointerleave', end);
+}
+bindBtn('btn-left', () => input.left = true, () => input.left = false);
+bindBtn('btn-right', () => input.right = true, () => input.right = false);
+bindBtn('btn-shot', () => input.shoot = true, () => input.shoot = false);
+bindBtn('btn-jump', () => jumpQueued = true);
+bindBtn('btn-form', () => formQueued = true);
+
+const select = document.getElementById('unit-select');
+for (const m of window.EXTRA_MODELS) {
+  const o = document.createElement('option');
+  o.value = m.key;
+  o.textContent = m.name + '（' + m.formNames.join(' / ') + '）';
+  select.appendChild(o);
+}
+select.value = 'shinkansen';
+document.getElementById('btn-start').addEventListener('click', () => {
+  document.getElementById('ov-start').classList.add('hidden');
+  reset(select.value);
+});
+document.getElementById('btn-retry').addEventListener('click', () => {
+  document.getElementById('ov-over').classList.add('hidden');
+  reset(select.value);
+});
+document.getElementById('load-status').textContent = 'モデル' + window.EXTRA_MODELS.length + '件を読み込みました';
+makePlayer('shinkansen');
+
+// ---------- メインループ ----------
+const clock = new THREE.Clock();
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (player) {
+    const u = player.u, entry = player.entry;
+    if (state === 'play') {
+      const robot = isRobotForm(entry, u.targetForm);
+      const speed = robot ? 17 : 27;
+      let move = 0;
+      if (keys['ArrowLeft'] || keys['KeyA'] || input.left) move -= 1;
+      if (keys['ArrowRight'] || keys['KeyD'] || input.right) move += 1;
+      const vx = move * speed + (move === 0 ? speed * 0.55 : 0); // 基本は右へ進み、入力で加減速
+      player.x += vx * dt;
+      if (jumpQueued && player.grounded) { player.vy = 36; player.grounded = false; }
+      jumpQueued = false;
+      player.vy -= 85 * dt;
+      player.y += player.vy * dt;
+      if (player.y <= 0) { player.y = 0; player.vy = 0; player.grounded = true; }
+      if (formQueued) {
+        u.targetForm = (u.targetForm + 1) % entry.forms.length;
+        formQueued = false;
+      }
+      player.shootCd -= dt;
+      if ((keys['KeyX'] || input.shoot) && robot && player.shootCd <= 0) {
+        shootBullet(player.x + formW(entry, u.targetForm) * 0.5 + 2, player.y + formH(entry, u.targetForm) * 0.62, 95, 0, false);
+        player.shootCd = 0.16;
+      }
+      player.invulnT = Math.max(0, player.invulnT - dt);
+      spawnAhead();
+    }
+    const moving = state === 'play';
+    updateUnit(u, dt, isRobotForm(entry, u.targetForm) && moving && player.grounded ? 'run' : (isRobotForm(entry, u.targetForm) ? null : null));
+    u.mesh.position.set(player.x, player.y + u.baseY + u.bobY, 0);
+    u.mesh.visible = !(player.invulnT > 0 && Math.floor(player.invulnT * 12) % 2 === 0);
+    document.getElementById('form-name').textContent = entry.formNames[u.targetForm];
+    // 敵
+    for (const e of enemies) {
+      const eu = e.u;
+      if (e.state === 'dormant' && player.x > e.x - 62) {
+        e.state = 'morph';
+        eu.targetForm = e.robotIdx;
+      }
+      if (e.state === 'morph' && eu.form === e.robotIdx && eu.t >= 1) e.state = 'active';
+      if (e.state === 'active') {
+        e.x += Math.sign(player.x - e.x) * (e.big ? 2.1 : 3.4) * dt * (Math.abs(player.x - e.x) > 16 ? 1 : 0);
+        e.shootT -= dt;
+        if (e.shootT <= 0 && Math.abs(player.x - e.x) < 135) {
+          const ey = formH(e.entry, e.robotIdx) * e.scale * 0.62;
+          const py = player.y + formH(entry, u.targetForm) * 0.5;
+          const dx = player.x - e.x, dy = py - ey;
+          const len = Math.hypot(dx, dy) || 1;
+          shootBullet(e.x, ey, dx / len * 30, dy / len * 30, true);
+          e.shootT = e.big ? 1.6 : 2.4;
+        }
+      }
+      if (e.state === 'dying') {
+        e.dieT -= dt;
+        eu.mesh.scale.setScalar(Math.max(0.01, e.scale * e.dieT / 0.3));
+        if (e.dieT <= 0) { scene.remove(eu.mesh); e.state = 'gone'; }
+      }
+      updateUnit(eu, dt, e.state === 'active' ? 'walk' : null);
+      eu.mesh.position.set(e.x, eu.baseY * e.scale + eu.bobY * e.scale, 0);
+      if (e.state !== 'gone' && e.state !== 'dying' && state === 'play') {
+        const pw = formW(entry, u.targetForm) * 0.36, ph = formH(entry, u.targetForm);
+        const ew = formW(e.entry, eu.targetForm) * 0.36 * e.scale, eh = formH(e.entry, eu.targetForm) * e.scale;
+        if (Math.abs(player.x - e.x) < pw + ew && player.y < eh && player.y + ph > 0) {
+          if (isRobotForm(entry, u.targetForm)) {
+            damagePlayer();
+            if (player.invulnT > 0.9) player.x -= 6;
+          } else {
+            e.ramT -= dt;
+            if (e.ramT <= 0) {
+              e.hp -= 3;
+              e.ramT = 0.35;
+              if (e.hp <= 0) { e.state = 'dying'; e.dieT = 0.3; score += e.big ? 500 : 150; }
+            }
+          }
+        }
+      }
+    }
+    enemies = enemies.filter(e => e.state !== 'gone' && e.x > player.x - 120);
+    // 障害物
+    for (const o of obstacles) {
+      if (o.x < player.x - 120) { scene.remove(o.mesh); o.gone = true; continue; }
+      if (state !== 'play' || o.hit) continue;
+      const pw = formW(entry, u.targetForm) * 0.36, ph = formH(entry, u.targetForm);
+      if (o.kind === 'block' && Math.abs(player.x - o.x) < pw + o.w / 2 && player.y < o.h) {
+        o.hit = true;
+        damagePlayer();
+      }
+      if (o.kind === 'gate' && Math.abs(player.x - o.x) < pw + o.w && ph > o.clearance) {
+        o.hit = true;
+        damagePlayer();
+      }
+    }
+    obstacles = obstacles.filter(o => !o.gone);
+    // 弾
+    for (const b of bullets) {
+      b.mesh.position.x += b.vx * dt;
+      b.mesh.position.y += b.vy * dt;
+      if (b.mesh.position.x > player.x + 240) { scene.remove(b.mesh); b.gone = true; continue; }
+      for (const e of enemies) {
+        if (e.state === 'gone' || e.state === 'dying') continue;
+        const ew = formW(e.entry, e.u.targetForm) * 0.4 * e.scale, eh = formH(e.entry, e.u.targetForm) * e.scale;
+        if (Math.abs(b.mesh.position.x - e.x) < ew && b.mesh.position.y < eh) {
+          e.hp -= 1;
+          b.gone = true;
+          scene.remove(b.mesh);
+          if (e.hp <= 0) { e.state = 'dying'; e.dieT = 0.3; score += e.big ? 500 : 150; }
+          break;
+        }
+      }
+    }
+    bullets = bullets.filter(b => !b.gone);
+    for (const b of ebullets) {
+      b.mesh.position.x += b.vx * dt;
+      b.mesh.position.y += b.vy * dt;
+      const pw = formW(entry, u.targetForm) * 0.36, ph = formH(entry, u.targetForm);
+      if (Math.abs(b.mesh.position.x - player.x) < pw + 0.9 && b.mesh.position.y > player.y && b.mesh.position.y < player.y + ph) {
+        scene.remove(b.mesh); b.gone = true;
+        damagePlayer();
+        continue;
+      }
+      if (Math.abs(b.mesh.position.x - player.x) > 200 || b.mesh.position.y < -4) { scene.remove(b.mesh); b.gone = true; }
+    }
+    ebullets = ebullets.filter(b => !b.gone);
+    // スコア表示（距離＋撃破）
+    const distScore = Math.floor(Math.max(0, player.x) / 10);
+    document.getElementById('score').textContent = score + distScore;
+    document.getElementById('hp').textContent = '♥'.repeat(Math.max(0, player.hp)) + '♡'.repeat(Math.max(0, 5 - player.hp));
+    // カメラと地面
+    shakeT = Math.max(0, shakeT - dt);
+    const shx = shakeT > 0 ? (Math.random() - 0.5) * 2.2 : 0;
+    const shy = shakeT > 0 ? (Math.random() - 0.5) * 2.2 : 0;
+    camera.position.set(player.x - 16 + shx, 21 + shy, 56);
+    camera.lookAt(player.x + 12, 11, 0);
+    grid.position.x = Math.floor(player.x / 5) * 5;
+    groundPlane.position.x = player.x;
+    for (const p of pillars) {
+      if (p.position.x < player.x - 90) {
+        p.position.x += 520 + Math.random() * 60;
+        p.scale.y = 10 + Math.random() * 38;
+        p.position.y = p.scale.y / 2;
+      }
+    }
+  }
+  renderer.render(scene, camera);
+  if (!window.__gameReady) { window.__gameReady = true; }
+}
+tick();
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
