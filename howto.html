@@ -44,7 +44,7 @@
 <body>
 <header>
   <h1>変形ボクセルの作り方</h1>
-  <p class="sub"><a href="index.html">変形ボクセルモデル集</a> / <a href="warlords.html">武将ロボシリーズ</a> のモデルが、どうやって作られているかの手順書です。同じ方法で、自分の変形ボクセルを作れます。</p>
+  <p class="sub"><a href="index.html">変形ボクセルモデル集</a>のモデルが、どうやって作られているかの手順書です。シリーズ別のページに、<a href="warlords.html">武将ロボ</a>、<a href="maids.html">十二支メイドロボ</a>、<a href="classics.html">西遊記／封神演義ロボ</a>、<a href="sangokushi.html">三国志ロボ</a>があります。同じ方法で、自分の変形ボクセルを作れます。</p>
 </header>
 <main>
   <h2>全体の流れ</h2>
@@ -222,7 +222,7 @@ if __name__ == &#x27;__main__&#x27;:
   <p>モデルは「.vox のデータ」と「Markdown の定義ファイル（specs/ に1モデル1ファイル）」の組になっています。定義には形態の名前、ロボットかどうか、アニメーションの型を書きます。変換器（build_models.py）で models-extra.js にすると、Voxel Valkyrie のようなゲーム側はそれを読み込むだけで、モデルとアニメーションが使えます。書式の詳細は <a href="https://github.com/oosawak/voxel-transformers/blob/main/MODEL-SPEC.md" style="color:#7cc4ff">MODEL-SPEC.md</a> を参照してください。</p>
 
   <h2>完成例を読みたいとき</h2>
-  <p><a href="index.html">モデル集</a>と<a href="warlords.html">武将ロボシリーズ</a>の各カードから、そのモデルの生成スクリプト（.py）と .vox がダウンロードできます。大きいモデルの作り方は、実物を読むのがいちばん早いです。</p>
+  <p><a href="index.html">モデル集</a>と各シリーズのページ（<a href="warlords.html">武将ロボ</a>、<a href="maids.html">十二支メイドロボ</a>、<a href="classics.html">西遊記／封神演義ロボ</a>、<a href="sangokushi.html">三国志ロボ</a>）の各カードから、そのモデルの生成スクリプト（.py）と .vox がダウンロードできます。大きいモデルの作り方は、実物を読むのがいちばん早いです。</p>
   <p>このサイトのモデルとスクリプトは MIT ライセンス（Lyre3 Games）で公開しています。自分の作品への利用もできます。</p>
 </main>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script>
