@@ -29,7 +29,7 @@
 <body>
 <header>
   <h1>ボクセル伸縮実験 ― 赤い子竜</h1>
-  <p class="lead">データは正立方体のボクセルのまま一切変えず、<strong>表示のときだけ箱の大きさを軸ごとに変える</strong>実験です。縦を薄くすると薄い板を積んだスプライトスタックの見た目に近づき、横や奥行きも独立に伸ばしたり縮めたりできます。ドラッグで回せます。</p>
+  <p class="lead">データは正立方体のボクセルのまま一切変えず、<strong>表示のときだけ箱の大きさを軸ごとに変える</strong>実験です。縦を薄くすると薄い板を積んだスプライトスタックの見た目に近づき、横や奥行きも独立に伸ばしたり縮めたりできます。ドラッグで回せます。翼のはばたきに加えて、口が開いて火を吐くアニメーションも入っています（ボタンで止められます）。伸縮と組み合わせると、平たく潰しても翼がはばたき、火も吐く、といった表示もできます。</p>
   <p class="lead"><a href="index.html">← ギャラリーへ戻る</a></p>
 </header>
 <div class="wrap">
@@ -37,6 +37,7 @@
     <span>モデル:</span>
     <button id="m-small" class="on">赤い子竜（テスト1）</button>
     <button id="m-big">赤い子竜（大）（テスト2）</button>
+    <button id="anim-toggle" class="on">アニメ: オン</button>
   </div>
   <canvas id="viewer-canvas"></canvas>
   <div class="panel">
@@ -79,6 +80,7 @@
     <p class="note" style="margin-top:0">造形テスト1（2026-11-22）: 格子 84×94×98、表面 18,464 個、生成 約7秒。チビキャラ造形（頭が全体の4割）が問題なく出て、WebGL 表示も余裕でした。</p>
     <p class="note">造形テスト2・128版（2026-11-22）: 格子 124×124×128、シェル 46,530 個、表面 43,771 個、生成 1.45 秒、.vox 187,216 bytes。テスト1と同じデザインを大きくして、さらに滑らかになりました。当初計画の格子1024版は、指示書の改訂前に生成が始まったため未実施で、改めて実施予定です。</p>
     <p class="note">伸縮の所見: 縦 0.12 で板のように薄く、0.25 で平たく、1.5〜2.0 で背高になります。横・奥行きも同じ仕組みで、データは一切変えていません。</p>
+    <p class="note">アニメーション追加（2026-11-22）: ギャラリーの竜で使っている「はばたき」をこのページにも入れました。上半分で左右に張り出したボクセルを翼とみなし、付け根を軸に上下に回します。はばたきは表示の計算の中で伸縮より先に効くので、潰したり伸ばしたりした姿のままで翼が動きます。あわせて口と火も入れました。下あごは頭の前面・中央の下の帯をあごとみなして軸で回し、火は口の位置から吹き出す小さな箱の粒子です。約5秒周期で、口が開く→火を吐く→閉じる、を繰り返します。</p>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -125,6 +127,12 @@
   }
 
   let surface = [], H = 0, mesh = null;
+  let parts = [], jaw = [], mouth = null, animOn = new URLSearchParams(location.search).get('anim') !== '0';
+  // 火の粒子（口の開閉と連動して吹き出す）
+  const FIRE_N = 150, FIRE_LIFE = 0.55;
+  const fireSeeds = [];
+  for (let i = 0; i < FIRE_N; i++) fireSeeds.push({ u: Math.random(), ang: Math.random() * Math.PI * 2, rad: Math.sqrt(Math.random()), wob: Math.random() * Math.PI * 2 });
+  let fireMesh = null;
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -135,6 +143,15 @@
   const dir = new THREE.DirectionalLight(0xfff5e6, 0.95); dir.position.set(60, 120, 70); scene.add(dir);
   const rim = new THREE.DirectionalLight(0x4da6ff, 0.45); rim.position.set(-70, 30, -80); scene.add(rim);
   const grid = new THREE.GridHelper(260, 52, 0x3b82f6, 0x1e293b); scene.add(grid);
+  fireMesh = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1.7, 1.7, 1.7),
+    new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    FIRE_N
+  );
+  fireMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  fireMesh.visible = false;
+  fireMesh.frustumCulled = false;
+  scene.add(fireMesh);
 
   const dummy = new THREE.Object3D();
   const tmpColor = new THREE.Color();
@@ -144,6 +161,23 @@
     const f = m.forms[0];
     surface = extractSurfaceVoxels(gridFromQuads(f.dims, f.data), m.palette);
     H = f.dims[2];
+    // はばたき用の翼パート判定（ギャラリーの竜と同じ方式: 上半分で左右に張り出したボクセルを翼とみなす）
+    let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, minZ = 1e9, maxZ = -1e9;
+    for (const v of surface) {
+      if (v.x < minX) minX = v.x; if (v.x > maxX) maxX = v.x;
+      if (v.y < minY) minY = v.y; if (v.y > maxY) maxY = v.y;
+      if (v.z < minZ) minZ = v.z; if (v.z > maxZ) maxZ = v.z;
+    }
+    const spanX = maxX - minX, HH = maxY - minY, spanZ = maxZ - minZ;
+    parts = surface.map(v => (v.y > minY + HH * 0.5 && Math.abs(v.x) > spanX * 0.16)
+      ? { side: v.x > 0 ? 1 : -1, cx: (v.x > 0 ? 1 : -1) * spanX * 0.10, cy: minY + HH * 0.52 } : null);
+    // 口（下あご）の判定: 頭の前面・中央・口の線より下の帯をあごとみなす（正面は -Z）
+    mouth = {
+      pivotY: minY + HH * 0.60, pivotZ: minZ + spanZ * 0.30,
+      emitY: minY + HH * 0.565, emitZ: minZ - 1, len: spanZ * 0.95 + 26
+    };
+    jaw = surface.map(v => (v.z < minZ + spanZ * 0.28 && Math.abs(v.x) < spanX * 0.30 &&
+      v.y <= mouth.pivotY && v.y > minY + HH * 0.46) ? true : null);
     if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); }
     mesh = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.96, 0.96, 0.96),
@@ -169,10 +203,70 @@
   const vals = { x: document.getElementById('sx-val'), y: document.getElementById('sy-val'), z: document.getElementById('sz-val') };
   sliders.x.value = S.x; sliders.y.value = S.y; sliders.z.value = S.z;
 
+  function smooth01(u) { return u * u * (3 - 2 * u); }
+  // 約5.2秒周期: 静止 → 口が開く → 開いたまま（火を吐く） → 閉じる
+  function openAmount(t) {
+    const c = t % 5.2;
+    if (c < 0.3) return 0;
+    if (c < 0.8) return smooth01((c - 0.3) / 0.5);
+    if (c < 2.2) return 1;
+    if (c < 2.7) return 1 - smooth01((c - 2.2) / 0.5);
+    return 0;
+  }
+  const fireColor = new THREE.Color(), fireC1 = new THREE.Color(0xfff3b0), fireC2 = new THREE.Color(0xff7b1c), fireC3 = new THREE.Color(0xc22418);
+  function updateFire(nowS) {
+    if (!fireMesh) return;
+    const c = nowS % 5.2;
+    const bursting = animOn && mouth && c >= 0.7 && c <= 2.3;
+    fireMesh.visible = !!bursting;
+    if (!bursting) return;
+    const bt = c - 0.7;
+    const avgS = (S.x + S.y + S.z) / 3;
+    for (let i = 0; i < FIRE_N; i++) {
+      const sd = fireSeeds[i];
+      const age = (bt / FIRE_LIFE + sd.u) % 1;
+      const dist = age * mouth.len;
+      const spread = (0.6 + age * 7.5) * sd.rad;
+      const px = Math.cos(sd.ang) * spread + Math.sin(nowS * 31 + sd.wob) * 0.7 * age;
+      const py = mouth.emitY + Math.sin(sd.ang) * spread * 0.8 + age * age * 9 + Math.cos(nowS * 27 + sd.wob) * 0.5 * age;
+      const pz = mouth.emitZ - dist;
+      const size = Math.max(0.01, (0.7 + age * 2.6) * (1 - age * 0.5)) * avgS;
+      dummy.position.set(px * S.x, (py + H / 2) * S.y, pz * S.z);
+      dummy.scale.set(size, size, size);
+      dummy.rotation.set(nowS * 3 + sd.wob, sd.wob, 0);
+      dummy.updateMatrix();
+      fireMesh.setMatrixAt(i, dummy.matrix);
+      if (age < 0.35) fireColor.copy(fireC1).lerp(fireC2, age / 0.35);
+      else fireColor.copy(fireC2).lerp(fireC3, (age - 0.35) / 0.65);
+      fireMesh.setColorAt(i, fireColor);
+    }
+    fireMesh.instanceMatrix.needsUpdate = true;
+    if (fireMesh.instanceColor) fireMesh.instanceColor.needsUpdate = true;
+  }
+
   function applyScales() {
+    const nowS = performance.now() / 1000;
+    const ph = nowS * 7.0;
+    const open = animOn ? openAmount(nowS) : 0;
     for (let i = 0; i < surface.length; i++) {
       const v = surface[i];
-      dummy.position.set(v.x * S.x, (v.y + H / 2) * S.y, v.z * S.z);
+      let vx = v.x, vy = v.y, vz = v.z;
+      const part = parts[i];
+      if (animOn && part) {
+        const a = part.side * Math.sin(ph * 1.5) * 0.5;
+        const c = Math.cos(a), s = Math.sin(a);
+        const dx = vx - part.cx, dy = vy - part.cy;
+        vx = part.cx + dx * c - dy * s;
+        vy = part.cy + dx * s + dy * c;
+      }
+      if (open > 0 && jaw[i] && mouth) {
+        const ang = -open * 0.38;
+        const c2 = Math.cos(ang), s2 = Math.sin(ang);
+        const dy = vy - mouth.pivotY, dz = vz - mouth.pivotZ;
+        vy = mouth.pivotY + dy * c2 - dz * s2;
+        vz = mouth.pivotZ + dy * s2 + dz * c2;
+      }
+      dummy.position.set(vx * S.x, (vy + H / 2) * S.y, vz * S.z);
       dummy.scale.set(S.x, S.y, S.z);
       dummy.rotation.set(0, 0, 0);
       dummy.updateMatrix();
@@ -183,6 +277,7 @@
     infoEl.textContent = '表面 ' + surface.length.toLocaleString() + ' 個 ／ 倍率 横 ' + S.x.toFixed(2) + ' ・ 縦 ' + S.y.toFixed(2) + ' ・ 奥行き ' + S.z.toFixed(2) + ' ／ 表示の高さ 約' + Math.round(H * S.y);
     document.querySelectorAll('.presets button[data-s]').forEach(b =>
       b.classList.toggle('on', Math.abs(parseFloat(b.dataset.s) - S.y) < 0.005));
+    updateFire(nowS);
   }
   const linkEl = document.getElementById('link');
   for (const ax of ['x', 'y', 'z']) {
@@ -219,6 +314,7 @@
     requestAnimationFrame(tick);
     resize();
     if (auto) yaw += 0.004;
+    if (animOn && mesh) applyScales();
     const ms = Math.max(S.x, S.y, S.z, 1);
     const dist = 190 * ms;
     const ty = (H / 2) * S.y * 0.55;
@@ -228,6 +324,10 @@
   }
   document.getElementById('m-small').addEventListener('click', () => loadModel('babydragon'));
   document.getElementById('m-big').addEventListener('click', () => loadModel('babydragon_big'));
+  const animBtn = document.getElementById('anim-toggle');
+  function syncAnimBtn() { animBtn.textContent = animOn ? 'アニメ: オン' : 'アニメ: オフ'; animBtn.classList.toggle('on', animOn); }
+  animBtn.addEventListener('click', () => { animOn = !animOn; syncAnimBtn(); applyScales(); });
+  syncAnimBtn();
   loadModel(new URLSearchParams(location.search).get('unit') === 'babydragon_big' ? 'babydragon_big' : 'babydragon');
   tick();
 })();
