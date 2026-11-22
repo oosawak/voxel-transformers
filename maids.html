@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>武将ロボシリーズ | VOXEL TRANSFORMERS</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px;
+    background: radial-gradient(circle at 50% 30%, #16243d 0%, #090d16 70%);
+    background-color: #0a0e17;
+    color: #dce8ff;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  }
+  header { max-width: 1080px; margin: 0 auto 8px; }
+  h1 { font-size: 26px; letter-spacing: .12em; margin: 8px 0 4px; }
+  .sub { color: #9bb3d8; font-size: 14px; line-height: 1.8; }
+  .sub a { color: #7cc4ff; }
+  .grid {
+    max-width: 1080px; margin: 20px auto 0;
+    display: grid; gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+  .card {
+    background: rgba(12, 18, 30, 0.85);
+    border: 1px solid rgba(100, 160, 255, 0.35);
+    border-radius: 10px; overflow: hidden;
+  }
+  .card img { width: 100%; display: block; }
+  .card .body { padding: 12px 14px 14px; }
+  .card h2 { font-size: 17px; margin: 0 0 4px; }
+  .counts { color: #9bb3d8; font-size: 12.5px; margin-bottom: 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  a.btn, button.btn {
+    display: inline-block; padding: 7px 12px; border-radius: 6px;
+    font-size: 12.5px; font-weight: 600; text-decoration: none;
+    background: rgba(24, 38, 64, 0.9); color: #dce8ff;
+    border: 1px solid rgba(100, 160, 255, 0.4);
+    font-family: inherit; cursor: pointer;
+  }
+  a.btn:hover, button.btn:hover { background: rgba(45, 75, 125, 0.95); }
+  a.btn.main, button.btn.main {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
+    border-color: #93c5fd;
+  }
+  button.btn.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
+    border-color: #93c5fd;
+  }
+  #viewer {
+    max-width: 1080px; margin: 20px auto 0;
+    background: rgba(12, 18, 30, 0.85);
+    border: 1px solid rgba(100, 160, 255, 0.35);
+    border-radius: 10px; overflow: hidden;
+  }
+  .viewer-head {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 12px 14px;
+  }
+  .viewer-head select {
+    font-size: 14px; padding: 7px 10px; border-radius: 6px;
+    background: rgba(24, 38, 64, 0.9); color: #dce8ff;
+    border: 1px solid rgba(100, 160, 255, 0.4); font-family: inherit;
+    max-width: 100%;
+  }
+  #viewer-canvas {
+    width: 100%; height: 440px; display: block;
+    background: #0b1324; touch-action: none; cursor: grab;
+  }
+  @media (max-width: 640px) { #viewer-canvas { height: 320px; } }
+  .viewer-note {
+    padding: 8px 14px 12px; color: #9bb3d8; font-size: 12.5px;
+  }
+  footer {
+    max-width: 1080px; margin: 28px auto 0; color: #7e93b8;
+    font-size: 12.5px; line-height: 1.9;
+  }
+  footer a { color: #7cc4ff; }
+</style>
+</head>
+<body>
+<header>
+  <h1>十二支メイドロボ＋猫</h1>
+  <div class="sub">
+    十二支の動物が、メイド型ロボットに変形するボクセルモデルのシリーズです。十二支12件と、番外の猫1件、全13件を公開しています。どのメイドロボにも白いエプロンとヘッドドレスがあり、その動物の耳や角や尻尾が残っています。<br>
+    変形の様子は、このページのビューアでそのまま見られます。各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。
+    ゲームの中で使う様子は
+    <a href="https://oosawak.github.io/voxel-valkyrie/">Voxel Valkyrie</a>
+    のハンガーで確認できます。<br>
+    乗り物や建物がロボットになるモデル集は
+    <a href="./">変形ボクセルモデル集</a>
+    に、作り方は
+    <a href="howto.html">変形ボクセルの作り方</a>
+    にあります。
+  </div>
+</header>
+
+<section id="viewer">
+  <div class="viewer-head">
+    <select id="unit-select" aria-label="モデルを選ぶ"><option>読み込み中…</option></select>
+    <div class="row" id="form-btns"></div>
+    <div class="row" style="align-items:center">
+      <button class="btn" id="btn-copy-url" type="button">このモデルのURLをコピー</button>
+      <a class="btn" id="btn-game-form" href="#" target="_blank" rel="noopener">この形態でゲームで開く</a>
+      <span id="copy-state" style="color:#9bb3d8; font-size:12.5px"></span>
+    </div>
+    <div class="row">
+      <button class="btn" id="btn-rotate">回転: オン</button>
+      <button class="btn" id="btn-anim">アニメ: なし</button>
+    </div>
+    <div class="row" id="pivot-row" style="align-items:center; color:#9bb3d8; font-size:12.5px">
+      <span>関節の位置（ブロック）:</span>
+      <span>股</span><button class="btn" data-pv="hip" data-d="-1">−</button><button class="btn" data-pv="hip" data-d="1">＋</button>
+      <span>肩</span><button class="btn" data-pv="shoulder" data-d="-1">−</button><button class="btn" data-pv="shoulder" data-d="1">＋</button>
+      <span>肘</span><button class="btn" data-pv="elbow" data-d="-1">−</button><button class="btn" data-pv="elbow" data-d="1">＋</button>
+      <span>腕の幅</span><button class="btn" data-pv="armX" data-d="-1">−</button><button class="btn" data-pv="armX" data-d="1">＋</button>
+      <span id="pivot-state"></span>
+    </div>
+    <div class="row" style="align-items:center; color:#9bb3d8; font-size:12.5px">
+      <span>自分の .vox を見る:</span>
+      <input type="file" id="vox-files" accept=".vox" multiple style="color:#9bb3d8; font-size:12.5px">
+      <span id="vox-state"></span>
+    </div>
+  </div>
+  <canvas id="viewer-canvas"></canvas>
+  <div class="viewer-note">ドラッグで回転できます。カードの「このページで変形を見る」からも、そのモデルがここに開きます。ロボット形態では「アニメ」ボタンで関節アニメ（歩行・構え・敬礼・L字・走行・移動）が、獣形態では型アニメ（うねり・はばたき・四足歩行）が再生でき、「関節の位置」で回転中心を1ブロックずつ調整できます。</div>
+</section>
+
+<div class="grid" id="grid"></div>
+
+<footer>
+  <p>
+    仕組み: モデルは2形態分のボクセルデータの組です。ビューアと Voxel Valkyrie は、同じ
+    <span style="font-family:monospace">models-extra.js</span>
+    のデータを読んで変形を表示しています。変換したデータを足すだけで、ユニットとして追加できます。<br>
+    生成スクリプト（.py）は各カードからダウンロードできます。戦闘機の見本は
+    <a href="https://oosawak.github.io/sprite-stack-proto/">スプライトスタック試作</a>の valkyrie.py です。
+  </p>
+</footer>
+
+<script>
+const VV = 'https://oosawak.github.io/voxel-valkyrie/';
+const MODELS = [
+  { key: 'nezumi', title: 'ねずみ → メイドロボ', forms: [['ねずみ', 1231, 'a'], ['メイドロボ', 1947, 'b']], note: '丸耳と長い尾。小柄で素早いメイドロボは羽根はたき持ち' },
+  { key: 'ushi', title: 'うし → メイドロボ', forms: [['うし', 1680, 'a'], ['メイドロボ', 2640, 'b']], note: 'ホルスタインの牛。大柄で、鈴付きリボンとミルク差しのメイドロボに' },
+  { key: 'tora', title: 'とら → メイドロボ', forms: [['とら', 1338, 'a'], ['メイドロボ', 2432, 'b']], note: '縞模様の虎。メイドロボでは縞ニーソと箒が目印' },
+  { key: 'usagi', title: 'うさぎ → メイドロボ', forms: [['うさぎ', 1504, 'a'], ['メイドロボ', 2290, 'b']], note: '白うさぎ。長い耳がヘッドドレスになり、懐中時計を持つ' },
+  { key: 'ryu', title: 'りゅう → メイドロボ', forms: [['りゅう', 1817, 'a'], ['メイドロボ', 2829, 'b']], note: '金と翡翠色の翼竜。角と翼と長い尾を残した竜娘メイドロボに' },
+  { key: 'hebi', title: 'へび → メイドロボ', forms: [['へび', 1459, 'a'], ['メイドロボ', 2673, 'b']], note: 'まだら模様のとぐろ蛇。下半身が蛇尾スカートのメイドロボに' },
+  { key: 'uma', title: 'うま → メイドロボ', forms: [['うま', 1481, 'a'], ['メイドロボ', 2526, 'b']], note: '栗毛の馬。細長い脚は乗馬ブーツに、たてがみは尾に' },
+  { key: 'hitsuji', title: 'ひつじ → メイドロボ', forms: [['ひつじ', 1409, 'a'], ['メイドロボ', 2451, 'b']], note: 'もこもこの羊。巻き小角ともこもこの袖のメイドロボに' },
+  { key: 'saru', title: 'さる → メイドロボ', forms: [['さる', 1471, 'a'], ['メイドロボ', 2377, 'b']], note: '元気な猿。長腕ではたきを振り上げるメイドロボに' },
+  { key: 'tori', title: 'とり → メイドロボ', forms: [['とり', 1313, 'a'], ['メイドロボ', 2498, 'b']], note: '鶏。赤い鶏冠がヘッドドレスに、尾羽が後ろの飾りに' },
+  { key: 'inu', title: 'いぬ → メイドロボ', forms: [['いぬ', 1365, 'a'], ['メイドロボ', 2199, 'b']], note: '柴犬。三角耳と巻き尾と赤い首輪を残したメイドロボに' },
+  { key: 'inoshishi', title: 'いのしし → メイドロボ', forms: [['いのしし', 1701, 'a'], ['メイドロボ', 2920, 'b']], note: 'がっしりした猪。牙の意匠を肩と襟に付けたメイドロボに' },
+  { key: 'neko', title: 'ねこ → メイドロボ', forms: [['ねこ', 1446, 'a'], ['メイドロボ', 2765, 'b']], note: '番外。タキシード黒猫から、銀トレイとティーカップを持つ黒白メイドロボに。このシリーズの顔' }
+];
+document.getElementById('grid').innerHTML = MODELS.map(m => `
+  <div class="card">
+    <img src="models/preview_${m.key}.png" alt="${m.title}の変形プレビュー">
+    <div class="body">
+      <h2>${m.title}</h2>
+      <div class="counts">ボクセル数 ${m.forms.map(f => f[1].toLocaleString()).join(' → ')} ／ ${m.note}</div>
+      <div class="row">
+        <button class="btn main" onclick="showInViewer('${m.key}')">このページで変形を見る</button>
+        <a class="btn" href="${VV}?unit=${m.key}">ゲームで開く</a>
+        <a class="btn" href="./warlords.html?unit=${m.key}" target="_blank" rel="noopener">このモデルのURL</a>
+      </div>
+      <div class="row" style="margin-top:8px">
+        ${m.forms.map(f => `<a class="btn" href="models/${m.key}_${f[2]}.vox" download>${f[0]}.vox</a>`).join('')}
+        <a class="btn" href="models/${m.key}.py" download>生成スクリプト.py</a>
+      </div>
+    </div>
+  </div>`).join('');
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://oosawak.github.io/voxel-valkyrie/models-extra.js"></script>
+<script>
+// =========================================================
+// ページ内ビューア: Voxel Valkyrie と同じ models-extra.js を読み、
+// 同じ方式（表面ボクセルの位置を補間）で変形を表示する。
+// =========================================================
+(function () {
+  const select = document.getElementById('unit-select');
+  const formBtns = document.getElementById('form-btns');
+  const canvas = document.getElementById('viewer-canvas');
+  if (!window.THREE || !window.EXTRA_MODELS) {
+    select.innerHTML = '<option>ビューアを読み込めませんでした</option>';
+    return;
+  }
+
+  // --- .vox 由来データの展開（Voxel Valkyrie と同じ手順） ---
+  function createGrid(X, Y, Z) {
+    return { X, Y, Z, data: new Uint8Array(X * Y * Z) };
+  }
+  function setVoxel(g, x, y, z, c) {
+    if (x < 0 || y < 0 || z < 0 || x >= g.X || y >= g.Y || z >= g.Z) return;
+    g.data[x + g.X * (y + g.Y * z)] = c;
+  }
+  function getVoxel(g, x, y, z) {
+    if (x < 0 || y < 0 || z < 0 || x >= g.X || y >= g.Y || z >= g.Z) return 0;
+    return g.data[x + g.X * (y + g.Y * z)];
+  }
+  function gridFromQuads(dims, dataB64) {
+    const g = createGrid(dims[0], dims[1], dims[2]);
+    const bin = atob(dataB64);
+    for (let i = 0; i + 3 < bin.length; i += 4) {
+      setVoxel(g, bin.charCodeAt(i), bin.charCodeAt(i + 1), bin.charCodeAt(i + 2), bin.charCodeAt(i + 3));
+    }
+    return g;
+  }
+  function extractSurfaceVoxels(grid, palette) {
+    const list = [];
+    for (let x = 0; x < grid.X; x++) {
+      for (let y = 0; y < grid.Y; y++) {
+        for (let z = 0; z < grid.Z; z++) {
+          const c = getVoxel(grid, x, y, z);
+          if (!c) continue;
+          if (getVoxel(grid, x - 1, y, z) && getVoxel(grid, x + 1, y, z) &&
+              getVoxel(grid, x, y - 1, z) && getVoxel(grid, x, y + 1, z) &&
+              getVoxel(grid, x, y, z - 1) && getVoxel(grid, x, y, z + 1)) continue;
+          list.push({
+            x: x - grid.X / 2 + 0.5,
+            y: z - grid.Z / 2 + 0.5,
+            z: -(y - grid.Y / 2 + 0.5),
+            color: palette[c]
+          });
+        }
+      }
+    }
+    return list;
+  }
+
+  const PAGE_KEYS = ['nezumi','ushi','tora','usagi','ryu','hebi','uma','hitsuji','saru','tori','inu','inoshishi','neko'];
+  const ALL_MODELS = window.EXTRA_MODELS.filter(m => PAGE_KEYS.includes(m.key));
+  const MODELS = ALL_MODELS;
+  const SURFACES = {};
+  for (const m of MODELS) {
+    SURFACES[m.key] = m.forms.map(f => extractSurfaceVoxels(gridFromQuads(f.dims, f.data), m.palette));
+  }
+
+  // --- 関節アニメ: ロボット形態のボクセルを位置から脚・腕・前腕に分ける ---
+  function computeParts(list, pivot) {
+    let minY = 1e9, maxY = -1e9, minX = 1e9, maxX = -1e9;
+    for (const v of list) {
+      if (v.y < minY) minY = v.y;
+      if (v.y > maxY) maxY = v.y;
+      if (v.x < minX) minX = v.x;
+      if (v.x > maxX) maxX = v.x;
+    }
+    const H = maxY - minY, W = maxX - minX;
+    const pv = pivot || {};
+    const hipY = minY + H * 0.40 + (pv.hip || 0);
+    const shoulderY = minY + H * 0.80 + (pv.shoulder || 0);
+    const elbowY = minY + H * 0.58 + (pv.elbow || 0);
+    const armX = W * 0.30 + (pv.armX || 0);
+    return list.map(v => {
+      if (v.y < hipY) return { part: v.x < 0 ? 'legL' : 'legR', py: hipY };
+      if (Math.abs(v.x) > armX && v.y < shoulderY) {
+        const side = v.x < 0 ? 'L' : 'R';
+        if (v.y >= elbowY) return { part: 'arm' + side, py: shoulderY };
+        return { part: 'fore' + side, py: shoulderY, ey: elbowY };
+      }
+      return null;
+    });
+  }
+  const PARTS = {};
+  const PIVOT_OFF = {};
+  function buildParts(key) {
+    const m = MODELS.find(e => e.key === key);
+    const base = m.pivot || {}, off = PIVOT_OFF[key] || {};
+    const pv = {
+      hip: (base.hip || 0) + (off.hip || 0),
+      shoulder: (base.shoulder || 0) + (off.shoulder || 0),
+      elbow: (base.elbow || 0) + (off.elbow || 0),
+      armX: (base.armX || 0) + (off.armX || 0)
+    };
+    PARTS[key] = m.forms.map((f, i) => (m.robotForms || [1]).includes(i) ? computeParts(SURFACES[key][i], pv) : null);
+    const st = document.getElementById('pivot-state');
+    if (st && key === unitKey) {
+      const fmt = n => (n >= 0 ? '+' : '') + n;
+      st.textContent = `股${fmt(pv.hip)} 肩${fmt(pv.shoulder)} 肘${fmt(pv.elbow)} 幅${fmt(pv.armX)}`;
+    }
+  }
+
+  let animMode = 0, animW = 0;
+  const ANIM_LABELS = ['アニメ: なし', 'アニメ: 歩行', 'アニメ: 構え', 'アニメ: 敬礼', 'アニメ: L字', 'アニメ: 走行', 'アニメ: 移動'];
+  function rotXAround(y, z, py, pz, ang) {
+    const c = Math.cos(ang), s = Math.sin(ang);
+    const dy = y - py, dz = z - pz;
+    return [py + dy * c - dz * s, pz + dy * s + dz * c];
+  }
+  function posePoint(p, part, w, ph) {
+    let y = p.y, z = p.z;
+    if (part.part === 'legL' || part.part === 'legR') {
+      if (animMode !== 1 && animMode !== 5 && animMode !== 6) return p;
+      const ang = (part.part === 'legL' ? Math.sin(ph) : -Math.sin(ph)) * (animMode === 5 ? 0.62 : 0.45) * w;
+      [y, z] = rotXAround(y, z, part.py, 0, ang);
+      return { x: p.x, y, z };
+    }
+    const side = part.part.endsWith('L') ? 1 : -1;
+    let swing = 0;
+    if (animMode === 1 || animMode === 5 || animMode === 6) swing = -side * Math.sin(ph) * (animMode === 5 ? 0.42 : 0.30) * w;
+    else if (animMode === 2) swing = 1.35 * w;
+    else if (animMode === 3) swing = side < 0 ? 1.35 * w : 0;
+    else if (animMode === 4) swing = 0.12 * w;
+    [y, z] = rotXAround(y, z, part.py, 0, swing);
+    if (part.part.startsWith('fore')) {
+      let bend = 0;
+      if (animMode === 1 || animMode === 5 || animMode === 6) bend = ((animMode === 5 ? 0.85 : 0.55) + 0.15 * side * Math.sin(ph)) * w;
+      else if (animMode === 2) bend = 0.10 * w;
+      else if (animMode === 3) bend = side < 0 ? 2.30 * w : 0;
+      else if (animMode === 4) bend = 1.5 * w;
+      let ey = part.ey, ez = 0;
+      [ey, ez] = rotXAround(ey, ez, part.py, 0, swing);
+      [y, z] = rotXAround(y, z, ey, ez, bend);
+    }
+    return { x: p.x, y, z };
+  }
+
+
+
+  // --- 獣形態の型アニメ（うねり・はばたき・四足歩行） ---
+  const BEAST = {};
+  const BEAST_LABELS = { wave: 'アニメ: うねり', flap: 'アニメ: はばたき', quad_cat: 'アニメ: 四足歩行', quad_monkey: 'アニメ: サルの歩行', quad_deer: 'アニメ: 四足歩行', quad_small: 'アニメ: 四足歩行' };
+  const QUAD_PARAMS = {
+    quad_cat: { spd: 0.6, amp: 0.50, front: 1.0, roll: 0.02, bob: 0.15 },
+    quad_monkey: { spd: 1.0, amp: 0.38, front: 1.7, roll: 0.07, bob: 0.2, pitch: 0.06, hindAmp: 1.35 },
+    quad_deer: { spd: 1.35, amp: 0.34, front: 1.0, roll: 0, bob: 0.5 },
+    quad_small: { spd: 1.2, amp: 0.38, front: 1.0, roll: 0.03, bob: 0.2 }
+  };
+  function buildBeast(key) {
+    const m = MODELS.find(e => e.key === key);
+    BEAST[key] = m.forms.map((f, i) => {
+      const type = m.formAnim ? m.formAnim[i] : null;
+      if (!type) return null;
+      const list = SURFACES[key][i];
+      let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, minZ = 1e9, maxZ = -1e9;
+      for (const v of list) {
+        if (v.x < minX) minX = v.x; if (v.x > maxX) maxX = v.x;
+        if (v.y < minY) minY = v.y; if (v.y > maxY) maxY = v.y;
+        if (v.z < minZ) minZ = v.z; if (v.z > maxZ) maxZ = v.z;
+      }
+      const H = maxY - minY, spanX = maxX - minX, spanZ = maxZ - minZ;
+      let parts = null;
+      if (type === 'flap') {
+        parts = list.map(v => (v.y > minY + H * 0.5 && Math.abs(v.x) > spanX * 0.16)
+          ? { side: v.x > 0 ? 1 : -1, cx: (v.x > 0 ? 1 : -1) * spanX * 0.10, cy: minY + H * 0.52 } : null);
+      } else if (type.startsWith('quad')) {
+        const py = minY + H * 0.38;
+        const midZ = (minZ + maxZ) / 2;
+        parts = list.map(v => {
+          if (v.y >= py) return null;
+          const front = v.z < midZ;
+          // サル型は前足が左右交互、後ろ足はそろえて蹴る。それ以外は対角ペア
+          const phase = type === 'quad_monkey'
+            ? (front ? (v.x < 0 ? 0 : Math.PI) : 0.8)
+            : (((v.x < 0) !== (v.z < 0)) ? 0 : Math.PI);
+          return { py, phase, front };
+        });
+      }
+      return { type, parts, minX, maxX, minY, maxY, minZ, maxZ, spanX, spanZ, H };
+    });
+  }
+  function animKind() {
+    const m = MODELS.find(e => e.key === unitKey);
+    if (!m) return null;
+    if ((m.robotForms || [1]).includes(targetForm)) return 'robot';
+    const b = BEAST[unitKey] && BEAST[unitKey][targetForm];
+    return b ? b.type : null;
+  }
+  function beastPoint(p, b, part, w, ph) {
+    if (b.type === 'wave') {
+      if (b.spanZ >= b.spanX) {
+        const nz = (p.z - b.minZ) / (b.spanZ || 1);
+        return { x: p.x + Math.sin(ph * 1.4 - p.z * 0.32) * 1.0 * w * (0.55 + 0.45 * nz), y: p.y + Math.cos(ph * 1.4 - p.z * 0.32) * 0.22 * w, z: p.z };
+      }
+      const nx = (p.x - b.minX) / (b.spanX || 1);
+      return { x: p.x, y: p.y + Math.cos(ph * 1.4 - p.x * 0.32) * 0.22 * w, z: p.z + Math.sin(ph * 1.4 - p.x * 0.32) * 1.0 * w * (0.55 + 0.45 * nx) };
+    }
+    if (b.type.startsWith('quad')) {
+      // 下の quad 処理へ（part が無いボクセルにも体の揺れを付ける）
+    } else if (!part) return p;
+    if (b.type === 'flap') {
+      const a = part.side * Math.sin(ph * 1.5) * 0.5 * w;
+      const c = Math.cos(a), s = Math.sin(a);
+      const dx = p.x - part.cx, dy = p.y - part.cy;
+      return { x: part.cx + dx * c - dy * s, y: part.cy + dx * s + dy * c, z: p.z };
+    }
+    const P = QUAD_PARAMS[b.type] || QUAD_PARAMS.quad_cat;
+    const qph = ph * P.spd;
+    let x = p.x, y = p.y + Math.abs(Math.sin(qph)) * P.bob * w, z = p.z;
+    if (P.roll) {
+      const a = Math.sin(qph) * P.roll * w;
+      const c = Math.cos(a), sn = Math.sin(a);
+      const cy = b.minY + (b.maxY - b.minY) * 0.45;
+      const dx = x, dy = y - cy;
+      x = dx * c - dy * sn; y = cy + dx * sn + dy * c;
+    }
+    if (P.pitch) {
+      const pa = Math.sin(qph + 0.6) * P.pitch * w;
+      const cy2 = b.minY + b.H * 0.42, cz2 = (b.minZ + b.maxZ) / 2;
+      const [py2, pz2] = rotXAround(y, z, cy2, cz2, pa);
+      y = py2; z = pz2;
+    }
+    if (!part) return { x, y, z };
+    const ang = Math.sin(qph + part.phase) * P.amp * (part.front ? P.front : (P.hindAmp || 1)) * w;
+    const [yy, zz] = rotXAround(y, z, part.py, 0, ang);
+    return { x, y: yy, z: zz };
+  }
+
+  // --- THREE 描画 ---
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1324);
+  const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 2000);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.72));
+  const dir = new THREE.DirectionalLight(0xfff5e6, 0.95);
+  dir.position.set(40, 80, 50);
+  scene.add(dir);
+  const rim = new THREE.DirectionalLight(0x4da6ff, 0.45);
+  rim.position.set(-50, 20, -60);
+  scene.add(rim);
+  const grid = new THREE.GridHelper(160, 32, 0x3b82f6, 0x1e293b);
+  scene.add(grid);
+
+  const MAX_INSTANCES = 11500;
+  const mesh = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.96, 0.96, 0.96),
+    new THREE.MeshLambertMaterial({ color: 0xffffff }),
+    MAX_INSTANCES
+  );
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  const group = new THREE.Group();
+  scene.add(group);
+  group.add(mesh);
+  const dummy = new THREE.Object3D();
+  const tmpColor = new THREE.Color();
+
+  // --- 状態 ---
+  let unitKey = null, currentForm = 0, targetForm = 0, morphT = 1.0;
+  let fromList = [], toList = [], camDist = 60;
+  let yaw = 0.65, pitch = 0.32, autoRotate = true, dragging = false;
+  let scrollZ = 0;
+  let moveX = 0, moveZ = 0, heading = 0;
+
+  function fitCamera(key) {
+    const m = ALL_MODELS.find(e => e.key === key);
+    const d = Math.max(...m.forms[0].dims);
+    camDist = d * 2.1;
+    grid.position.y = -d / 2 - 1;
+  }
+  function syncUrl() {
+    const gb = document.getElementById('btn-game-form');
+    if (!unitKey || unitKey === '__custom') { if (gb) gb.style.display = 'none'; return; }
+    if (gb) {
+      gb.style.display = '';
+      gb.href = 'https://oosawak.github.io/voxel-valkyrie/?unit=' + unitKey + '&form=' + targetForm;
+    }
+    const q = '?unit=' + unitKey + (targetForm ? '&form=' + targetForm : '');
+    history.replaceState(null, '', q);
+  }
+  function loadUnit(key, form) {
+    unitKey = key;
+    currentForm = form; targetForm = form; morphT = 1.0;
+    fromList = SURFACES[key][form];
+    toList = SURFACES[key][form];
+    moveX = 0; moveZ = 0; heading = 0;
+    buildParts(key);
+    buildBeast(key);
+    fitCamera(key);
+    buildFormButtons();
+    syncUrl();
+  }
+  function setForm(idx) {
+    if (!unitKey || idx === targetForm) return;
+    fromList = SURFACES[unitKey][targetForm];
+    toList = SURFACES[unitKey][idx];
+    currentForm = targetForm;
+    targetForm = idx;
+    morphT = 0.0;
+    buildFormButtons();
+    const k2 = animKind();
+    if (k2 && k2 !== 'robot' && animMode > 1) animMode = 1;
+    refreshAnimBtn();
+    syncUrl();
+  }
+  function buildFormButtons() {
+    const m = ALL_MODELS.find(e => e.key === unitKey);
+    formBtns.innerHTML = m.formNames.map((n, i) =>
+      `<button class="btn ${i === targetForm ? 'active' : ''}" data-form="${i}">${n}</button>`).join('');
+    formBtns.querySelectorAll('button').forEach(b =>
+      b.addEventListener('click', () => setForm(Number(b.dataset.form))));
+  }
+
+  select.innerHTML = ALL_MODELS.map(m =>
+    `<option value="${m.key}">${m.name}</option>`).join('');
+  select.addEventListener('change', () => loadUnit(select.value, 0));
+  const _params = new URLSearchParams(location.search);
+  const _wantKey = _params.get('unit');
+  const _wantForm = Math.max(0, parseInt(_params.get('form') || '0', 10) || 0);
+  const _startKey = ALL_MODELS.some(m => m.key === _wantKey) ? _wantKey : ALL_MODELS[0].key;
+  select.value = _startKey;
+  loadUnit(_startKey, 0);
+  if (_wantForm > 0) setTimeout(() => setForm(_wantForm), 500);
+
+  window.showInViewer = function (key) {
+    if (!SURFACES[key]) return;
+    select.value = key;
+    loadUnit(key, 0);
+    document.getElementById('viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => setForm(1), 450);
+  };
+
+  const rotateBtn = document.getElementById('btn-rotate');
+  rotateBtn.addEventListener('click', () => {
+    autoRotate = !autoRotate;
+    rotateBtn.textContent = autoRotate ? '回転: オン' : '回転: オフ';
+    rotateBtn.classList.toggle('active', autoRotate);
+  });
+  rotateBtn.classList.add('active');
+
+
+  // --- 自分の .vox を読み込んでビューアで見る ---
+  function parseVox(buf) {
+    const dv = new DataView(buf);
+    const u8 = new Uint8Array(buf);
+    const tag = o => String.fromCharCode(u8[o], u8[o + 1], u8[o + 2], u8[o + 3]);
+    let dims = null, voxels = [], palette = {};
+    function walk(start, end) {
+      let o = start;
+      while (o + 12 <= end) {
+        const id = tag(o);
+        const n = dv.getInt32(o + 4, true);
+        const children = dv.getInt32(o + 8, true);
+        const content = o + 12;
+        if (id === 'SIZE') {
+          dims = [dv.getInt32(content, true), dv.getInt32(content + 4, true), dv.getInt32(content + 8, true)];
+        } else if (id === 'XYZI') {
+          const cnt = dv.getInt32(content, true);
+          voxels = [];
+          for (let i = 0; i < cnt; i++) {
+            const p = content + 4 + i * 4;
+            voxels.push([u8[p], u8[p + 1], u8[p + 2], u8[p + 3]]);
+          }
+        } else if (id === 'RGBA') {
+          for (let i = 0; i < 256; i++) {
+            const p = content + i * 4;
+            palette[i + 1] = (u8[p] << 16) | (u8[p + 1] << 8) | u8[p + 2];
+          }
+        }
+        if (children > 0) walk(content + n, content + n + children);
+        o = content + n + children;
+      }
+    }
+    walk(8, buf.byteLength);
+    return { dims, voxels, palette };
+  }
+  const voxInput = document.getElementById('vox-files');
+  const voxState = document.getElementById('vox-state');
+  voxInput.addEventListener('change', async () => {
+    const files = [...voxInput.files].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 3);
+    if (!files.length) return;
+    try {
+      const parsed = [];
+      for (const f of files) parsed.push(parseVox(await f.arrayBuffer()));
+      if (parsed.some(p => !p.dims || !p.voxels.length)) throw new Error('bad vox');
+      const key = '__custom';
+      const forms = parsed.map(p => {
+        const quads = new Uint8Array(p.voxels.length * 4);
+        p.voxels.forEach((v, i) => quads.set(v, i * 4));
+        let bin = '';
+        for (let i = 0; i < quads.length; i += 8192) bin += String.fromCharCode(...quads.subarray(i, i + 8192));
+        return { dims: p.dims, data: btoa(bin) };
+      });
+      const names = ['元の姿', 'ロボット', 'もう1つの姿'];
+      const entry = {
+        key, name: '自分のモデル',
+        formNames: names.slice(0, forms.length),
+        robotForms: forms.length > 1 ? [1] : [],
+        palette: parsed[0].palette, forms
+      };
+      const mi = MODELS.findIndex(e => e.key === key);
+      if (mi >= 0) MODELS[mi] = entry; else MODELS.push(entry);
+      SURFACES[key] = forms.map(f => extractSurfaceVoxels(gridFromQuads(f.dims, f.data), entry.palette));
+      let opt = select.querySelector('option[value="__custom"]');
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = key; opt.textContent = '自分のモデル';
+        select.appendChild(opt);
+      }
+      select.value = key;
+      loadUnit(key, 0);
+      const surfMax = Math.max(...SURFACES[key].map(l => l.length));
+      voxState.textContent = surfMax > MAX_INSTANCES
+        ? '読み込みました（大きいモデルなので一部が欠けて表示されます）'
+        : '読み込みました';
+      if (forms.length > 1) setTimeout(() => setForm(1), 450);
+    } catch (e) {
+      voxState.textContent = '読み込めませんでした（.vox 形式か確認してください）';
+    }
+  });
+
+  document.getElementById('btn-copy-url').addEventListener('click', async () => {
+    const st = document.getElementById('copy-state');
+    try {
+      await navigator.clipboard.writeText(location.href);
+      st.textContent = 'コピーしました';
+    } catch (e) {
+      st.textContent = location.href;
+    }
+    setTimeout(() => { st.textContent = ''; }, 2600);
+  });
+  const animBtn = document.getElementById('btn-anim');
+  function refreshAnimBtn() {
+    const kind = animKind();
+    animBtn.textContent = (kind && kind !== 'robot')
+      ? (animMode > 0 ? BEAST_LABELS[kind] : 'アニメ: なし')
+      : ANIM_LABELS[animMode];
+    animBtn.classList.toggle('active', animMode > 0);
+  }
+  animBtn.addEventListener('click', () => {
+    const kind = animKind();
+    if (kind && kind !== 'robot') animMode = animMode > 0 ? 0 : 1;
+    else animMode = (animMode + 1) % ANIM_LABELS.length;
+    refreshAnimBtn();
+  });
+  document.querySelectorAll('#pivot-row button[data-pv]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (!unitKey) return;
+      const off = PIVOT_OFF[unitKey] || (PIVOT_OFF[unitKey] = {});
+      const k = b.dataset.pv;
+      off[k] = Math.max(-8, Math.min(8, (off[k] || 0) + Number(b.dataset.d)));
+      buildParts(unitKey);
+    });
+  });
+
+
+  let lastX = 0, lastY = 0;
+  canvas.addEventListener('pointerdown', e => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    yaw += (e.clientX - lastX) * 0.008;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch + (e.clientY - lastY) * 0.006));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  canvas.addEventListener('pointerup', () => { dragging = false; });
+  canvas.addEventListener('pointercancel', () => { dragging = false; });
+
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (canvas.width !== Math.floor(w * renderer.getPixelRatio()) ||
+        canvas.height !== Math.floor(h * renderer.getPixelRatio())) {
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+  }
+
+  let last = performance.now();
+  function animate(now) {
+    requestAnimationFrame(animate);
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    resize();
+    if (autoRotate && !dragging) yaw += dt * 0.4;
+    if (morphT < 1.0) morphT = Math.min(1.0, morphT + dt * 2.2);
+    const t = morphT * morphT * (3 - 2 * morphT);
+    const count = Math.max(fromList.length, toList.length);
+    const curModel = MODELS.find(e => e.key === unitKey);
+    const isRobot = curModel && (curModel.robotForms || [1]).includes(targetForm);
+    const kindNow = animKind();
+    animW = Math.max(0, Math.min(1, animW + ((animMode > 0 && kindNow) ? dt * 3 : -dt * 3)));
+    const ph = now / 1000 * (animMode === 5 ? 11.5 : 7.0);
+    const bob = (animMode === 1 || animMode === 6) ? Math.abs(Math.sin(ph)) * 0.8 * animW * t : animMode === 5 ? Math.abs(Math.sin(ph)) * 1.3 * animW * t : 0;
+    scrollZ = (scrollZ + dt * 16 * (animMode === 5 ? animW : 0)) % 5;
+    grid.position.z = scrollZ;
+    if (animMode === 6 && isRobot && animW > 0) {
+      const sp = 11 * animW;
+      const distC = Math.hypot(moveX, moveZ);
+      if (distC > 26) {
+        const fx = -moveX / (distC || 1), fz = -moveZ / (distC || 1);
+        const desired = Math.atan2(-fx, -fz);
+        let dh = desired - heading;
+        while (dh > Math.PI) dh -= Math.PI * 2;
+        while (dh < -Math.PI) dh += Math.PI * 2;
+        heading += Math.max(-1.8 * dt, Math.min(1.8 * dt, dh));
+      }
+      moveX += -Math.sin(heading) * sp * dt;
+      moveZ += -Math.cos(heading) * sp * dt;
+    } else {
+      moveX += (0 - moveX) * Math.min(1, dt * 2);
+      moveZ += (0 - moveZ) * Math.min(1, dt * 2);
+      let dh = 0 - heading;
+      while (dh > Math.PI) dh -= Math.PI * 2;
+      while (dh < -Math.PI) dh += Math.PI * 2;
+      heading += dh * Math.min(1, dt * 2);
+    }
+    group.position.set(moveX, 0, moveZ);
+    group.rotation.y = heading;
+    for (let i = 0; i < MAX_INSTANCES; i++) {
+      if (i >= count) {
+        dummy.position.set(0, 0, 0);
+        dummy.scale.set(0, 0, 0);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+        continue;
+      }
+      const a = fromList[i % fromList.length];
+      const b = toList[i % toList.length];
+      const scA = i < fromList.length ? 1 : 0.01;
+      const scB = i < toList.length ? 1 : 0.01;
+      const sc = scA + (scB - scA) * t;
+      let bx = b.x, by = b.y, bz = b.z;
+      if (animW > 0) {
+        if (kindNow === 'robot') {
+          const plist = PARTS[unitKey] ? PARTS[unitKey][targetForm] : null;
+          if (plist) {
+            const part = plist[i % toList.length];
+            if (part) { const pp = posePoint(b, part, animW * t, ph); bx = pp.x; by = pp.y; bz = pp.z; }
+          }
+        } else if (kindNow) {
+          const bb = BEAST[unitKey] ? BEAST[unitKey][targetForm] : null;
+          if (bb) {
+            const part = bb.parts ? bb.parts[i % toList.length] : null;
+            const pp = beastPoint(b, bb, part, animW * t, ph);
+            bx = pp.x; by = pp.y; bz = pp.z;
+          }
+        }
+      }
+      dummy.position.set(
+        a.x + (bx - a.x) * t,
+        a.y + (by - a.y) * t + bob,
+        a.z + (bz - a.z) * t
+      );
+      dummy.scale.set(sc, sc, sc);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      tmpColor.setHex(t < 0.5 ? a.color : b.color);
+      mesh.setColorAt(i, tmpColor);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    camera.position.set(
+      Math.sin(yaw) * Math.cos(pitch) * camDist,
+      Math.sin(pitch) * camDist,
+      Math.cos(yaw) * Math.cos(pitch) * camDist
+    );
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(animate);
+})();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script>
+</body>
+</html>
