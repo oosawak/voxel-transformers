@@ -84,7 +84,7 @@
 <header>
   <h1>三国志ロボ</h1>
   <div class="sub">
-    三国志の武将がロボットに変形するボクセルモデルのシリーズです。第7弾として全30人を予定していて、先にできた5人を公開しています。ゆかりの動物への第3形態も追加予定です。<br>
+    三国志の武将がロボットに変形するボクセルモデルのシリーズです。第7弾として全30人を予定していて、先にできた5人を公開しています。ゆかりの動物への第3形態も追加予定です。一般兵（魏・蜀・呉の歩兵／弓兵／槍兵／騎兵）と、黄巾賊・一揆衆もそろいました。<br>
     変形の様子は、このページのビューアでそのまま見られます。各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。
     ゲームの中で使う様子は
     <a href="https://oosawak.github.io/voxel-valkyrie/">Voxel Valkyrie</a>
@@ -147,7 +147,21 @@ const MODELS = [
   { key: 'zhangfei', title: '張飛 → ロボ', forms: [['張飛', 2215, 'a'], ['ロボ', 3405, 'b']], note: '黒基調と蛇矛。がっしりした体格' },
   { key: 'zhugeliang', title: '諸葛亮 → ロボ', forms: [['諸葛亮', 2361, 'a'], ['ロボ', 3140, 'b']], note: '白い道服と羽扇、四輪車。ロボでは羽扇と車輪が意匠に' },
   { key: 'zhaoyun', title: '趙雲 → ロボ', forms: [['趙雲', 1916, 'a'], ['ロボ', 2824, 'b']], note: '白銀の鎧と銀の槍。すらりとした立ち姿' },
-  { key: 'lubu', title: '呂布 → ロボ', forms: [['呂布', 2406, 'a'], ['ロボ', 3748, 'b']], note: '方天画戟と赤い飾り羽。強そうな大柄' }
+  { key: 'lubu', title: '呂布 → ロボ', forms: [['呂布', 2406, 'a'], ['ロボ', 3748, 'b']], note: '方天画戟と赤い飾り羽。強そうな大柄' },
+  { key: 'hohei_wei', title: '歩兵（魏）', forms: [['歩兵（魏）', 823, 'a']], note: '青の鎧と鉄の兜。剣と盾' },
+  { key: 'hohei_shu', title: '歩兵（蜀）', forms: [['歩兵（蜀）', 790, 'a']], note: '緑の鎧と金の帯の兜。剣と盾' },
+  { key: 'hohei_wu', title: '歩兵（呉）', forms: [['歩兵（呉）', 856, 'a']], note: '赤の鎧と白い羽根の兜。剣と盾' },
+  { key: 'yumihei_wei', title: '弓兵（魏）', forms: [['弓兵（魏）', 776, 'a']], note: '青。反り弓と背中の矢筒' },
+  { key: 'yumihei_shu', title: '弓兵（蜀）', forms: [['弓兵（蜀）', 778, 'a']], note: '緑。羽根飾りの兜と弓' },
+  { key: 'yumihei_wu', title: '弓兵（呉）', forms: [['弓兵（呉）', 830, 'a']], note: '赤。広鍔の兜と弓' },
+  { key: 'yarihei_wei', title: '槍兵（魏）', forms: [['槍兵（魏）', 744, 'a']], note: '青。頭上に伸びる長い槍と青い房' },
+  { key: 'yarihei_shu', title: '槍兵（蜀）', forms: [['槍兵（蜀）', 744, 'a']], note: '緑。長い槍と緑の房' },
+  { key: 'yarihei_wu', title: '槍兵（呉）', forms: [['槍兵（呉）', 788, 'a']], note: '赤。長い槍と紅い房' },
+  { key: 'kihei_wei', title: '騎兵（魏）', forms: [['騎兵（魏）', 1471, 'a']], note: '青。黒い馬と旗つきの騎槍' },
+  { key: 'kihei_shu', title: '騎兵（蜀）', forms: [['騎兵（蜀）', 1471, 'a']], note: '緑。栗毛の馬と旗つきの騎槍' },
+  { key: 'kihei_wu', title: '騎兵（呉）', forms: [['騎兵（呉）', 1459, 'a']], note: '赤。白い馬と旗つきの騎槍' },
+  { key: 'koukin', title: '黄巾賊', forms: [['黄巾賊', 848, 'a']], note: '黄色い頭巾と曲刀、粗末な板盾' },
+  { key: 'ikki', title: '一揆衆', forms: [['一揆衆', 996, 'a']], note: '菅笠と竹槍と鍬。背中にむしろの旗' }
 ];
 document.getElementById('grid').innerHTML = MODELS.map(m => `
   <div class="card">
@@ -226,7 +240,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     return list;
   }
 
-  const PAGE_KEYS = ['guanyu','zhangfei','zhugeliang','zhaoyun','lubu'];
+  const PAGE_KEYS = ['guanyu','zhangfei','zhugeliang','zhaoyun','lubu','hohei_wei','hohei_shu','hohei_wu','yumihei_wei','yumihei_shu','yumihei_wu','yarihei_wei','yarihei_shu','yarihei_wu','kihei_wei','kihei_shu','kihei_wu','koukin','ikki'];
   const ALL_MODELS = window.EXTRA_MODELS.filter(m => PAGE_KEYS.includes(m.key));
   const MODELS = ALL_MODELS;
   const SURFACES = {};
