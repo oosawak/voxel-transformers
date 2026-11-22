@@ -1,7 +1,7 @@
 ---
 key: ikki
 name: 一揆衆
-order: 148
+order: 160
 forms:
   - file: ikki_a.vox
     label: 一揆衆

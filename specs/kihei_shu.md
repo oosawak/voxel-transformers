@@ -1,7 +1,7 @@
 ---
 key: kihei_shu
 name: 騎兵（蜀）
-order: 145
+order: 157
 forms:
   - file: kihei_shu_a.vox
     label: 騎兵（蜀）

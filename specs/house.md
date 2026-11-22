@@ -1,7 +1,7 @@
 ---
 key: house
 name: 村の家
-order: 155
+order: 167
 forms:
   - file: house_a.vox
     label: 村の家

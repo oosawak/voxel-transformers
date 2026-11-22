@@ -1,7 +1,7 @@
 ---
 key: yarihei_wu
 name: 槍兵（呉）
-order: 143
+order: 155
 forms:
   - file: yarihei_wu_a.vox
     label: 槍兵（呉）

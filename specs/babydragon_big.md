@@ -1,7 +1,7 @@
 ---
 key: babydragon_big
 name: 赤い子竜（大）
-order: 161
+order: 173
 forms:
   - file: babydragon_big_a.vox
     label: 赤い子竜（大）
