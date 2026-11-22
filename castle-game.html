@@ -38,7 +38,7 @@
 </div>
 <div class="panel">
   <div class="prow" id="generals"></div>
-  <div class="help">遊び方: 兵は自動で湧いて、自動で進軍します。敵の城や砦をタップ（クリック）すると、自軍の進軍先がそこに変わります。武将は兵力を使って出撃でき、危なくなると自動でロボットに変形します。敵の城を全部落とせば勝ち、自城を全部落とされれば負けです。川と橋は今のところ飾りです。</div>
+  <div class="help">遊び方: 兵は自動で湧いて、自動で進軍します。敵の城や砦をタップ（クリック）すると、自軍の進軍先がそこに変わります。武将は兵力を使って出撃でき、危なくなると自動でロボットに変形します。敵の城を全部落とせば勝ち、自城を全部落とされれば負けです。川は橋でしか渡れないので、橋の取り合いになります。</div>
 </div>
 <div class="overlay hidden" id="ov-end"><div class="card">
   <h1 id="end-title"></h1>
@@ -313,6 +313,7 @@ makeHold('wu', 'fort', 30, 0);
 // 飾り
 function placeDeco(key, x, z, scale, rotY) {
   const u = makeUnit(byKey[key]);
+  updateUnit(u, 0, null);
   u.mesh.scale.setScalar(scale);
   u.mesh.rotation.y = rotY || 0;
   u.mesh.position.set(x, 0, z);
@@ -503,8 +504,17 @@ function stepUnit(un, dt) {
     if (un.atkCd <= 0) { un.atkCd = 0.8; damageHold(target, un.dmg * 0.8 * (0.85 + Math.random() * 0.3), un.side); }
     return 'siege';
   }
+  // 川は橋でしか渡れない: 反対岸が目的地なら橋経由に回す
+  let wx = gx, wz = gz;
+  const RIVER_HALF = 5.5, BRIDGE_HALF = 4.5;
+  if ((un.x < -RIVER_HALF && gx > RIVER_HALF) || (un.x > RIVER_HALF && gx < -RIVER_HALF)) {
+    if (Math.abs(un.z) > BRIDGE_HALF) { wx = un.x < 0 ? -RIVER_HALF - 1.5 : RIVER_HALF + 1.5; wz = 0; }
+    else { wx = 0; wz = 0; }
+  }
+  const wdx = wx - un.x, wdz = wz - un.z;
+  const distW = Math.hypot(wdx, wdz);
   // 移動（分離つき）
-  let mx = dx / (distT || 1), mz = dz / (distT || 1);
+  let mx = wdx / (distW || 1), mz = wdz / (distW || 1);
   for (const o of units) {
     if (o === un || o.hp <= 0) continue;
     const ox = un.x - o.x, oz = un.z - o.z;
@@ -537,7 +547,7 @@ function frame(now) {
   aiThink(dt);
   // 湧き
   for (const h of holds) {
-    h.spawnT -= dt * (h.side === 'shu' ? 1 : 1.12);
+    h.spawnT -= dt;
     const interval = h.kind === 'castle' ? 2.4 : 3.8;
     if (h.spawnT <= 0) {
       h.spawnT = interval;
