@@ -409,7 +409,8 @@ for (const m of window.EXTRA_MODELS) {
   o.textContent = m.name + '（' + m.formNames.join(' / ') + '）';
   select.appendChild(o);
 }
-select.value = 'shinkansen';
+const wantUnit = new URLSearchParams(location.search).get('unit');
+select.value = (wantUnit && window.EXTRA_MODELS.some(m => m.key === wantUnit)) ? wantUnit : 'shinkansen';
 document.getElementById('btn-start').addEventListener('click', () => {
   document.getElementById('ov-start').classList.add('hidden');
   reset(select.value);
