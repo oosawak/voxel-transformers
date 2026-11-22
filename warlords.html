@@ -435,7 +435,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
   const grid = new THREE.GridHelper(160, 32, 0x3b82f6, 0x1e293b);
   scene.add(grid);
 
-  const MAX_INSTANCES = 11500;
+  const MAX_INSTANCES = 60000;
   const mesh = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.96, 0.96, 0.96),
     new THREE.MeshLambertMaterial({ color: 0xffffff }),
