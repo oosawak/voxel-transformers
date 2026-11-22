@@ -294,6 +294,7 @@ function makePlayer(key) {
   if (player) { scene.remove(player.u.mesh); }
   const entry = byKey[key];
   const u = makeUnit(entry);
+  u.mesh.rotation.y = -Math.PI / 2;
   scene.add(u.mesh);
   player = { u, entry, x: 0, y: 0, vy: 0, hp: 5, invulnT: 0, shootCd: 0, grounded: true };
   document.getElementById('unit-name').textContent = entry.name;
