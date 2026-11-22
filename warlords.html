@@ -455,6 +455,11 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     camDist = d * 2.1;
     grid.position.y = -d / 2 - 1;
   }
+  function syncUrl() {
+    if (!unitKey || unitKey === '__custom') return;
+    const q = '?unit=' + unitKey + (targetForm ? '&form=' + targetForm : '');
+    history.replaceState(null, '', q);
+  }
   function loadUnit(key, form) {
     unitKey = key;
     currentForm = form; targetForm = form; morphT = 1.0;
@@ -465,6 +470,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     buildBeast(key);
     fitCamera(key);
     buildFormButtons();
+    syncUrl();
   }
   function setForm(idx) {
     if (!unitKey || idx === targetForm) return;
@@ -477,6 +483,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     const k2 = animKind();
     if (k2 && k2 !== 'robot' && animMode > 1) animMode = 1;
     refreshAnimBtn();
+    syncUrl();
   }
   function buildFormButtons() {
     const m = ALL_MODELS.find(e => e.key === unitKey);
@@ -489,7 +496,13 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
   select.innerHTML = ALL_MODELS.map(m =>
     `<option value="${m.key}">${m.name}</option>`).join('');
   select.addEventListener('change', () => loadUnit(select.value, 0));
-  loadUnit(ALL_MODELS[0].key, 0);
+  const _params = new URLSearchParams(location.search);
+  const _wantKey = _params.get('unit');
+  const _wantForm = Math.max(0, parseInt(_params.get('form') || '0', 10) || 0);
+  const _startKey = ALL_MODELS.some(m => m.key === _wantKey) ? _wantKey : ALL_MODELS[0].key;
+  select.value = _startKey;
+  loadUnit(_startKey, 0);
+  if (_wantForm > 0) setTimeout(() => setForm(_wantForm), 500);
 
   window.showInViewer = function (key) {
     if (!SURFACES[key]) return;
