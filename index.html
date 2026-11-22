@@ -114,6 +114,11 @@
       <span>腕の幅</span><button class="btn" data-pv="armX" data-d="-1">−</button><button class="btn" data-pv="armX" data-d="1">＋</button>
       <span id="pivot-state"></span>
     </div>
+    <div class="row" style="align-items:center; color:#9bb3d8; font-size:12.5px">
+      <span>自分の .vox を見る:</span>
+      <input type="file" id="vox-files" accept=".vox" multiple style="color:#9bb3d8; font-size:12.5px">
+      <span id="vox-state"></span>
+    </div>
   </div>
   <canvas id="viewer-canvas"></canvas>
   <div class="viewer-note">ドラッグで回転できます。カードの「このページで変形を見る」からも、そのモデルがここに開きます。ロボット形態では「アニメ」ボタンで関節アニメ（歩行・構え・敬礼・L字・走行・移動）が、獣形態では型アニメ（うねり・はばたき・四足歩行）が再生でき、「関節の位置」で回転中心を1ブロックずつ調整できます。</div>
@@ -531,6 +536,87 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
     rotateBtn.classList.toggle('active', autoRotate);
   });
   rotateBtn.classList.add('active');
+
+
+  // --- 自分の .vox を読み込んでビューアで見る ---
+  function parseVox(buf) {
+    const dv = new DataView(buf);
+    const u8 = new Uint8Array(buf);
+    const tag = o => String.fromCharCode(u8[o], u8[o + 1], u8[o + 2], u8[o + 3]);
+    let dims = null, voxels = [], palette = {};
+    function walk(start, end) {
+      let o = start;
+      while (o + 12 <= end) {
+        const id = tag(o);
+        const n = dv.getInt32(o + 4, true);
+        const children = dv.getInt32(o + 8, true);
+        const content = o + 12;
+        if (id === 'SIZE') {
+          dims = [dv.getInt32(content, true), dv.getInt32(content + 4, true), dv.getInt32(content + 8, true)];
+        } else if (id === 'XYZI') {
+          const cnt = dv.getInt32(content, true);
+          voxels = [];
+          for (let i = 0; i < cnt; i++) {
+            const p = content + 4 + i * 4;
+            voxels.push([u8[p], u8[p + 1], u8[p + 2], u8[p + 3]]);
+          }
+        } else if (id === 'RGBA') {
+          for (let i = 0; i < 256; i++) {
+            const p = content + i * 4;
+            palette[i + 1] = (u8[p] << 16) | (u8[p + 1] << 8) | u8[p + 2];
+          }
+        }
+        if (children > 0) walk(content + n, content + n + children);
+        o = content + n + children;
+      }
+    }
+    walk(8, buf.byteLength);
+    return { dims, voxels, palette };
+  }
+  const voxInput = document.getElementById('vox-files');
+  const voxState = document.getElementById('vox-state');
+  voxInput.addEventListener('change', async () => {
+    const files = [...voxInput.files].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 3);
+    if (!files.length) return;
+    try {
+      const parsed = [];
+      for (const f of files) parsed.push(parseVox(await f.arrayBuffer()));
+      if (parsed.some(p => !p.dims || !p.voxels.length)) throw new Error('bad vox');
+      const key = '__custom';
+      const forms = parsed.map(p => {
+        const quads = new Uint8Array(p.voxels.length * 4);
+        p.voxels.forEach((v, i) => quads.set(v, i * 4));
+        let bin = '';
+        for (let i = 0; i < quads.length; i += 8192) bin += String.fromCharCode(...quads.subarray(i, i + 8192));
+        return { dims: p.dims, data: btoa(bin) };
+      });
+      const names = ['元の姿', 'ロボット', 'もう1つの姿'];
+      const entry = {
+        key, name: '自分のモデル',
+        formNames: names.slice(0, forms.length),
+        robotForms: forms.length > 1 ? [1] : [],
+        palette: parsed[0].palette, forms
+      };
+      const mi = MODELS.findIndex(e => e.key === key);
+      if (mi >= 0) MODELS[mi] = entry; else MODELS.push(entry);
+      SURFACES[key] = forms.map(f => extractSurfaceVoxels(gridFromQuads(f.dims, f.data), entry.palette));
+      let opt = select.querySelector('option[value="__custom"]');
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = key; opt.textContent = '自分のモデル';
+        select.appendChild(opt);
+      }
+      select.value = key;
+      loadUnit(key, 0);
+      const surfMax = Math.max(...SURFACES[key].map(l => l.length));
+      voxState.textContent = surfMax > MAX_INSTANCES
+        ? '読み込みました（大きいモデルなので一部が欠けて表示されます）'
+        : '読み込みました';
+      if (forms.length > 1) setTimeout(() => setForm(1), 450);
+    } catch (e) {
+      voxState.textContent = '読み込めませんでした（.vox 形式か確認してください）';
+    }
+  });
 
   const animBtn = document.getElementById('btn-anim');
   function refreshAnimBtn() {
