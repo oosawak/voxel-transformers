@@ -8,6 +8,9 @@ forms:
   - file: taikobo_b.vox
     label: ロボ
     robot: true
+  - file: taikobo_c.vox
+    label: 鯉
+    anim: wave
 ---
 
 # 太公望

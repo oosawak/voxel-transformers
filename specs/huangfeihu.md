@@ -8,6 +8,9 @@ forms:
   - file: huangfeihu_b.vox
     label: ロボ
     robot: true
+  - file: huangfeihu_c.vox
+    label: 虎
+    anim: quad_cat
 ---
 
 # 黄飛虎

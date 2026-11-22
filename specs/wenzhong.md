@@ -8,6 +8,9 @@ forms:
   - file: wenzhong_b.vox
     label: ロボ
     robot: true
+  - file: wenzhong_c.vox
+    label: 麒麟（墨麒麟）
+    anim: quad_cat
 ---
 
 # 聞仲

@@ -206,6 +206,91 @@ def build_b():
     return grid
 
 
+def draw_6conn_line_c(grid, p0, p1, col, pad=(0, 0, 0)):
+    X, Y, Z = grid.shape
+    x0, y0, z0 = int(round(p0[0])), int(round(p0[1])), int(round(p0[2]))
+    x1, y1, z1 = int(round(p1[0])), int(round(p1[1])), int(round(p1[2]))
+    steps = max(abs(x1 - x0), abs(y1 - y0), abs(z1 - z0), 1) * 2
+    prev = None
+    px, py, pz = pad
+
+    def stamp(cx_, cy_, cz_):
+        xa, xb = max(0, cx_ - px), min(X - 1, cx_ + px)
+        ya, yb = max(0, cy_ - py), min(Y - 1, cy_ + py)
+        za, zb = max(0, cz_ - pz), min(Z - 1, cz_ + pz)
+        grid[xa:xb + 1, ya:yb + 1, za:zb + 1] = col
+
+    for i in range(steps + 1):
+        t = i / steps
+        x = int(round(x0 + (x1 - x0) * t))
+        y = int(round(y0 + (y1 - y0) * t))
+        z = int(round(z0 + (z1 - z0) * t))
+        if prev is not None:
+            ox, oy, oz = prev
+            if x != ox:
+                stamp(x, oy, oz)
+                ox = x
+            if y != oy:
+                stamp(ox, y, oz)
+                oy = y
+            if z != oz:
+                stamp(ox, oy, z)
+        else:
+            stamp(x, y, z)
+        prev = (x, y, z)
+
+
+# ============================================================
+# FORM C: MYTHICAL BLACK SWALLOW / XUANNIAO (玄鳥 — ツバメ、黒い鳥!) (48 x 38 x 32)
+# ============================================================
+def build_c():
+    grid = np.zeros((48, 38, 32), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx_l = X // 2 - 1  # 23
+    cx_r = X // 2      # 24
+
+    # Royal Shang-Bronze Perch & Golden Bird Claws grounded at Z=0..7
+    fill_sym_box(grid, 0, 5, 16, 22, 0, 2, 4)     # Ancient bronze Yin pedestal!
+    fill_sym_box(grid, 0, 5, 16, 22, 2, 2, 3)     # Gold rim
+    fill_sym_box(grid, 2, 3, 18, 22, 3, 7, 3)     # Golden swallow legs & talons!
+
+    # Sleek Aerodynamic Obsidian-Black Swallow Body (玄鳥 — 黒い鳥!) (Z: 7..20)
+    fill_sym_box(grid, 0, 4, 15, 27, 8, 17, 1)    # Glossy obsidian swallow body!
+    fill_sym_box(grid, 0, 3, 21, 28, 9, 15, 6)    # Sleek pearl-white swallow breast!
+    fill_sym_box(grid, 0, 3, 25, 29, 14, 18, 5)   # Iconic blood-crimson swallow throat!
+    fill_sym_box(grid, 0, 2, 27, 29, 12, 14, 3)   # Imperial gold chest band!
+
+    # ICONIC DEEPLY FORKED TWIN SWALLOW TAIL STREAMERS! (ツバメの二股尾!) (Y: 2..15, Z: 5..14)
+    for sign in (-1, 1):
+        bx = cx_r if sign == 1 else cx_l
+        draw_6conn_line_c(grid, (bx + sign * 1, 15, 11), (bx + sign * 5, 8, 8), 1, pad=(0, 0, 1))
+        draw_6conn_line_c(grid, (bx + sign * 5, 8, 8), (bx + sign * 8, 2, 5), 1, pad=(0, 0, 0))
+        fill_box(grid, bx + sign * 8, bx + sign * 8, 2, 3, 5, 6, 3)  # Gold forked tail-tips!
+
+    # WIDE SWEPT POINTED BLACK-AND-GOLD SWALLOW WINGS! (X: 2..45, Z: 13..30)
+    for sign in (-1, 1):
+        bx = cx_r if sign == 1 else cx_l
+        # Sharp aerodynamic swept leading wing-edge!
+        draw_6conn_line_c(grid, (bx + sign * 3, 21, 16), (bx + sign * 13, 19, 25), 1, pad=(0, 1, 1))
+        draw_6conn_line_c(grid, (bx + sign * 13, 19, 25), (bx + sign * 22, 16, 29), 3, pad=(0, 0, 1))
+        # Swept back-angled primary swallow wing feathers!
+        for tip_x, tip_y, tip_z in [(21, 13, 24), (17, 11, 20), (13, 11, 16), (9, 12, 13)]:
+            draw_6conn_line_c(grid, (bx + sign * 4, 19, 15), (bx + sign * tip_x, tip_y, tip_z), 1, pad=(0, 0, 1))
+            fill_box(grid, bx + sign * tip_x, bx + sign * tip_x, tip_y, tip_y, tip_z, tip_z, 3 if tip_x > 16 else 2)
+
+    # Regal Black Swallow Head, Sharp Golden Beak, Blazing Crimson Eyes & Crown Crest! (Z: 17..29)
+    fill_sym_box(grid, 0, 3, 24, 30, 17, 23, 1)   # Sleek black swallow head
+    fill_sym_box(grid, 0, 1, 30, 35, 19, 21, 3)   # Sharp pointed golden swallow beak!
+    fill_sym_box(grid, 2, 3, 29, 30, 21, 22, 9)   # Blazing crimson tyrant bird eyes!
+    # Imperial Gold Crown Crest (homage to Zhouwang's crown!)
+    fill_sym_box(grid, 0, 2, 24, 30, 23, 25, 3)
+    draw_6conn_line_c(grid, (cx_r, 25, 25), (cx_r, 20, 29), 3, pad=(1, 0, 0))
+    fill_sym_box(grid, 0, 1, 20, 21, 28, 29, 5)   # Crimson crown plume tip!
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
 def export_vox(grid, filename):
     X, Y, Z = grid.shape
     xs, ys, zs = np.nonzero(grid)
@@ -299,15 +384,17 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview(models, title_banner, out_path):
+    n = len(models)
+    cw = 24 + n * 398 + (n - 1) * 16 + 24
+    canvas = Image.new("RGBA", (cw, 540), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
+    for gx in range(0, cw, 20):
         draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
     for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(models):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -321,7 +408,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -330,16 +417,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "zhouwang_a.vox")
     v_b = export_vox(model_b, "zhouwang_b.vox")
+    v_c = export_vox(model_c, "zhouwang_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
+    comp_c, minz_c = count_components_6(model_c)
     render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #20: KING ZHOU / ZHOUWANG (FENGSHEN) -> TYRANT EMPEROR ROBOT",
-        "1. KING ZHOU (EMPEROR)",
-        "2. KING ZHOU ROBOT",
+        [
+            ("1. KING ZHOU (EMPEROR)", model_a, v_a, 28, 18),
+            ("2. KING ZHOU ROBOT", model_b, v_b, 28, 18),
+            ("3. BLACK SWALLOW (XUANNIAO)", model_c, v_c, 36, 22),
+        ],
+        "CLASSICS ROBO #20: KING ZHOU / ZHOUWANG (FENGSHEN) - 3-FORM TRANSFORMATION",
         "preview_zhouwang.png",
     )
-    print(f"zhouwang: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"zhouwang: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}), "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}), "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

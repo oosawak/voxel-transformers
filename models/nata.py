@@ -16,6 +16,9 @@ PALETTE = {
     7: (252, 220, 196, 255),  # Youthful Warrior Face
     8: (206, 218, 232, 255),  # Honed Silver Fire-Tipped Spear Blade
     9: (106, 242, 255, 255),  # Luminous Lotus-Cyan Eyes & Wind-Jet Core!
+    10: (246, 152, 186, 255), # Blooming Lotus Petal Pink (蓮の化身!)
+    11: (54, 168, 92, 255),   # Lush Lotus Leaf Emerald Green (緑の葉!)
+    12: (32, 118, 66, 255),   # Deep Lotus Leaf Shading
 }
 
 
@@ -276,6 +279,179 @@ def build_b():
     return grid
 
 
+# ============================================================
+# FORM C: NATA THREE-HEADED SIX-ARMED BATTLE FORM (三頭六臂!) (46 x 26 x 46)
+# ============================================================
+def build_c():
+    grid = np.zeros((46, 26, 46), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx_l = X // 2 - 1  # 22
+    cx_r = X // 2      # 23
+
+    # Twin Blazing Wind-Fire Wheels grounded at Z=0..6
+    draw_fire_wheel_yz(grid, cx_r + 2, cx_r + 4, cy=13, cz=3, radius=3, rim_col=4, hub_col=3, tire_col=1)
+    draw_fire_wheel_yz(grid, cx_l - 4, cx_l - 2, cy=13, cz=3, radius=3, rim_col=4, hub_col=3, tire_col=1)
+
+    # Battle-Ready Lotus Warrior Legs & Torso (Z: 6..30)
+    fill_sym_box(grid, 2, 4, 11, 15, 6, 8, 6)
+    fill_sym_box(grid, 2, 4, 11, 15, 9, 16, 5)
+    fill_sym_box(grid, 0, 5, 10, 16, 16, 20, 1)
+    fill_sym_box(grid, 0, 5, 16, 16, 16, 17, 3)
+    fill_sym_box(grid, 0, 5, 10, 16, 20, 30, 5)
+    fill_sym_box(grid, 0, 3, 15, 17, 21, 29, 1)   # Crimson Lotus Apron
+    fill_sym_box(grid, 0, 2, 17, 17, 23, 27, 3)   # Gold lotus emblem
+    fill_sym_box(grid, 0, 5, 10, 16, 29, 30, 3)   # Wide golden shoulder yoke supporting 3 heads!
+
+    # --- ICONIC SIX ARMS (六臂 — 3 ARMS PER SIDE!) WIELDING 6 DIVINE TREASURES! ---
+    # 1. UPPER-RIGHT ARM (+X, Z: 27..35) -> FIRE-TIPPED SPEAR (火尖槍!)
+    draw_6conn_line(grid, (cx_r + 5, 13, 28), (cx_r + 11, 15, 33), 5, pad=(0, 1, 1))
+    fill_box(grid, cx_r + 11, cx_r + 12, 15, 17, 32, 34, 7)
+    fill_box(grid, cx_r + 12, cx_r + 12, 16, 16, 18, 39, 3)   # Golden spear shaft
+    fill_box(grid, cx_r + 12, cx_r + 12, 16, 16, 40, 45, 8)   # Silver spearhead
+    fill_box(grid, cx_r + 11, cx_r + 13, 16, 16, 39, 40, 4)   # Flame tassel!
+
+    # 2. MID-RIGHT ARM (+X, Z: 23..26) -> GOLDEN BRICK (金磚!)
+    draw_6conn_line(grid, (cx_r + 5, 13, 25), (cx_r + 13, 16, 25), 5, pad=(0, 1, 1))
+    fill_box(grid, cx_r + 13, cx_r + 14, 16, 18, 24, 26, 7)
+    fill_box(grid, cx_r + 14, cx_r + 17, 16, 19, 25, 28, 3)   # Glowing Golden Brick (金磚!)
+    fill_box(grid, cx_r + 15, cx_r + 16, 19, 19, 26, 27, 4)
+
+    # 3. LOWER-RIGHT ARM (+X, Z: 19..22) -> RED ARMILLARY SASH (混天綾!)
+    draw_6conn_line(grid, (cx_r + 5, 13, 21), (cx_r + 11, 16, 19), 5, pad=(0, 1, 1))
+    fill_box(grid, cx_r + 11, cx_r + 12, 16, 18, 18, 20, 7)
+    # Flowing Red Armillary Sash looping dramatically from lower-right hand over the back!
+    sash_c = [
+        (cx_r + 12, 17, 19), (cx_r + 16, 14, 24), (cx_r + 15, 9, 36),
+        (cx_r + 7, 7, 43), (cx_l - 7, 7, 43), (cx_l - 15, 9, 36), (cx_l - 14, 12, 24)
+    ]
+    for i in range(len(sash_c) - 1):
+        draw_6conn_line(grid, sash_c[i], sash_c[i + 1], 1, pad=(0, 0, 1))
+
+    # 4. UPPER-LEFT ARM (-X, Z: 27..35) -> GOLDEN UNIVERSE RING (乾坤圏!)
+    draw_6conn_line(grid, (cx_l - 5, 13, 28), (cx_l - 11, 15, 33), 5, pad=(0, 1, 1))
+    fill_box(grid, cx_l - 12, cx_l - 11, 15, 17, 32, 34, 7)
+    draw_universe_ring_xy(grid, cx_l - 14, 16, 34, r=3)
+    fill_box(grid, cx_l - 12, cx_l - 11, 16, 16, 33, 34, 3)
+
+    # 5. MID-LEFT ARM (-X, Z: 23..26) -> SILVER YIN-YANG SWORD (陰陽剣!)
+    draw_6conn_line(grid, (cx_l - 5, 13, 25), (cx_l - 13, 16, 25), 5, pad=(0, 1, 1))
+    fill_box(grid, cx_l - 14, cx_l - 13, 16, 18, 24, 26, 7)
+    fill_box(grid, cx_l - 15, cx_l - 14, 17, 17, 24, 25, 3)   # Sword guard
+    fill_box(grid, cx_l - 15, cx_l - 15, 17, 17, 26, 37, 8)   # Gleaming silver blade!
+
+    # 6. LOWER-LEFT ARM (-X, Z: 19..22) -> NINE-DRAGON FIRE BELL (九龍神火罩!)
+    draw_6conn_line(grid, (cx_l - 5, 13, 21), (cx_l - 11, 16, 19), 5, pad=(0, 1, 1))
+    fill_box(grid, cx_l - 12, cx_l - 11, 16, 18, 18, 20, 7)
+    fill_box(grid, cx_l - 15, cx_l - 12, 16, 19, 17, 21, 4)   # Fiery bronze-orange fire hood!
+    fill_box(grid, cx_l - 14, cx_l - 13, 17, 18, 21, 22, 3)
+
+    # --- ICONIC THREE HEADS (三頭 — CENTER + LEFT + RIGHT HEADS!) (Z: 30..41) ---
+    # Central Head
+    fill_sym_box(grid, 0, 2, 11, 16, 30, 36, 7)
+    fill_sym_box(grid, 1, 2, 16, 16, 33, 34, 9)
+    fill_sym_box(grid, 0, 2, 10, 16, 36, 38, 6)
+    fill_sym_box(grid, 0, 1, 16, 16, 36, 37, 1)
+    fill_sym_box(grid, 0, 1, 12, 15, 38, 40, 3)   # Central lotus battle crown!
+    # Left & Right Flanking Heads facing slightly outward!
+    for sign in (-1, 1):
+        hx = (cx_r + 5) if sign == 1 else (cx_l - 5)
+        fill_box(grid, hx - 2, hx + 2, 11, 15, 30, 35, 7)     # Flanking fierce face!
+        fill_box(grid, hx + sign * 2, hx + sign * 2, 13, 14, 33, 33, 9)  # Side eyes!
+        fill_box(grid, hx, hx + sign * 1, 15, 15, 33, 33, 9)  # Front-angled eye!
+        fill_box(grid, hx - 2, hx + 2, 10, 15, 35, 37, 6)     # Black hair
+        fill_box(grid, hx + sign * 1, hx + sign * 3, 11, 14, 37, 39, 6)  # Outer twin hair-bun!
+        fill_box(grid, hx + sign * 1, hx + sign * 2, 11, 14, 37, 37, 1)  # Crimson ribbon
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
+# ============================================================
+# FORM D: LOTUS INCARNATION (蓮の化身 — ピンクと白の花びら、緑の葉、中央に小さな哪吒!) (32 x 32 x 28)
+# ============================================================
+def build_d():
+    grid = np.zeros((32, 32, 28), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx, cy = X // 2 - 0.5, Y // 2 - 0.5  # 15.5, 15.5
+
+    # --- 1. LUSH GREEN LOTUS LEAVES FLOATING AT BASE (緑の葉!) (Z: 0..2) ---
+    for x in range(X):
+        for y in range(Y):
+            dx, dy = x - cx, y - cy
+            r = np.sqrt(dx * dx + dy * dy)
+            ang = np.arctan2(dy, dx)
+            pad_r = 12.2 + 1.1 * np.cos(6 * ang)
+            if r <= pad_r:
+                grid[x, y, 0] = 12
+                if r <= pad_r - 1.0:
+                    grid[x, y, 1] = 11
+                if abs(np.sin(3 * ang)) < 0.14 and r > 3:
+                    grid[x, y, 1] = 12
+
+    # --- 2. TWO LAYERS OF 6-CONNECTED BLOOMING PINK-AND-WHITE LOTUS PETALS! (Z: 2..13) ---
+    # Solid golden lotus calyx core connecting leaves, petals & seated mini-Nata!
+    for x in range(X):
+        for y in range(Y):
+            r = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
+            if r <= 5.8:
+                grid[x, y, 2:6] = 3
+                if r <= 4.5:
+                    grid[x, y, 6] = 3
+
+    # 8 Outer Broad Blooming Petals drawn with guaranteed 6-connected ribs!
+    for i in range(8):
+        ang = i * (np.pi / 4.0)
+        ca, sa = np.cos(ang), np.sin(ang)
+        px_u, py_u = -sa, ca
+        for offset in (-1.6, -0.8, 0.0, 0.8, 1.6):
+            reach = 12.0 if abs(offset) < 0.5 else (10.5 if abs(offset) < 1.2 else 8.8)
+            z_mid = 5 if abs(offset) < 1.2 else 4
+            z_tip = 10 if abs(offset) < 0.5 else (8 if abs(offset) < 1.2 else 6)
+            p0 = (cx + ca * 4.5 + px_u * (offset * 0.5), cy + sa * 4.5 + py_u * (offset * 0.5), 2)
+            p1 = (cx + ca * (reach * 0.72) + px_u * offset, cy + sa * (reach * 0.72) + py_u * offset, z_mid)
+            p2 = (cx + ca * reach + px_u * (offset * 0.45), cy + sa * reach + py_u * (offset * 0.45), z_tip)
+            draw_6conn_line(grid, p0, p1, 5)
+            draw_6conn_line(grid, p1, p2, 10)
+            if abs(offset) < 0.5:
+                grid[int(round(p2[0])), int(round(p2[1])), int(round(p2[2]))] = 1  # Crimson tip blush!
+
+    # 8 Inner Cupped Upright Petals (offset 22.5 deg, curving gracefully around Nata!)
+    for i in range(8):
+        ang = (i + 0.5) * (np.pi / 4.0)
+        ca, sa = np.cos(ang), np.sin(ang)
+        px_u, py_u = -sa, ca
+        for offset in (-1.0, 0.0, 1.0):
+            reach = 8.6 if offset == 0.0 else 7.4
+            z_tip = 13 if offset == 0.0 else 10
+            p0 = (cx + ca * 4.0 + px_u * (offset * 0.5), cy + sa * 4.0 + py_u * (offset * 0.5), 4)
+            p1 = (cx + ca * (reach * 0.78) + px_u * offset, cy + sa * (reach * 0.78) + py_u * offset, 8)
+            p2 = (cx + ca * reach + px_u * (offset * 0.35), cy + sa * reach + py_u * (offset * 0.35), z_tip)
+            draw_6conn_line(grid, p0, p1, 5)
+            draw_6conn_line(grid, p1, p2, 10)
+
+    # --- 3. MINIATURE NATA SEATED SERENELY IN THE GOLDEN LOTUS HEART! (Z: 6..25) ---
+    cx_l, cx_r = X // 2 - 1, X // 2  # 15, 16
+    fill_sym_box(grid, 0, 3, 13, 18, 6, 8, 5)     # Seated white trousers
+    fill_sym_box(grid, 0, 2, 14, 17, 9, 14, 1)    # Crimson lotus apron torso
+    fill_sym_box(grid, 0, 1, 17, 18, 10, 13, 3)   # Gold lotus emblem
+    fill_sym_box(grid, 3, 4, 14, 17, 10, 14, 7)   # Prayer-clasped arms
+    fill_sym_box(grid, 0, 1, 18, 19, 11, 13, 7)   # Clasped hands in meditation!
+    fill_sym_box(grid, 0, 2, 14, 18, 15, 19, 7)   # Serene little face
+    fill_sym_box(grid, 1, 1, 18, 18, 17, 17, 9)   # Luminous cyan eyes
+    fill_sym_box(grid, 0, 2, 13, 18, 19, 21, 6)   # Black hair
+    fill_sym_box(grid, 3, 4, 14, 17, 20, 22, 6)   # Iconic twin hair-buns!
+    fill_sym_box(grid, 3, 3, 14, 17, 20, 20, 1)   # Red ribbons!
+    halo_d = [
+        (cx_l - 4, 15, 13), (cx_l - 6, 13, 19), (cx_l - 3, 12, 25),
+        (cx_r + 3, 12, 25), (cx_r + 6, 13, 19), (cx_r + 4, 15, 13)
+    ]
+    for i in range(len(halo_d) - 1):
+        draw_6conn_line(grid, halo_d[i], halo_d[i + 1], 1)
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
 def export_vox(grid, filename):
     X, Y, Z = grid.shape
     xs, ys, zs = np.nonzero(grid)
@@ -369,16 +545,19 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview(models, title_banner, out_path):
+    # 2x2 grid layout for 4-form Nata (860 x 1024)!
+    cw, ch = 860, 1024
+    canvas = Image.new("RGBA", (cw, ch), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
-        draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
-    for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+    for gx in range(0, cw, 20):
+        draw.line([(gx, 0), (gx, ch)], fill=(28, 34, 48, 255), width=1)
+    for gy in range(0, ch, 20):
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
-        bx, by, w, h = 24 + idx * 414, 48, 398, 468
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(models):
+        col_i, row_i = idx % 2, idx // 2
+        bx, by, w, h = 24 + col_i * 414, 48 + row_i * 484, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
         gx, gy, gz = m_grid.shape
@@ -391,25 +570,36 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
-            px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
-            draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
+        for pi in range(1, len(PALETTE) + 1):
+            px0, py0 = bx + 14 + (pi - 1) * 18, by + 430
+            draw.rectangle([px0, py0, px0 + 14, py0 + 14], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
 
 
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
+    model_d = build_d()
     v_a = export_vox(model_a, "nata_a.vox")
     v_b = export_vox(model_b, "nata_b.vox")
+    v_c = export_vox(model_c, "nata_c.vox")
+    v_d = export_vox(model_d, "nata_d.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
+    comp_c, minz_c = count_components_6(model_c)
+    comp_d, minz_d = count_components_6(model_d)
     render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #10: NATA / NEZHA (FENGSHEN) -> WIND-FIRE WHEEL ROBOT",
-        "1. NATA (CHARACTER)",
-        "2. NATA ROBOT (WHEEL LEGS)",
+        [
+            ("1. NATA (CHARACTER)", model_a, v_a, 28, 18),
+            ("2. NATA ROBOT (WHEEL LEGS)", model_b, v_b, 28, 18),
+            ("3. THREE HEADS & SIX ARMS", model_c, v_c, 26, 18),
+            ("4. LOTUS INCARNATION", model_d, v_d, 35, 30),
+        ],
+        "CLASSICS ROBO #10: NATA / NEZHA (FENGSHEN) - 4-FORM TRANSFORMATION",
         "preview_nata.png",
     )
-    print(f"nata: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"nata: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}), "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}), "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c}), "
+          f"D={v_d} {model_d.shape} (c={comp_d},z={minz_d})")

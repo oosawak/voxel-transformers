@@ -233,6 +233,50 @@ def build_b():
     return grid
 
 
+# ============================================================
+# FORM C: RIVER KAPPA CREATURE (河童 — 青緑の肌、頭の皿、甲羅) (28 x 30 x 28)
+# ============================================================
+def build_c():
+    grid = np.zeros((28, 30, 28), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx_l = X // 2 - 1  # 13
+    cx_r = X // 2      # 14
+
+    # Wide Webbed Amphibious Kappa Feet & Squatting Legs (Z: 0..10)
+    fill_sym_box(grid, 2, 6, 12, 20, 0, 1, 3)     # Wide webbed mint-aqua feet!
+    fill_sym_box(grid, 3, 5, 19, 21, 0, 0, 1)
+    fill_sym_box(grid, 3, 5, 12, 16, 2, 9, 3)     # Squatting frog-like kappa legs!
+
+    # Hunched Amphibian Body & PROMINENT DOMED TURTLE SHELL (甲羅!) (Z: 6..20)
+    fill_sym_box(grid, 0, 5, 11, 20, 6, 17, 3)    # Mint-aqua kappa torso (青緑の肌!)
+    fill_sym_box(grid, 0, 4, 18, 21, 7, 15, 1)    # Teal river belly
+    fill_sym_box(grid, 0, 3, 19, 21, 15, 16, 5)   # Neck cord
+    fill_sym_box(grid, 0, 1, 20, 22, 12, 14, 4)   # Hanging amber gourd
+    # BIG DOMED HEXAGONAL RIVER-TURTLE SHELL ON BACK (甲羅!)
+    fill_sym_box(grid, 0, 6, 8, 12, 6, 18, 2)
+    fill_sym_box(grid, 0, 5, 6, 8, 8, 17, 1)
+    fill_sym_box(grid, 1, 4, 5, 6, 10, 15, 2)
+    fill_sym_box(grid, 0, 3, 5, 5, 11, 14, 4)
+
+    # Webbed Forearms reaching playfully forward!
+    fill_sym_box(grid, 5, 7, 14, 19, 10, 15, 3)
+    fill_sym_box(grid, 5, 7, 18, 23, 8, 11, 3)
+    fill_sym_box(grid, 5, 7, 23, 24, 8, 9, 1)
+
+    # Classic River-Kappa Head, Beak, Shaggy Hair Ring & WIDE WATER DISH (頭の皿!) (Z: 17..27)
+    fill_sym_box(grid, 0, 4, 14, 22, 17, 23, 3)
+    fill_sym_box(grid, 0, 2, 22, 26, 18, 20, 4)   # Amber turtle-beak!
+    fill_sym_box(grid, 2, 3, 22, 22, 21, 22, 9)   # Water-cyan eyes!
+    fill_sym_box(grid, 0, 5, 12, 21, 22, 24, 2)   # Shaggy dark-jade kappa hair bob!
+    fill_sym_box(grid, 4, 5, 13, 21, 18, 23, 2)
+    fill_sym_box(grid, 0, 4, 12, 13, 17, 23, 2)
+    fill_sym_box(grid, 0, 3, 14, 20, 25, 26, 3)   # Wide Water-Dish on Crown (頭の皿!)
+    fill_sym_box(grid, 0, 2, 15, 19, 26, 26, 9)
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
 def export_vox(grid, filename):
     X, Y, Z = grid.shape
     xs, ys, zs = np.nonzero(grid)
@@ -326,15 +370,17 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview(models, title_banner, out_path):
+    n = len(models)
+    cw = 24 + n * 398 + (n - 1) * 16 + 24
+    canvas = Image.new("RGBA", (cw, 540), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
+    for gx in range(0, cw, 20):
         draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
     for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(models):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -348,7 +394,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -357,16 +403,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "sagojo_a.vox")
     v_b = export_vox(model_b, "sagojo_b.vox")
+    v_c = export_vox(model_c, "sagojo_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
+    comp_c, minz_c = count_components_6(model_c)
     render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #03: SHA WUJING (JOURNEY TO THE WEST) -> KAPPA RIVER ROBOT",
-        "1. SHA WUJING (CHARACTER)",
-        "2. SHA WUJING ROBOT",
+        [
+            ("1. SHA WUJING (CHARACTER)", model_a, v_a, 28, 18),
+            ("2. SHA WUJING ROBOT", model_b, v_b, 28, 18),
+            ("3. RIVER KAPPA (BEAST)", model_c, v_c, 38, 22),
+        ],
+        "CLASSICS ROBO #03: SHA WUJING (JOURNEY TO THE WEST) - 3-FORM TRANSFORMATION",
         "preview_sagojo.png",
     )
-    print(f"sagojo: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"sagojo: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}), "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}), "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

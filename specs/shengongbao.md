@@ -8,6 +8,9 @@ forms:
   - file: shengongbao_b.vox
     label: ロボ
     robot: true
+  - file: shengongbao_c.vox
+    label: 豹
+    anim: quad_cat
 ---
 
 # 申公豹

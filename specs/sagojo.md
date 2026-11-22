@@ -8,6 +8,8 @@ forms:
   - file: sagojo_b.vox
     label: ロボ
     robot: true
+  - file: sagojo_c.vox
+    label: 河童
 ---
 
 # 沙悟浄

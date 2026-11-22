@@ -8,6 +8,9 @@ forms:
   - file: leizhenzi_b.vox
     label: ロボ
     robot: true
+  - file: leizhenzi_c.vox
+    label: 鳥
+    anim: flap
 ---
 
 # 雷震子

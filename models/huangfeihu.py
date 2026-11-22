@@ -234,6 +234,56 @@ def build_b():
     return grid
 
 
+# ============================================================
+# FORM C: GOLDEN STRIPED TIGER / FLYING TIGER (虎 — 縞模様!) (26 x 44 x 28)
+# ============================================================
+def build_c():
+    grid = np.zeros((26, 44, 28), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx_l = X // 2 - 1  # 12
+    cx_r = X // 2      # 13
+
+    # Four Powerful Striped Tiger Legs & White Paws (Z: 0..10)
+    for ly0, ly1 in ((10, 14), (25, 29)):
+        fill_sym_box(grid, 2, 5, ly0, ly1 + 1, 0, 2, 5)  # White tiger paws!
+        fill_sym_box(grid, 2, 5, ly0, ly1, 3, 10, 1)     # Golden muscular tiger legs!
+        fill_sym_box(grid, 3, 5, ly0 + 1, ly0 + 2, 5, 6, 6)  # Bold dark leg stripes!
+        fill_sym_box(grid, 3, 5, ly0 + 1, ly0 + 2, 8, 9, 6)
+
+    # Muscular Golden Tiger Torso WITH BOLD BLACK TIGER STRIPES! (縞模様!) (Z: 8..19)
+    fill_sym_box(grid, 0, 5, 10, 30, 9, 17, 1)    # Radiant golden tiger coat!
+    fill_sym_box(grid, 0, 4, 12, 28, 8, 10, 5)    # Pure-white tiger belly & chest!
+    # Iconic Bold Dark Tiger Stripes wrapping across back and down both flanks!
+    for sy in (12, 16, 20, 24, 28):
+        fill_sym_box(grid, 0, 5, sy, sy + 1, 13, 17, 6)
+    # Huang Feihu's Five-Color Martial Collar Ribbon (Red/Blue/Green/White)!
+    fill_sym_box(grid, 0, 5, 28, 29, 12, 18, 2)   # Crimson ribbon
+    fill_sym_box(grid, 3, 5, 29, 30, 13, 16, 3)   # Azure accent
+    fill_sym_box(grid, 1, 2, 29, 30, 11, 13, 4)   # Emerald jewel
+    # Long Striped Sweeping Tiger Tail! (Y: 1..10, Z: 11..24)
+    tail_c = [(cx_r, 10, 15), (cx_r, 6, 12), (cx_r, 3, 15), (cx_r, 2, 20), (cx_r, 4, 23)]
+    for i in range(len(tail_c) - 1):
+        col_t = 6 if i % 2 == 1 else 1  # Alternating golden & black tail rings!
+        draw_6conn_line(grid, tail_c[i], tail_c[i + 1], col_t)
+        draw_6conn_line(grid, (tail_c[i][0] - 1, tail_c[i][1], tail_c[i][2]),
+                        (tail_c[i + 1][0] - 1, tail_c[i + 1][1], tail_c[i + 1][2]), col_t)
+
+    # Majestic Fierce Tiger Head, White Whisker-Cheeks & Crimson "King" Brow Mark! (Y: 29..41, Z: 13..25)
+    fill_sym_box(grid, 0, 4, 29, 36, 14, 22, 1)   # Broad golden tiger head!
+    fill_sym_box(grid, 4, 5, 31, 35, 14, 18, 5)   # White tiger cheek-ruffs!
+    fill_sym_box(grid, 0, 2, 36, 40, 14, 18, 5)   # White tiger muzzle & fangs!
+    fill_sym_box(grid, 0, 1, 40, 40, 17, 17, 2)   # Crimson tiger nose
+    fill_sym_box(grid, 2, 3, 36, 36, 19, 20, 9)   # Piercing cyan tiger eyes!
+    # Iconic Tiger Brow Stripes & Crimson Martial-King Forehead Crest!
+    fill_sym_box(grid, 0, 3, 35, 36, 21, 21, 6)
+    fill_sym_box(grid, 0, 1, 34, 36, 22, 23, 2)   # Crimson "王" brow crest!
+    fill_sym_box(grid, 3, 4, 30, 32, 22, 24, 1)   # Rounded tiger ears
+    fill_sym_box(grid, 3, 4, 30, 30, 23, 24, 6)   # Black ear backs!
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
 def export_vox(grid, filename):
     X, Y, Z = grid.shape
     xs, ys, zs = np.nonzero(grid)
@@ -327,15 +377,17 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview(models, title_banner, out_path):
+    n = len(models)
+    cw = 24 + n * 398 + (n - 1) * 16 + 24
+    canvas = Image.new("RGBA", (cw, 540), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
+    for gx in range(0, cw, 20):
         draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
     for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(models):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -349,7 +401,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -358,16 +410,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "huangfeihu_a.vox")
     v_b = export_vox(model_b, "huangfeihu_b.vox")
+    v_c = export_vox(model_c, "huangfeihu_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
+    comp_c, minz_c = count_components_6(model_c)
     render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #19: HUANG FEIHU (FENGSHEN) -> FIVE-COLOR OX GENERAL ROBOT",
-        "1. HUANG FEIHU (MARTIAL KING)",
-        "2. HUANG FEIHU ROBOT",
+        [
+            ("1. HUANG FEIHU (MARTIAL KING)", model_a, v_a, 28, 18),
+            ("2. HUANG FEIHU ROBOT", model_b, v_b, 28, 18),
+            ("3. STRIPED TIGER (BEAST)", model_c, v_c, 44, 20),
+        ],
+        "CLASSICS ROBO #19: HUANG FEIHU (FENGSHEN) - 3-FORM TRANSFORMATION",
         "preview_huangfeihu.png",
     )
-    print(f"huangfeihu: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"huangfeihu: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}), "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}), "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

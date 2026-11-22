@@ -8,6 +8,9 @@ forms:
   - file: hakkai_b.vox
     label: ロボ
     robot: true
+  - file: hakkai_c.vox
+    label: 猪
+    anim: quad_cat
 ---
 
 # 猪八戒

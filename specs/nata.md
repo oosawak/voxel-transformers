@@ -8,6 +8,10 @@ forms:
   - file: nata_b.vox
     label: ロボ
     robot: true
+  - file: nata_c.vox
+    label: 三頭六臂
+  - file: nata_d.vox
+    label: 蓮の化身
 ---
 
 # 哪吒

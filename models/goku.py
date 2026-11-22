@@ -255,6 +255,59 @@ def build_b():
     return grid
 
 
+# ============================================================
+# FORM C: GOLDEN STONE MONKEY / ISHIZARU (石猿 — 猿形態) (30 x 34 x 32)
+# ============================================================
+def build_c():
+    grid = np.zeros((30, 34, 32), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx_l = X // 2 - 1  # 14
+    cx_r = X // 2      # 15
+
+    # Craggy Mountain-Stone Rock Perch grounded at Z=0..3 (石猿の岩座!)
+    fill_sym_box(grid, 0, 7, 10, 24, 0, 1, 8)
+    fill_sym_box(grid, 0, 6, 12, 22, 2, 2, 5)
+
+    # Agile Crouching Golden-Furred Monkey Limbs (金色の毛並み!) (Z: 2..15)
+    fill_sym_box(grid, 3, 5, 12, 17, 2, 4, 6)     # Agile peach monkey hind paws
+    fill_sym_box(grid, 3, 5, 11, 15, 5, 11, 2)    # Golden haunches!
+    fill_sym_box(grid, 4, 5, 12, 14, 6, 10, 1)    # Fiery-orange golden-fur highlight
+    fill_sym_box(grid, 4, 6, 20, 24, 2, 4, 6)     # Front monkey hands gripping rock
+    fill_sym_box(grid, 4, 6, 19, 22, 5, 14, 2)    # Golden fur arms
+    fill_sym_box(grid, 5, 6, 20, 21, 7, 13, 1)
+
+    # Hunched Agile Golden Monkey Torso & Crimson Scarf Accent (Z: 8..20)
+    fill_sym_box(grid, 0, 4, 11, 21, 9, 17, 2)    # Golden-furred monkey body!
+    fill_sym_box(grid, 0, 3, 13, 22, 8, 13, 1)    # Warm orange golden belly fur
+    fill_sym_box(grid, 0, 4, 13, 21, 17, 18, 1)   # Golden shoulder ruff
+    fill_sym_box(grid, 0, 4, 16, 22, 16, 17, 3)   # Crimson Sun-Wukong scarf collar!
+    for ty in (13, 16):
+        fill_sym_box(grid, 1, 3, ty, ty, 16, 17, 5)
+
+    # LONG CURLING GOLDEN MONKEY TAIL arcing high behind! (尻尾!) (Y: 3..11, Z: 11..29)
+    tail_c = [
+        (cx_r, 11, 12), (cx_r, 7, 11), (cx_r + 1, 4, 14),
+        (cx_r + 2, 3, 20), (cx_r + 1, 5, 26), (cx_r - 1, 7, 28), (cx_r - 1, 9, 26)
+    ]
+    for i in range(len(tail_c) - 1):
+        draw_6conn_line(grid, tail_c[i], tail_c[i + 1], 2 if i % 2 == 0 else 1, pad=(1, 0, 0))
+
+    # Expressive Golden Stone-Monkey Head, Big Monkey Ears & GOLDEN KINKOJI HEADBAND! (Z: 17..29)
+    fill_sym_box(grid, 0, 3, 18, 25, 18, 26, 2)   # Golden-furred monkey head!
+    fill_sym_box(grid, 0, 2, 24, 28, 18, 24, 6)   # Peach monkey face & protruding muzzle!
+    fill_sym_box(grid, 0, 1, 28, 29, 19, 21, 6)   # Cheeky snout
+    fill_sym_box(grid, 1, 2, 26, 26, 22, 23, 9)   # Blazing fiery-gold eyes (火眼金睛!)
+    fill_sym_box(grid, 4, 6, 20, 23, 20, 24, 2)   # Big Round Monkey Ears!
+    fill_sym_box(grid, 4, 5, 23, 23, 21, 23, 6)
+    fill_sym_box(grid, 0, 3, 18, 26, 25, 26, 3)   # Crimson brow tie
+    fill_sym_box(grid, 0, 3, 19, 26, 26, 27, 2)   # Golden Kinkoji headband!
+    fill_sym_box(grid, 0, 1, 26, 27, 26, 28, 2)   # Center filigree!
+    fill_sym_box(grid, 0, 2, 19, 24, 27, 29, 1)   # Spiky golden-orange monkey crest!
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
 def export_vox(grid, filename):
     X, Y, Z = grid.shape
     xs, ys, zs = np.nonzero(grid)
@@ -348,15 +401,17 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview(models, title_banner, out_path):
+    n = len(models)
+    cw = 24 + n * 398 + (n - 1) * 16 + 24
+    canvas = Image.new("RGBA", (cw, 540), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
+    for gx in range(0, cw, 20):
         draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
     for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(models):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -370,7 +425,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -379,16 +434,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "goku_a.vox")
     v_b = export_vox(model_b, "goku_b.vox")
+    v_c = export_vox(model_c, "goku_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
+    comp_c, minz_c = count_components_6(model_c)
     render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #01: SUN WUKONG (JOURNEY TO THE WEST) -> MONKEY KING ROBOT",
-        "1. SUN WUKONG (CHARACTER)",
-        "2. SUN WUKONG ROBOT",
+        [
+            ("1. SUN WUKONG (CHARACTER)", model_a, v_a, 28, 18),
+            ("2. SUN WUKONG ROBOT", model_b, v_b, 28, 18),
+            ("3. STONE MONKEY (BEAST)", model_c, v_c, 40, 20),
+        ],
+        "CLASSICS ROBO #01: SUN WUKONG (JOURNEY TO THE WEST) - 3-FORM TRANSFORMATION",
         "preview_goku.png",
     )
-    print(f"goku: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"goku: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}), "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}), "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

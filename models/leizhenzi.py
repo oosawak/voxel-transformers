@@ -231,6 +231,55 @@ def build_b():
     return grid
 
 
+# ============================================================
+# FORM C: GIANT BLUE THUNDER BIRD / GARUDA (鳥 — 青基調の大きな鳥!) (52 x 34 x 36)
+# ============================================================
+def build_c():
+    grid = np.zeros((52, 34, 36), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx_l = X // 2 - 1  # 25
+    cx_r = X // 2      # 26
+
+    # Powerful Golden Eagle Talons & Storm-Rock Perch grounded at Z=0..9
+    fill_sym_box(grid, 2, 5, 13, 21, 0, 1, 3)     # Spreading golden eagle talons!
+    fill_sym_box(grid, 2, 5, 21, 22, 0, 0, 6)     # Sharp dark claws
+    fill_sym_box(grid, 3, 4, 15, 18, 2, 8, 3)     # Sturdy golden raptor legs!
+
+    # Majestic Cobalt-Blue Raptor Body & Golden Breast Plume (青基調!) (Z: 7..24)
+    fill_sym_box(grid, 0, 5, 11, 23, 8, 20, 1)    # Cobalt-blue bird torso!
+    fill_sym_box(grid, 0, 4, 21, 25, 10, 20, 7)   # Sky-blue & gold chest feathers!
+    fill_sym_box(grid, 0, 2, 24, 25, 12, 18, 3)   # Golden lightning breastplate plume
+    # Sweeping Fan-Shaped Tail Feathers behind! (Y: 2..11, Z: 6..13)
+    for dx_t in (-4, -2, 0, 2, 4):
+        bx_t = (cx_r if dx_t >= 0 else cx_l) + dx_t
+        draw_6conn_line(grid, (cx_r if dx_t >= 0 else cx_l, 11, 11), (bx_t, 3, 7), 2, pad=(0, 0, 1))
+        fill_box(grid, bx_t, bx_t, 2, 3, 6, 8, 9)  # Electric-yellow tail tips!
+
+    # MASSIVE OUTSTRETCHED BLUE-AND-GOLD THUNDER WINGS! (大きな鳥!) (X: 2..49, Z: 14..35)
+    for sign in (-1, 1):
+        bx = cx_r if sign == 1 else cx_l
+        # Leading golden-and-cobalt wing spar sweeping high & wide!
+        draw_6conn_line(grid, (bx + sign * 4, 17, 19), (bx + sign * 14, 15, 29), 1, pad=(0, 1, 1))
+        draw_6conn_line(grid, (bx + sign * 14, 15, 29), (bx + sign * 24, 13, 33), 3, pad=(0, 0, 1))
+        # Sweeping layered primary wing feathers!
+        for tip_x, tip_z, col_w in [(24, 28, 1), (22, 22, 2), (18, 17, 1), (13, 13, 2)]:
+            draw_6conn_line(grid, (bx + sign * 5, 16, 17), (bx + sign * tip_x, 12, tip_z), col_w, pad=(0, 0, 1))
+            fill_box(grid, bx + sign * tip_x, bx + sign * tip_x, 12, 13, tip_z, tip_z + 1, 9)
+
+    # Fierce Cobalt-Blue Thunder-Eagle Head, Hooked Golden Beak & Crimson Crest! (Z: 20..33)
+    fill_sym_box(grid, 0, 3, 18, 25, 20, 27, 1)   # Cobalt-blue raptor neck & head
+    fill_sym_box(grid, 0, 2, 25, 31, 22, 25, 3)   # Powerful hooked golden eagle beak!
+    fill_sym_box(grid, 0, 1, 30, 32, 20, 23, 3)   # Sharp hooked beak tip!
+    fill_sym_box(grid, 2, 3, 24, 25, 25, 26, 9)   # Blazing electric-yellow raptor eyes!
+    # Sweeping Crimson Thunder-Crest Plume on Head!
+    fill_sym_box(grid, 0, 2, 17, 25, 27, 30, 5)
+    draw_6conn_line(grid, (cx_r, 18, 29), (cx_r, 13, 33), 5, pad=(1, 0, 0))
+    fill_sym_box(grid, 0, 1, 13, 15, 32, 33, 9)   # Lightning crest tip!
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
 def export_vox(grid, filename):
     X, Y, Z = grid.shape
     xs, ys, zs = np.nonzero(grid)
@@ -324,15 +373,17 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview(models, title_banner, out_path):
+    n = len(models)
+    cw = 24 + n * 398 + (n - 1) * 16 + 24
+    canvas = Image.new("RGBA", (cw, 540), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
+    for gx in range(0, cw, 20):
         draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
     for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(models):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -346,7 +397,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -355,16 +406,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "leizhenzi_a.vox")
     v_b = export_vox(model_b, "leizhenzi_b.vox")
+    v_c = export_vox(model_c, "leizhenzi_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
+    comp_c, minz_c = count_components_6(model_c)
     render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #13: LEIZHENZI (FENGSHEN) -> THUNDER-WING ROBOT",
-        "1. LEIZHENZI (CHARACTER)",
-        "2. LEIZHENZI ROBOT",
+        [
+            ("1. LEIZHENZI (CHARACTER)", model_a, v_a, 28, 18),
+            ("2. LEIZHENZI ROBOT", model_b, v_b, 28, 18),
+            ("3. THUNDER BIRD (BEAST)", model_c, v_c, 34, 22),
+        ],
+        "CLASSICS ROBO #13: LEIZHENZI (FENGSHEN) - 3-FORM TRANSFORMATION",
         "preview_leizhenzi.png",
     )
-    print(f"leizhenzi: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"leizhenzi: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}), "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}), "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

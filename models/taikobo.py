@@ -234,6 +234,74 @@ def build_b():
     return grid
 
 
+# ============================================================
+# FORM C: DRAGON-GATE KOHAKU KOI CARP (登龍門の鯉 — 赤と白!) (32 x 32 x 38)
+# ============================================================
+def build_c():
+    grid = np.zeros((32, 32, 38), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx = X // 2  # 16
+
+    # Surging Jade-Cyan Waterfall Splash Base grounded at Z=0..5 (登龍門の滝!)
+    fill_box(grid, cx - 7, cx + 6, 10, 22, 0, 1, 2)
+    fill_box(grid, cx - 6, cx + 5, 11, 21, 2, 3, 1)
+    fill_box(grid, cx - 7, cx - 5, 19, 22, 2, 5, 9)  # Foaming water spray!
+    fill_box(grid, cx + 4, cx + 6, 19, 22, 2, 5, 9)
+    fill_box(grid, cx - 4, cx + 3, 12, 18, 3, 5, 1)
+
+    # Graceful Leaping Kohaku Koi Body arching dynamically upward! (赤と白の錦鯉!)
+    # Spine points (x, y, z, radius_xy, radius_z) from caudal base -> plump mid-body -> leaping head!
+    koi_nodes = [
+        (cx - 2, 13, 8,  2.0, 2.0),
+        (cx - 3, 15, 12, 3.0, 2.8),
+        (cx - 1, 17, 17, 4.0, 3.8),
+        (cx + 2, 18, 22, 4.2, 4.0),
+        (cx + 3, 19, 27, 3.6, 3.4),
+        (cx + 2, 21, 31, 2.8, 2.6),
+    ]
+    # Connect tail base solidly into waterfall splash!
+    fill_box(grid, cx - 4, cx + 1, 11, 16, 4, 9, 3)
+    for idx_n, (nx, ny, nz, rx, rz) in enumerate(koi_nodes):
+        x0, x1 = max(0, int(nx - rx)), min(X - 1, int(nx + rx))
+        y0, y1 = max(0, int(ny - rx)), min(Y - 1, int(ny + rx))
+        z0, z1 = max(0, int(nz - rz)), min(Z - 1, int(nz + rz))
+        for x in range(x0, x1 + 1):
+            for y in range(y0, y1 + 1):
+                for z in range(z0, z1 + 1):
+                    d = ((x - nx) / rx) ** 2 + ((y - ny) / rx) ** 2 + ((z - nz) / rz) ** 2
+                    if d <= 1.0:
+                        # Classic Kohaku Red-and-White Koi Markings (紅白の模様!)
+                        is_red = (idx_n in (2, 4) and y >= ny - 1) or (idx_n == 5 and z >= nz)
+                        grid[x, y, z] = 6 if is_red else 3
+
+    # Broad Sweeping Koi Tail Fin (尾びれ) fanning gracefully at waterfall base!
+    for tx, tz in [(-7, 4), (-7, 7), (-6, 10), (1, 4), (2, 8)]:
+        draw_6conn_line(grid, (cx - 2, 12, 8), (cx + tx, 9, tz), 3)
+        draw_6conn_line(grid, (cx - 2, 12, 7), (cx + tx, 9, max(2, tz - 1)), 6 if tx < -5 else 3)
+
+    # Flowing Graceful Pectoral Fins (胸びれ) & Dorsal Fin (背びれ)!
+    # Right & Left wide sweeping Koi pectoral fins!
+    for sign in (-1, 1):
+        draw_6conn_line(grid, (cx + 2 + sign * 3, 19, 23), (cx + 2 + sign * 9, 17, 19), 3)
+        draw_6conn_line(grid, (cx + 2 + sign * 3, 18, 22), (cx + 2 + sign * 9, 16, 18), 3)
+        draw_6conn_line(grid, (cx + 2 + sign * 3, 18, 21), (cx + 2 + sign * 8, 15, 17), 4)
+    # Flowing dorsal fin crest along back!
+    for z_d in range(15, 26):
+        draw_6conn_line(grid, (cx, 14, z_d), (cx - 1, 10, z_d - 2), 6 if z_d % 2 == 0 else 3)
+
+    # Koi Head Details: Red Tancho Crown Spot, Glowing Eyes & GOLDEN CARP WHISKERS (鯉の髭!)
+    fill_box(grid, cx + 1, cx + 3, 21, 24, 31, 34, 3)  # Rounded koi snout
+    fill_box(grid, cx + 1, cx + 3, 22, 24, 34, 35, 6)  # Classic red Tancho forehead spot!
+    fill_box(grid, cx - 1, cx, 22, 23, 32, 33, 9)      # Bright cyan eyes!
+    fill_box(grid, cx + 4, cx + 5, 22, 23, 32, 33, 9)
+    # Iconic Golden Koi Whiskers (Barbels) trailing gracefully!
+    draw_6conn_line(grid, (cx, 24, 31), (cx - 4, 26, 28), 4)
+    draw_6conn_line(grid, (cx + 4, 24, 31), (cx + 8, 26, 28), 4)
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
 def export_vox(grid, filename):
     X, Y, Z = grid.shape
     xs, ys, zs = np.nonzero(grid)
@@ -327,15 +395,17 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview(models, title_banner, out_path):
+    n = len(models)
+    cw = 24 + n * 398 + (n - 1) * 16 + 24
+    canvas = Image.new("RGBA", (cw, 540), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
+    for gx in range(0, cw, 20):
         draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
     for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(models):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -349,7 +419,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -358,16 +428,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "taikobo_a.vox")
     v_b = export_vox(model_b, "taikobo_b.vox")
+    v_c = export_vox(model_c, "taikobo_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
+    comp_c, minz_c = count_components_6(model_c)
     render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #12: TAIKOBO / JIANG ZIYA (FENGSHEN HERO) -> SAGE ROBOT",
-        "1. TAIKOBO (CHARACTER)",
-        "2. TAIKOBO ROBOT",
+        [
+            ("1. TAIKOBO (CHARACTER)", model_a, v_a, 28, 18),
+            ("2. TAIKOBO ROBOT", model_b, v_b, 28, 18),
+            ("3. DRAGON-GATE KOI (CARP)", model_c, v_c, 36, 20),
+        ],
+        "CLASSICS ROBO #12: TAIKOBO / JIANG ZIYA (FENGSHEN HERO) - 3-FORM TRANSFORMATION",
         "preview_taikobo.png",
     )
-    print(f"taikobo: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"taikobo: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}), "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}), "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

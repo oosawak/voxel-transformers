@@ -213,6 +213,93 @@ def build_b():
     return grid
 
 
+def draw_6conn_line_c(grid, p0, p1, col, pad=(0, 0, 0)):
+    X, Y, Z = grid.shape
+    x0, y0, z0 = int(round(p0[0])), int(round(p0[1])), int(round(p0[2]))
+    x1, y1, z1 = int(round(p1[0])), int(round(p1[1])), int(round(p1[2]))
+    steps = max(abs(x1 - x0), abs(y1 - y0), abs(z1 - z0), 1) * 2
+    prev = None
+    px, py, pz = pad
+
+    def stamp(cx_, cy_, cz_):
+        xa, xb = max(0, cx_ - px), min(X - 1, cx_ + px)
+        ya, yb = max(0, cy_ - py), min(Y - 1, cy_ + py)
+        za, zb = max(0, cz_ - pz), min(Z - 1, cz_ + pz)
+        grid[xa:xb + 1, ya:yb + 1, za:zb + 1] = col
+
+    for i in range(steps + 1):
+        t = i / steps
+        x = int(round(x0 + (x1 - x0) * t))
+        y = int(round(y0 + (y1 - y0) * t))
+        z = int(round(z0 + (z1 - z0) * t))
+        if prev is not None:
+            ox, oy, oz = prev
+            if x != ox:
+                stamp(x, oy, oz)
+                ox = x
+            if y != oy:
+                stamp(ox, y, oz)
+                oy = y
+            if z != oz:
+                stamp(ox, oy, z)
+        else:
+            stamp(x, y, z)
+        prev = (x, y, z)
+
+
+# ============================================================
+# FORM C: WHITE JADE DRAGON PRINCE / GYOKURYU (白い竜 — 白と金の細身の竜) (32 x 32 x 42)
+# ============================================================
+def build_c():
+    grid = np.zeros((32, 32, 42), dtype=np.uint8)
+    X, Y, Z = grid.shape
+    cx = X // 2  # 16
+
+    # Soft Cloud-Lotus Mist Base grounded cleanly at Z=0..2
+    fill_box(grid, cx - 7, cx + 6, 11, 21, 0, 1, 2)
+    fill_box(grid, cx - 5, cx + 4, 13, 19, 2, 2, 1)
+
+    # Slender Noble White-and-Gold Dragon Spine coiling gracefully upward! (白と金の細身の竜!)
+    spine = [
+        (cx - 5, 17, 3), (cx - 8, 12, 6), (cx - 2, 9, 10), (cx + 6, 11, 14),
+        (cx + 7, 18, 18), (cx + 1, 21, 22), (cx - 5, 18, 26), (cx - 3, 13, 30),
+        (cx, 16, 34)
+    ]
+    for i in range(len(spine) - 1):
+        draw_6conn_line_c(grid, spine[i], spine[i + 1], 1, pad=(1, 1, 1))
+        p0, p1 = spine[i], spine[i + 1]
+        draw_6conn_line_c(grid, (p0[0], p0[1] + 1, p0[2] - 1), (p1[0], p1[1] + 1, p1[2] - 1), 3)
+        draw_6conn_line_c(grid, (p0[0], p0[1] - 1, p0[2] + 1), (p1[0], p1[1] - 1, p1[2] + 1), 3)
+
+    # Graceful Slender White-Gold Tail Plume
+    draw_6conn_line_c(grid, (cx - 5, 17, 3), (cx - 10, 20, 3), 1, pad=(1, 0, 1))
+    draw_6conn_line_c(grid, (cx - 10, 20, 3), (cx - 12, 23, 6), 3)
+    fill_box(grid, cx - 13, cx - 11, 23, 25, 5, 8, 5)
+
+    # Slender Dragon Claws + Sacred Lotus Pearl (宝珠!)
+    draw_6conn_line_c(grid, (cx + 1, 21, 22), (cx + 6, 25, 21), 1)
+    fill_box(grid, cx + 6, cx + 8, 25, 27, 20, 22, 9)
+    fill_box(grid, cx + 7, cx + 7, 26, 26, 22, 23, 3)
+    draw_6conn_line_c(grid, (cx - 5, 18, 26), (cx - 8, 23, 24), 1)
+    fill_box(grid, cx - 9, cx - 7, 23, 24, 23, 24, 3)
+
+    # Refined White Dragon Head, Golden Antlers, Whiskers & Crimson Crest! (Z: 32..41)
+    fill_box(grid, cx - 2, cx + 2, 16, 23, 33, 37, 1)
+    fill_box(grid, cx - 2, cx + 2, 23, 27, 33, 35, 1)
+    fill_box(grid, cx - 1, cx + 1, 22, 26, 32, 33, 3)
+    fill_box(grid, cx - 2, cx - 2, 22, 23, 35, 36, 9)
+    fill_box(grid, cx + 2, cx + 2, 22, 23, 35, 36, 9)
+    fill_box(grid, cx - 1, cx + 1, 19, 22, 37, 39, 5)
+    fill_box(grid, cx - 3, cx + 3, 14, 16, 33, 37, 2)
+    for sign in (-1, 1):
+        draw_6conn_line_c(grid, (cx + sign * 2, 18, 37), (cx + sign * 5, 14, 41), 3)
+        draw_6conn_line_c(grid, (cx + sign * 2, 26, 34), (cx + sign * 6, 28, 33), 3)
+        draw_6conn_line_c(grid, (cx + sign * 6, 28, 33), (cx + sign * 8, 26, 30), 3)
+
+    hollow_interior_26(grid, 1, Z - 2)
+    return grid
+
+
 def export_vox(grid, filename):
     X, Y, Z = grid.shape
     xs, ys, zs = np.nonzero(grid)
@@ -306,15 +393,17 @@ def render_voxel_iso(grid, yaw_deg=35, pitch_deg=25, scale=None, img_size=(386, 
     return img
 
 
-def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out_path, yaw_a=28, pitch_a=18, yaw_b=28, pitch_b=18):
-    canvas = Image.new("RGBA", (860, 540), (20, 24, 34, 255))
+def render_preview(models, title_banner, out_path):
+    n = len(models)
+    cw = 24 + n * 398 + (n - 1) * 16 + 24
+    canvas = Image.new("RGBA", (cw, 540), (20, 24, 34, 255))
     draw = ImageDraw.Draw(canvas)
-    for gx in range(0, 860, 20):
+    for gx in range(0, cw, 20):
         draw.line([(gx, 0), (gx, 540)], fill=(28, 34, 48, 255), width=1)
     for gy in range(0, 540, 20):
-        draw.line([(0, gy), (860, gy)], fill=(28, 34, 48, 255), width=1)
+        draw.line([(0, gy), (cw, gy)], fill=(28, 34, 48, 255), width=1)
     draw.text((24, 16), title_banner, fill=(210, 225, 250, 255))
-    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate([(label_a, grid_a, v_a, yaw_a, pitch_a), (label_b, grid_b, v_b, yaw_b, pitch_b)]):
+    for idx, (label, m_grid, v_cnt, yaw, pitch) in enumerate(models):
         bx, by, w, h = 24 + idx * 414, 48, 398, 468
         draw.rectangle([bx, by, bx + w, by + h], fill=(14, 17, 24, 255), outline=(65, 80, 110, 255), width=2)
         draw.text((bx + 14, by + 12), label, fill=(235, 240, 255, 255))
@@ -328,7 +417,7 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
         canvas.paste(r_rear, (rx0 + 3, ry0 + 16), r_rear)
         draw.text((rx0 + 8, ry0 + 5), "REAR VIEW", fill=(120, 140, 175, 255))
         draw.text((bx + 14, by + 406), f"Z-Slices: {gz} layers", fill=(160, 180, 210, 255))
-        for pi in range(1, 10):
+        for pi in range(1, len(PALETTE) + 1):
             px0, py0 = bx + 14 + (pi - 1) * 20, by + 430
             draw.rectangle([px0, py0, px0 + 15, py0 + 15], fill=PALETTE[pi], outline=(70, 82, 105, 255))
     canvas.save(out_path)
@@ -337,16 +426,22 @@ def render_preview(grid_a, v_a, grid_b, v_b, title_banner, label_a, label_b, out
 if __name__ == "__main__":
     model_a = build_a()
     model_b = build_b()
+    model_c = build_c()
     v_a = export_vox(model_a, "sanzo_a.vox")
     v_b = export_vox(model_b, "sanzo_b.vox")
+    v_c = export_vox(model_c, "sanzo_c.vox")
     comp_a, minz_a = count_components_6(model_a)
     comp_b, minz_b = count_components_6(model_b)
+    comp_c, minz_c = count_components_6(model_c)
     render_preview(
-        model_a, v_a, model_b, v_b,
-        "CLASSICS ROBO #04: SANZO HOSHI (JOURNEY TO THE WEST) -> MONK PALADIN ROBOT",
-        "1. SANZO HOSHI (CHARACTER)",
-        "2. SANZO HOSHI ROBOT",
+        [
+            ("1. SANZO HOSHI (CHARACTER)", model_a, v_a, 28, 18),
+            ("2. SANZO HOSHI ROBOT", model_b, v_b, 28, 18),
+            ("3. WHITE DRAGON (GYOKURYU)", model_c, v_c, 36, 20),
+        ],
+        "CLASSICS ROBO #04: SANZO HOSHI (JOURNEY TO THE WEST) - 3-FORM TRANSFORMATION",
         "preview_sanzo.png",
     )
-    print(f"sanzo: A={v_a} voxels {model_a.shape} (comp={comp_a}, minZ={minz_a}), "
-          f"B={v_b} voxels {model_b.shape} (comp={comp_b}, minZ={minz_b})")
+    print(f"sanzo: A={v_a} {model_a.shape} (c={comp_a},z={minz_a}), "
+          f"B={v_b} {model_b.shape} (c={comp_b},z={minz_b}), "
+          f"C={v_c} {model_c.shape} (c={comp_c},z={minz_c})")

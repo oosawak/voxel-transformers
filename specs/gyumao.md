@@ -8,6 +8,9 @@ forms:
   - file: gyumao_b.vox
     label: ロボ
     robot: true
+  - file: gyumao_c.vox
+    label: 牛
+    anim: quad_cat
 ---
 
 # 牛魔王

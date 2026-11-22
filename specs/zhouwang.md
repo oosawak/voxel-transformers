@@ -8,6 +8,9 @@ forms:
   - file: zhouwang_b.vox
     label: ロボ
     robot: true
+  - file: zhouwang_c.vox
+    label: 玄鳥
+    anim: flap
 ---
 
 # 紂王

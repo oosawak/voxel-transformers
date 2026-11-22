@@ -8,6 +8,9 @@ forms:
   - file: yojian_b.vox
     label: ロボ
     robot: true
+  - file: yojian_c.vox
+    label: 犬
+    anim: quad_small
 ---
 
 # 楊戩

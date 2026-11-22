@@ -8,6 +8,9 @@ forms:
   - file: dakki_b.vox
     label: ロボ
     robot: true
+  - file: dakki_c.vox
+    label: 狐
+    anim: quad_small
 ---
 
 # 妲己
