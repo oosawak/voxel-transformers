@@ -39,11 +39,30 @@
     border: 1px solid rgba(100, 160, 255, 0.4);
   }
   a.btn:hover { background: rgba(45, 75, 125, 0.95); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+  .tabs a {
+    padding: 8px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
+    text-decoration: none; color: #dce8ff;
+    background: rgba(24, 38, 64, 0.9); border: 1px solid rgba(100, 160, 255, 0.4);
+  }
+  .tabs a:hover { background: rgba(45, 75, 125, 0.95); }
+  .tabs a.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border-color: #93c5fd;
+  }
 </style>
 </head>
 <body>
 <header>
   <h1>変形ボクセルの作り方</h1>
+  <nav class="tabs">
+    <a href="./">モデル集</a>
+    <a href="warlords.html">武将ロボ</a>
+    <a href="maids.html">十二支メイドロボ＋猫</a>
+    <a href="classics.html">西遊記／封神演義ロボ</a>
+    <a href="sangokushi.html">三国志ロボ</a>
+    <a href="zodiac.html">黄道十二星座ロボ</a>
+    <a href="howto.html" class="active">作り方</a>
+  </nav>
   <p class="sub"><a href="index.html">変形ボクセルモデル集</a>のモデルが、どうやって作られているかの手順書です。シリーズ別のページに、<a href="warlords.html">武将ロボ</a>、<a href="maids.html">十二支メイドロボ</a>、<a href="classics.html">西遊記／封神演義ロボ</a>、<a href="sangokushi.html">三国志ロボ</a>、<a href="zodiac.html">黄道十二星座ロボ</a>があります。同じ方法で、自分の変形ボクセルを作れます。</p>
 </header>
 <main>

@@ -78,11 +78,30 @@
     font-size: 12.5px; line-height: 1.9;
   }
   footer a { color: #7cc4ff; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+  .tabs a {
+    padding: 8px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
+    text-decoration: none; color: #dce8ff;
+    background: rgba(24, 38, 64, 0.9); border: 1px solid rgba(100, 160, 255, 0.4);
+  }
+  .tabs a:hover { background: rgba(45, 75, 125, 0.95); }
+  .tabs a.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border-color: #93c5fd;
+  }
 </style>
 </head>
 <body>
 <header>
   <h1>変形ボクセルモデル集</h1>
+  <nav class="tabs">
+    <a href="./" class="active">モデル集</a>
+    <a href="warlords.html">武将ロボ</a>
+    <a href="maids.html">十二支メイドロボ＋猫</a>
+    <a href="classics.html">西遊記／封神演義ロボ</a>
+    <a href="sangokushi.html">三国志ロボ</a>
+    <a href="zodiac.html">黄道十二星座ロボ</a>
+    <a href="howto.html">作り方</a>
+  </nav>
   <div class="sub">
     Gemini が設計した、乗り物や建物からロボットへ変形するボクセルモデル70件です。<br>
     変形の様子は、このページのビューアでそのまま見られます。各モデルのデータ（MagicaVoxel 形式の .vox）はダウンロードできます。
