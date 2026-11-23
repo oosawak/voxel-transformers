@@ -571,7 +571,7 @@ document.getElementById('grid').innerHTML = MODELS.map(m => `
   const _params = new URLSearchParams(location.search);
   const _wantKey = _params.get('unit');
   const _wantForm = Math.max(0, parseInt(_params.get('form') || '0', 10) || 0);
-  const _startKey = window.EXTRA_MODELS.some(m => m.key === _wantKey) ? _wantKey : window.EXTRA_MODELS[0].key;
+  const _startKey = window.EXTRA_MODELS.some(m => m.key === _wantKey) ? _wantKey : (window.EXTRA_MODELS.some(m => m.key === 'babydragon') ? 'babydragon' : window.EXTRA_MODELS[0].key);
   select.value = _startKey;
   loadUnit(_startKey, 0);
   if (_wantForm > 0) setTimeout(() => setForm(_wantForm), 500);
