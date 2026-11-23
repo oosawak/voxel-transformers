@@ -3,301 +3,381 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>赤い子竜（大）格子1024 ― 特大ボクセル表示 | 変形ボクセルギャラリー</title>
+<title>赤い子竜（大）格子1024｜変形ボクセルモデル集</title>
 <style>
+  :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: #0b1324; color: #e2e8f0; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; }
-  header { max-width: 1080px; margin: 0 auto; padding: 20px 16px 4px; }
-  h1 { font-size: 22px; margin: 0 0 6px; }
-  p.lead { color: #94a3b8; font-size: 14px; line-height: 1.7; margin: 0 0 4px; }
-  a { color: #7dd3fc; }
-  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
-  .tabs a {
-    padding: 8px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
-    text-decoration: none; color: #dce8ff;
-    background: rgba(24, 38, 64, 0.9); border: 1px solid rgba(100, 160, 255, 0.4);
-  }
-  .tabs a:hover { background: rgba(45, 75, 125, 0.95); }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 8px 16px 28px; }
-  #viewer-canvas { width: 100%; height: 62vh; display: block; background: #0b1324; border: 1px solid #1e293b; border-radius: 10px; touch-action: none; }
-  .panel { margin-top: 12px; background: #111c33; border: 1px solid #1e293b; border-radius: 10px; padding: 14px 16px; }
-  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .row span { font-size: 13px; color: #94a3b8; }
-  button { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 8px; padding: 7px 14px; font-size: 14px; cursor: pointer; }
-  button.on { background: #2563eb; border-color: #2563eb; }
-  button:disabled { opacity: 0.5; cursor: wait; }
-  #status { font-size: 13.5px; color: #cbd5e1; margin-top: 10px; line-height: 1.7; }
-  .note { color: #94a3b8; font-size: 13px; line-height: 1.7; margin-top: 10px; }
-  .spec { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13.5px; }
-  .spec th, .spec td { border: 1px solid #1e293b; padding: 6px 10px; text-align: left; }
-  .spec th { background: #111c33; color: #9bb3d8; font-weight: 600; white-space: nowrap; }
+  body { margin: 0; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; background: #0b1324; color: #e2e8f0; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 1.45rem; margin: 4px 0 10px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+  .tabs a { color: #cbd5e1; text-decoration: none; border: 1px solid #334155; border-radius: 999px; padding: 6px 14px; font-size: .9rem; background: #111c33; }
+  .tabs a.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+  p.lead { color: #cbd5e1; line-height: 1.75; margin: 0 0 14px; }
+  #stage { background: radial-gradient(1200px 600px at 50% 30%, #16233f 0%, #0b1324 70%); border: 1px solid #1e293b; border-radius: 14px; }
+  canvas { display: block; width: 100%; height: 62vh; touch-action: none; cursor: grab; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .bar button { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 999px; padding: 7px 16px; font-size: .92rem; cursor: pointer; }
+  .bar button.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .bar .lbl { color: #94a3b8; font-size: .9rem; }
+  #status { color: #94a3b8; font-size: .9rem; margin-top: 10px; line-height: 1.7; }
+  h2 { font-size: 1.1rem; margin: 26px 0 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td { border: 1px solid #1e293b; padding: 7px 10px; text-align: left; }
+  th { background: #111c33; color: #cbd5e1; white-space: nowrap; }
+  td { color: #e2e8f0; }
+  .back { margin-top: 26px; }
+  .back a { color: #7dd3fc; }
 </style>
 </head>
 <body>
-<header>
+<main>
   <h1>赤い子竜（大）― 格子1024の特大ボクセル</h1>
   <nav class="tabs">
-    <a href="./">モデル集</a>
-    <a href="warlords.html">武将ロボ</a>
-    <a href="maids.html">十二支メイドロボ＋猫</a>
-    <a href="classics.html">西遊記／封神演義ロボ</a>
-    <a href="sangokushi.html">三国志ロボ</a>
-    <a href="zodiac.html">黄道十二星座ロボ</a>
-    <a href="howto.html">作り方</a>
+    <a href="./index.html">モデル集</a>
+    <a href="./warlords.html">武将ロボ</a>
+    <a href="./maids.html">十二支メイドロボ＋猫</a>
+    <a href="./classics.html">西遊記／封神演義ロボ</a>
+    <a href="./sangokushi.html">三国志ロボ</a>
+    <a href="./zodiac.html">黄道十二星座ロボ</a>
+    <a href="./howto.html">作り方</a>
   </nav>
-  <p class="lead">造形テストの本命です。通常のモデルは格子256まで（座標が1バイトの形式の都合）ですが、これは独自形式 <strong>.voxx</strong>（座標2バイト）で <strong>格子 878×982×1024</strong> まで大きくした赤い子竜です。表面ボクセルは <strong>1,385,385個</strong>。表示は、見える面だけを描く面カリングと、解像度を落とす LOD（間引き）で軽くしています。ドラッグで回せます。</p>
-</header>
-<div class="wrap">
-  <canvas id="viewer-canvas"></canvas>
-  <div class="panel">
-    <div class="row">
-      <span>解像度:</span>
-      <button id="lod4">1/4（軽い）</button>
-      <button id="lod2" class="on">1/2</button>
-      <button id="lod1">フル（重い）</button>
-      <button id="rot" class="on">自動回転: オン</button>
-    </div>
-    <div id="status">データを読み込んでいます…</div>
+  <p class="lead">
+    造形テストの本命です。通常のモデルは格子256まで（座標が1バイトの形式の都合）ですが、これは独自形式 .voxx（座標2バイト）で 格子 878×982×1024 まで大きくした赤い子竜です。表面ボクセルは <strong>1,385,385個</strong>。
+    表示は、見える面だけを描く面カリングと、解像度を落とす LOD（間引き）で軽くしています。翼・あご・体を部品に分けて作ってあるので、はばたきと口の開閉、火吹きも動きます。ドラッグで回せます。
+  </p>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div class="bar">
+    <span class="lbl">解像度:</span>
+    <button data-lod="4">1/4（軽い）</button>
+    <button data-lod="2">1/2</button>
+    <button data-lod="1">フル（重い）</button>
+    <button id="rot" class="on">自動回転: オン</button>
+    <button id="anim" class="on">アニメ: オン</button>
   </div>
-  <div class="panel">
-    <div class="row"><span style="font-size:15px; color:#e2e8f0; font-weight:600">実測の記録</span></div>
-    <table class="spec">
-      <tr><th>格子</th><td>878 × 982 × 1024（最長辺 1024、総格子点 約8.83億）</td></tr>
-      <tr><th>表面ボクセル</th><td>1,385,385 個（生成時に6近傍の表面だけを抽出）</td></tr>
-      <tr><th>生成</th><td>Mac（Antigravity）で 74.17 秒、ピークメモリ 約3.85 GiB。Z方向にスラブ分割して表面だけを残す作り</td></tr>
-      <tr><th>データ</th><td>.voxx 形式 9.25 MiB（1ボクセル7バイト）。Web用データ 12.33 MiB</td></tr>
-      <tr><th>変換の見比べ</th><td>Mac側とミューズ側で同じ変換器（convert_one.py）を回し、出力がバイト単位で一致することを確認済み</td></tr>
-      <tr><th>表示</th><td>面カリング（隣り合う面を描かない）と LOD（1/2・1/4 は 2×2×2・4×4×4 を1個にまとめた間引き表示）</td></tr>
-    </table>
-    <p class="note">128版（格子124×124×128）は、モデル集の「赤い子竜（大）」として通常のビューアでも見られます。この1024版は、大きさの実測のために分けた特大版です。</p>
-  </div>
-</div>
+  <div id="status">読み込み中…</div>
+
+  <h2>実測の記録</h2>
+  <table>
+    <tr><th>格子</th><td>878 × 982 × 1024（総格子点 882,884,608）</td></tr>
+    <tr><th>表面ボクセル</th><td>1,385,385個</td></tr>
+    <tr><th>生成</th><td>74.17秒（Mac の Antigravity、Z方向スラブ分割のSDF造形、ピークメモリ 3,947.2 MiB）</td></tr>
+    <tr><th>形式</th><td>.voxx（座標は uint16、1ボクセル7バイト）＋ palette.json ＋ meta.json。.vox と現行のWeb形式は座標が1バイトで256が上限のため、この大きさでは使えない</td></tr>
+    <tr><th>変換の見比べ</th><td>Mac側とミューズ側で同じ変換器（convert_one.py）を回し、出力データがバイト単位で完全一致した（SHA-256 b897d00e…）</td></tr>
+    <tr><th>表示</th><td>面カリング＋LOD。フル解像度で面 4,938,910枚・三角形 9,877,820（面カリングなしの箱表示なら三角形 16,624,620）。アニメーションは翼・あご・体に部品分けして、それぞれの部品の中で面カリングしている</td></tr>
+  </table>
+  <p class="back"><a href="./index.html">← モデル集へ戻る</a></p>
+</main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="./models/babydragon_big-data.js"></script>
 <script>
-"use strict";
-const statusEl = document.getElementById('status');
-const canvas = document.getElementById('viewer-canvas');
-const M = window.BIG_MODEL;
-const FORM = M.forms[0];
-const DIMS = FORM.dims; // [X, Y, Z] Y=奥行き(正面+Y), Z=高さ
-const PAL = M.palette;
+(function () {
+  const status = document.getElementById('status');
+  const M = window.BIG_MODEL;
+  if (!M) { status.textContent = 'データの読み込みに失敗しました。'; return; }
+  const FORM = M.forms[0];
+  const X = FORM.dims[0], Y = FORM.dims[1], Z = FORM.dims[2];
 
-let VX = null, VY = null, VZ = null, VC = null, NV = 0;
-function decode() {
+  // --- デコード（u16x7） ---
   const bin = atob(FORM.data);
-  const n = Math.floor(bin.length / 7);
-  VX = new Uint16Array(n); VY = new Uint16Array(n); VZ = new Uint16Array(n); VC = new Uint8Array(n);
+  const NB = bin.length;
+  const n = (NB / 7) | 0;
+  const VX = new Uint16Array(n), VY = new Uint16Array(n), VZ = new Uint16Array(n), VC = new Uint8Array(n);
   for (let i = 0, o = 0; i < n; i++, o += 7) {
     VX[i] = bin.charCodeAt(o) | (bin.charCodeAt(o + 1) << 8);
     VY[i] = bin.charCodeAt(o + 2) | (bin.charCodeAt(o + 3) << 8);
     VZ[i] = bin.charCodeAt(o + 4) | (bin.charCodeAt(o + 5) << 8);
     VC[i] = bin.charCodeAt(o + 6);
   }
-  NV = n;
-}
+  const PAL = [];
+  for (const k in M.palette) PAL[+k] = M.palette[k];
 
-// LOD: s×s×s のセルを1ボクセルにまとめる。色はセル内の多数決、位置はセルの原点にそろえる（隣と隙間なく並ぶ）。
-function downsample(s) {
-  if (s === 1) return { x: VX, y: VY, z: VZ, c: VC, n: NV, s: 1 };
-  const cells = new Map();
-  for (let i = 0; i < NV; i++) {
-    const gx = (VX[i] / s) | 0, gy = (VY[i] / s) | 0, gz = (VZ[i] / s) | 0;
-    const key = (gx * 2048 + gy) * 2048 + gz;
-    let cell = cells.get(key);
-    if (!cell) { cell = { gx, gy, gz, cnt: new Map() }; cells.set(key, cell); }
-    const c = VC[i];
-    cell.cnt.set(c, (cell.cnt.get(c) || 0) + 1);
-  }
-  const n = cells.size;
-  const ox = new Uint16Array(n), oy = new Uint16Array(n), oz = new Uint16Array(n), oc = new Uint8Array(n);
-  let j = 0;
-  for (const cell of cells.values()) {
-    let best = -1, bestN = -1;
-    for (const [c, cnt] of cell.cnt) if (cnt > bestN) { bestN = cnt; best = c; }
-    ox[j] = cell.gx * s; oy[j] = cell.gy * s; oz[j] = cell.gz * s; oc[j] = best; j++;
-  }
-  return { x: ox, y: oy, z: oz, c: oc, n, s };
-}
-
-// 面カリングつきジオメトリ: 隣にボクセルがある方向の面は出さない
-const DIRS = [
-  { d: [1, 0, 0], n: [1, 0, 0] }, { d: [-1, 0, 0], n: [-1, 0, 0] },
-  { d: [0, 1, 0], n: [0, 1, 0] }, { d: [0, -1, 0], n: [0, -1, 0] },
-  { d: [0, 0, 1], n: [0, 0, 1] }, { d: [0, 0, -1], n: [0, 0, -1] },
-];
-// ローカル座標: lx = x - X/2, ly = z - Z/2 (高さ), lz = -(y - Y/2)
-// 面の4頂点（ボクセル中心からのオフセット×(s), 方向ごと）
-function faceCorners(nx, ny, nz) {
-  // 法線方向に +0.5、それ以外は ±0.5 の組み合わせ
-  const ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
-  let u, v;
-  if (ax) { u = [0, 1, 0]; v = [0, 0, 1]; }
-  else if (ay) { u = [1, 0, 0]; v = [0, 0, 1]; }
-  else { u = [1, 0, 0]; v = [0, 1, 0]; }
-  const c = [nx * 0.5, ny * 0.5, nz * 0.5];
-  const pts = [];
-  for (const [su, sv] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
-    pts.push([
-      c[0] + (u[0] * su + v[0] * sv) * 0.5,
-      c[1] + (u[1] * su + v[1] * sv) * 0.5,
-      c[2] + (u[2] * su + v[2] * sv) * 0.5,
-    ]);
-  }
-  // 外向きになるよう、法線と逆なら反転
-  const e1 = [pts[1][0] - pts[0][0], pts[1][1] - pts[0][1], pts[1][2] - pts[0][2]];
-  const e2 = [pts[3][0] - pts[0][0], pts[3][1] - pts[0][1], pts[3][2] - pts[0][2]];
-  const cx = e1[1] * e2[2] - e1[2] * e2[1], cy = e1[2] * e2[0] - e1[0] * e2[2], cz = e1[0] * e2[1] - e1[1] * e2[0];
-  if (cx * nx + cy * ny + cz * nz < 0) pts.reverse();
-  return pts;
-}
-const FACE_PTS = DIRS.map(d => faceCorners(d.n[0], d.n[1], d.n[2]));
-
-function buildGeometry(lod) {
-  const { x, y, z, c, n, s } = lod;
-  const set = new Set();
-  for (let i = 0; i < n; i++) set.add((x[i] * 2048 + y[i]) * 2048 + z[i]);
-  const has = (lx, ly, lz) => {
-    // ローカル座標→元座標の逆変換はせず、元座標のまま判定する
-    return set.has((lx * 2048 + ly) * 2048 + lz);
-  };
-  let faces = 0;
-  for (let i = 0; i < n; i++) {
-    for (let f = 0; f < 6; f++) {
-      const d = DIRS[f].d;
-      if (!has(x[i] + d[0] * s, y[i] + d[1] * s, z[i] + d[2] * s)) faces++;
+  // --- LOD 間引き（s×s×s セルの多数決色） ---
+  function downsample(s) {
+    if (s === 1) {
+      const cells = new Array(n);
+      for (let i = 0; i < n; i++) cells[i] = { x: VX[i], y: VY[i], z: VZ[i], c: VC[i] };
+      return cells;
     }
+    const map = new Map();
+    for (let i = 0; i < n; i++) {
+      const gx = (VX[i] / s) | 0, gy = (VY[i] / s) | 0, gz = (VZ[i] / s) | 0;
+      const key = (gx * 2048 + gy) * 2048 + gz;
+      let cell = map.get(key);
+      if (!cell) { cell = { x: gx * s, y: gy * s, z: gz * s, counts: new Map() }; map.set(key, cell); }
+      cell.counts.set(VC[i], (cell.counts.get(VC[i]) || 0) + 1);
+    }
+    const cells = [...map.values()];
+    for (const cell of cells) {
+      let best = 0, bc = -1;
+      for (const [c, cnt] of cell.counts) if (cnt > bc) { bc = cnt; best = c; }
+      cell.c = best; delete cell.counts;
+    }
+    return cells;
   }
-  const pos = new Float32Array(faces * 4 * 3);
-  const nor = new Float32Array(faces * 4 * 3);
-  const col = new Float32Array(faces * 4 * 3);
-  const idx = new Uint32Array(faces * 6);
-  const X2 = DIMS[0] / 2, Y2 = DIMS[1] / 2, Z2 = DIMS[2] / 2;
-  const off = (s - 1) / 2; // LOD セルの中心へのずれ（フル解像度では0）
-  let fp = 0, ip = 0, vb = 0;
-  const tmpC = new THREE.Color();
-  for (let i = 0; i < n; i++) {
-    const cx = x[i] + off - X2, cy = z[i] + off - Z2, cz = -(y[i] + off - Y2);
-    tmpC.setHex(PAL[c[i]] || 0xffffff);
-    for (let f = 0; f < 6; f++) {
-      const d = DIRS[f].d;
-      if (has(x[i] + d[0] * s, y[i] + d[1] * s, z[i] + d[2] * s)) continue;
-      // ローカル法線: 元座標の方向 d=(dx,dy,dz) → ローカル (dx, dz, -dy)
-      const ln = [d[0], d[2], -d[1]];
-      const pts = FACE_PTS[f];
-      for (let k = 0; k < 4; k++) {
-        // 面の頂点オフセットも同じ変換: 元 (px,py,pz) → ローカル (px, pz, -py)
-        const lp = [pts[k][0], pts[k][2], -pts[k][1]];
-        pos[fp] = cx + lp[0] * s; pos[fp + 1] = cy + lp[1] * s; pos[fp + 2] = cz + lp[2] * s;
-        nor[fp] = ln[0]; nor[fp + 1] = ln[1]; nor[fp + 2] = ln[2];
-        col[fp] = tmpC.r; col[fp + 1] = tmpC.g; col[fp + 2] = tmpC.b;
-        fp += 3;
+
+  // --- 部品分け（翼・あご・体） ---
+  // 実測した位置関係（格子座標）: 顔は +Y 側（目の暗色が y 662..786, z 637..782）、
+  // 翼膜は x 173..704 / y 255..388 / z 330..513。ローカル座標は lx=x-X/2, ly=z-Z/2, lz=-(y-Y/2) で、正面は -Z。
+  const MEMB = new Set([7, 8]);       // 翼膜の色（濃い赤紫2色、パレット番号）
+  const REDS = new Set([1, 2, 3]);    // 翼の枠の赤3色
+  const WING_PIVOT = { x: 35, y: -105 };  // 翼の付け根（ローカル座標、回転はZ軸まわり）
+  const JAW_PIVOT = { y: 155, z: -175 };  // あごの関節（回転はX軸まわり）
+  function classify(cells, s) {
+    const part = new Int8Array(cells.length); // 0=体 1=翼(左) 2=翼(右) 3=あご
+    const loc = cells.map(cell => ({
+      lx: cell.x + s / 2 - X / 2, ly: cell.z + s / 2 - Z / 2, lz: -(cell.y + s / 2 - Y / 2)
+    }));
+    const inWingRegion = L => Math.abs(L.lx) <= 310 && L.ly >= -300 && L.ly <= 90 && L.lz >= 30 && L.lz <= 330;
+    // 翼: 膜色を種に、近くの赤い枠セルへ広げる
+    const byKey = new Map();
+    cells.forEach((cell, i) => byKey.set((cell.x * 2048 + cell.y) * 2048 + cell.z, i));
+    const queue = [];
+    cells.forEach((cell, i) => { if (MEMB.has(cell.c)) { part[i] = loc[i].lx > 0 ? 2 : 1; queue.push([i, 0]); } });
+    const seen = new Set(queue.map(q => q[0]));
+    let qh = 0;
+    while (qh < queue.length) {
+      const [i, step] = queue[qh++];
+      if (step >= 16) continue;
+      const cell = cells[i];
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+        if (!dx && !dy && !dz) continue;
+        const j = byKey.get(((cell.x + dx * s) * 2048 + (cell.y + dy * s)) * 2048 + (cell.z + dz * s));
+        if (j === undefined || seen.has(j)) continue;
+        if (!REDS.has(cells[j].c) || !inWingRegion(loc[j])) continue;
+        seen.add(j); part[j] = loc[j].lx > 0 ? 2 : 1; queue.push([j, step + 1]);
       }
-      idx[ip++] = vb; idx[ip++] = vb + 1; idx[ip++] = vb + 2;
-      idx[ip++] = vb; idx[ip++] = vb + 2; idx[ip++] = vb + 3;
-      vb += 4;
+    }
+    // あご: 頭の前面・下・中央の帯
+    cells.forEach((cell, i) => {
+      if (part[i]) return;
+      const L = loc[i];
+      if (L.lz >= -300 && L.lz <= -180 && L.ly >= 25 && L.ly <= 170 && Math.abs(L.lx) <= 180) part[i] = 3;
+    });
+    return part;
+  }
+
+  // --- 面カリングしたジオメトリ（部品ごと。オフセットは部品の回転中心） ---
+  const DIRS = [
+    { d: [1, 0, 0], n: [1, 0, 0] }, { d: [-1, 0, 0], n: [-1, 0, 0] },
+    { d: [0, 1, 0], n: [0, 0, -1] }, { d: [0, -1, 0], n: [0, 0, 1] },
+    { d: [0, 0, 1], n: [0, 1, 0] }, { d: [0, 0, -1], n: [0, -1, 0] }
+  ];
+  function faceCorners(d, s) {
+    const h = s / 2;
+    let u, v;
+    if (d[0] !== 0) { u = [0, 1, 0]; v = [0, 0, 1]; }
+    else if (d[1] !== 0) { u = [1, 0, 0]; v = [0, 0, 1]; }
+    else { u = [1, 0, 0]; v = [0, 1, 0]; }
+    const c = [d[0] * h, d[1] * h, d[2] * h];
+    const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [
+      c[0] + u[0] * a * h + v[0] * b * h,
+      c[1] + u[1] * a * h + v[1] * b * h,
+      c[2] + u[2] * a * h + v[2] * b * h
+    ]);
+    const e1 = [pts[1][0] - pts[0][0], pts[1][1] - pts[0][1], pts[1][2] - pts[0][2]];
+    const e2 = [pts[3][0] - pts[0][0], pts[3][1] - pts[0][1], pts[3][2] - pts[0][2]];
+    const cr = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
+    if (cr[0] * d[0] + cr[1] * d[1] + cr[2] * d[2] < 0) { const t = pts[1]; pts[1] = pts[3]; pts[3] = t; }
+    return pts;
+  }
+  const CORNERS = DIRS.map(({ d }) => ({ d, corners: faceCorners(d, 1) }));
+  function buildPartGeometry(list, s) {
+    const occ = new Set();
+    for (const c of list) occ.add((c.x * 2048 + c.y) * 2048 + c.z);
+    let faces = 0;
+    for (const c of list) for (const { d } of CORNERS) {
+      if (!occ.has(((c.x + d[0] * s) * 2048 + (c.y + d[1] * s)) * 2048 + (c.z + d[2] * s))) faces++;
+    }
+    const pos = new Float32Array(faces * 4 * 3);
+    const nor = new Float32Array(faces * 4 * 3);
+    const col = new Float32Array(faces * 4 * 3);
+    const idx = new Uint32Array(faces * 6);
+    const colTmp = new THREE.Color();
+    let fp = 0, ip = 0, vi = 0;
+    const off = (s - 1) / 2;
+    for (const c of list) {
+      const cx = c.x + off - X / 2, cy = c.z + off - Z / 2, cz = -(c.y + off - Y / 2);
+      colTmp.setHex(PAL[c.c] || 0xcccccc);
+      for (const { d, corners } of CORNERS) {
+        if (occ.has(((c.x + d[0] * s) * 2048 + (c.y + d[1] * s)) * 2048 + (c.z + d[2] * s))) continue;
+        const ln = [d[0], d[2], -d[1]];
+        for (const p of corners) {
+          pos[fp] = cx + (p[0] * s); pos[fp + 1] = cy + (p[2] * s); pos[fp + 2] = cz + (-p[1] * s);
+          nor[fp] = ln[0]; nor[fp + 1] = ln[1]; nor[fp + 2] = ln[2];
+          col[fp] = colTmp.r; col[fp + 1] = colTmp.g; col[fp + 2] = colTmp.b;
+          fp += 3;
+        }
+        idx[ip++] = vi; idx[ip++] = vi + 1; idx[ip++] = vi + 2;
+        idx[ip++] = vi; idx[ip++] = vi + 2; idx[ip++] = vi + 3;
+        vi += 4;
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.setIndex(new THREE.BufferAttribute(idx, 1));
+    return { geometry: g, faces };
+  }
+
+  // --- シーン ---
+  const canvas = document.getElementById('cv');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1324);
+  const camera = new THREE.PerspectiveCamera(45, 2, 1, 20000);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const dir = new THREE.DirectionalLight(0xfff5e6, 0.95); dir.position.set(600, 1200, 700); scene.add(dir);
+  const rim = new THREE.DirectionalLight(0x4da6ff, 0.45); rim.position.set(-700, 300, -800); scene.add(rim);
+  const group = new THREE.Group(); scene.add(group);
+
+  // 火の粒子（口の開閉と連動）
+  const FIRE_N = 150, FIRE_LIFE = 0.55;
+  const fireSeeds = [];
+  for (let i = 0; i < FIRE_N; i++) fireSeeds.push({ u: Math.random(), ang: Math.random() * Math.PI * 2, rad: Math.sqrt(Math.random()), wob: Math.random() * Math.PI * 2 });
+  const fireMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffffff }), FIRE_N);
+  fireMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  fireMesh.visible = false; fireMesh.frustumCulled = false;
+  group.add(fireMesh);
+  const dummy = new THREE.Object3D();
+  const fireColor = new THREE.Color(), fireC1 = new THREE.Color(0xfff3b0), fireC2 = new THREE.Color(0xff7b1c), fireC3 = new THREE.Color(0xc22418);
+  const MOUTH = { x: 0, y: 85, z: -295, len: 640 };
+  function smooth01(u) { return u * u * (3 - 2 * u); }
+  // 約5.2秒周期: 静止 → 口が開く → 開いたまま（火を吐く） → 閉じる（伸縮実験ページと同じ型）
+  function openAmount(t) {
+    const c = t % 5.2;
+    if (c < 0.3) return 0;
+    if (c < 0.8) return smooth01((c - 0.3) / 0.5);
+    if (c < 2.2) return 1;
+    if (c < 2.7) return 1 - smooth01((c - 2.2) / 0.5);
+    return 0;
+  }
+  function updateFire(nowS, cell) {
+    const c = nowS % 5.2;
+    const bursting = animOn && c >= 0.7 && c <= 2.3;
+    fireMesh.visible = !!bursting;
+    if (!bursting) return;
+    const bt = c - 0.7;
+    for (let i = 0; i < FIRE_N; i++) {
+      const sd = fireSeeds[i];
+      const age = ((bt / FIRE_LIFE + sd.u) % 1);
+      const prog = age;
+      const spread = 6 + prog * 95 * sd.rad;
+      dummy.position.set(
+        MOUTH.x + Math.cos(sd.ang) * spread,
+        MOUTH.y + Math.sin(sd.ang) * spread * 0.7 - prog * prog * 55,
+        MOUTH.z - prog * MOUTH.len
+      );
+      const sc = Math.max(0.1, (1.15 - age)) * 15 * cell;
+      dummy.scale.set(sc, sc, sc);
+      dummy.rotation.set(sd.wob + prog * 2, sd.wob * 2 + prog * 3, 0);
+      dummy.updateMatrix();
+      fireMesh.setMatrixAt(i, dummy.matrix);
+      if (age < 0.35) fireColor.copy(fireC1).lerp(fireC2, age / 0.35);
+      else fireColor.copy(fireC2).lerp(fireC3, (age - 0.35) / 0.65);
+      fireMesh.setColorAt(i, fireColor);
+    }
+    fireMesh.instanceMatrix.needsUpdate = true;
+    if (fireMesh.instanceColor) fireMesh.instanceColor.needsUpdate = true;
+  }
+
+  let parts = { body: null, wingL: null, wingR: null, jaw: null };
+  let cellSize = 2;
+  function clearParts() {
+    for (const k in parts) if (parts[k]) { group.remove(parts[k]); parts[k].geometry.dispose(); parts[k] = null; }
+  }
+  function build(s) {
+    cellSize = s;
+    status.textContent = '組み立て中…（解像度 1/' + s + '）';
+    setTimeout(() => {
+      const t0 = performance.now();
+      const cells = downsample(s);
+      const part = classify(cells, s);
+      const lists = [[], [], [], []];
+      cells.forEach((cell, i) => lists[part[i]].push(cell));
+      clearParts();
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+      let faces = 0;
+      const mk = (list, off) => {
+        if (!list.length) return null;
+        const { geometry, faces: f } = buildPartGeometry(list, s);
+        faces += f;
+        if (off) geometry.translate(-off.x, -off.y, -off.z);
+        const mesh = new THREE.Mesh(geometry, mat);
+        if (off) mesh.position.set(off.x, off.y, off.z);
+        group.add(mesh);
+        return mesh;
+      };
+      parts.body = mk(lists[0], null);
+      parts.wingL = mk(lists[1], { x: -WING_PIVOT.x, y: WING_PIVOT.y, z: 0 });
+      parts.wingR = mk(lists[2], { x: WING_PIVOT.x, y: WING_PIVOT.y, z: 0 });
+      parts.jaw = mk(lists[3], { x: 0, y: JAW_PIVOT.y, z: JAW_PIVOT.z });
+      const secs = ((performance.now() - t0) / 1000).toFixed(1);
+      status.innerHTML = '解像度 1/' + s + '： ボクセル ' + cells.length.toLocaleString() + '個 → 面 ' + faces.toLocaleString() +
+        '枚（三角形 ' + (faces * 2).toLocaleString() + '）。組み立て ' + secs + '秒。翼 ' + (lists[1].length + lists[2].length).toLocaleString() +
+        '個／あご ' + lists[3].length.toLocaleString() + '個を別部品にしています。';
+    }, 30);
+  }
+
+  // --- カメラと操作 ---
+  const fitR = 0.5 * Math.hypot(X, Y, Z);
+  let yaw = 2.7, pitch = 0.32, autoRot = true;
+  let animOn = new URLSearchParams(location.search).get('anim') !== '0';
+  let dragging = false, px = 0, py = 0;
+  canvas.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    yaw += (e.clientX - px) * 0.008; pitch += (e.clientY - py) * 0.008;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch));
+    px = e.clientX; py = e.clientY;
+  });
+  canvas.addEventListener('pointerup', () => { dragging = false; });
+  let dist = fitR * 2.6;
+  canvas.addEventListener('wheel', e => { e.preventDefault(); dist = Math.max(fitR * 0.9, Math.min(fitR * 5, dist * (1 + Math.sign(e.deltaY) * 0.09))); }, { passive: false });
+
+  const lodBtns = [...document.querySelectorAll('[data-lod]')];
+  let curLod = window.innerWidth < 760 ? 4 : 2;
+  function syncLod() { lodBtns.forEach(b => b.classList.toggle('on', +b.dataset.lod === curLod)); }
+  lodBtns.forEach(b => b.addEventListener('click', () => { curLod = +b.dataset.lod; syncLod(); build(curLod); }));
+  const rotBtn = document.getElementById('rot');
+  rotBtn.addEventListener('click', () => { autoRot = !autoRot; rotBtn.textContent = '自動回転: ' + (autoRot ? 'オン' : 'オフ'); rotBtn.classList.toggle('on', autoRot); });
+  const animBtn = document.getElementById('anim');
+  function syncAnim() { animBtn.textContent = 'アニメ: ' + (animOn ? 'オン' : 'オフ'); animBtn.classList.toggle('on', animOn); }
+  animBtn.addEventListener('click', () => { animOn = !animOn; syncAnim(); });
+  syncAnim();
+
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (canvas.width !== (w * renderer.getPixelRatio()) | 0 || canvas.height !== (h * renderer.getPixelRatio()) | 0) {
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
     }
   }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  g.setIndex(new THREE.BufferAttribute(idx, 1));
-  return { geometry: g, faces, voxels: n };
-}
-
-// ---------- three.js ----------
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b1324);
-const camera = new THREE.PerspectiveCamera(42, 1, 1, 20000);
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const dl = new THREE.DirectionalLight(0xffffff, 0.85);
-dl.position.set(600, 900, 700);
-scene.add(dl);
-const dl2 = new THREE.DirectionalLight(0xaac4ff, 0.3);
-dl2.position.set(-700, 300, -500);
-scene.add(dl2);
-const group = new THREE.Group();
-scene.add(group);
-let mesh = null;
-
-const fitR = Math.hypot(DIMS[0], DIMS[1], DIMS[2]) / 2;
-let dist = fitR / Math.tan(THREE.MathUtils.degToRad(21)) * 1.12;
-let yaw = 2.7, pitch = 0.32, autoRot = true;
-
-function resize() {
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-}
-window.addEventListener('resize', resize);
-
-let dragging = false, px = 0, py = 0;
-canvas.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; canvas.setPointerCapture(e.pointerId); });
-canvas.addEventListener('pointermove', e => {
-  if (!dragging) return;
-  yaw += (e.clientX - px) * 0.008;
-  pitch = Math.max(-1.3, Math.min(1.3, pitch + (e.clientY - py) * 0.008));
-  px = e.clientX; py = e.clientY;
-});
-canvas.addEventListener('pointerup', () => { dragging = false; });
-canvas.addEventListener('wheel', e => { e.preventDefault(); dist = Math.max(fitR * 0.6, Math.min(fitR * 5, dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: false });
-
-function tick() {
-  requestAnimationFrame(tick);
-  if (autoRot && !dragging) yaw += 0.0035;
-  camera.position.set(
-    Math.sin(yaw) * Math.cos(pitch) * dist,
-    Math.sin(pitch) * dist,
-    Math.cos(yaw) * Math.cos(pitch) * dist
-  );
-  camera.lookAt(0, 0, 0);
-  renderer.render(scene, camera);
-}
-
-const buttons = { 1: document.getElementById('lod1'), 2: document.getElementById('lod2'), 4: document.getElementById('lod4') };
-let building = false;
-async function showLOD(s) {
-  if (building) return;
-  building = true;
-  for (const k in buttons) { buttons[k].disabled = true; buttons[k].classList.toggle('on', +k === s); }
-  statusEl.textContent = '表示を作っています…（解像度 ' + (s === 1 ? 'フル' : '1/' + s) + '）';
-  await new Promise(r => setTimeout(r, 30));
-  const t0 = performance.now();
-  const lod = downsample(s);
-  const built = buildGeometry(lod);
-  if (mesh) { group.remove(mesh); mesh.geometry.dispose(); }
-  mesh = new THREE.Mesh(built.geometry, new THREE.MeshLambertMaterial({ vertexColors: true }));
-  group.add(mesh);
-  const ms = Math.round(performance.now() - t0);
-  statusEl.textContent = 'ボクセル ' + built.voxels.toLocaleString() + ' 個 → 面 ' + built.faces.toLocaleString() +
-    ' 枚（三角形 ' + (built.faces * 2).toLocaleString() + '）。面カリングなしの箱表示なら三角形 ' +
-    (built.voxels * 12).toLocaleString() + ' になるところです。構築 ' + (ms / 1000).toFixed(1) + ' 秒。';
-  for (const k in buttons) buttons[k].disabled = false;
-  building = false;
-}
-buttons[1].addEventListener('click', () => showLOD(1));
-buttons[2].addEventListener('click', () => showLOD(2));
-buttons[4].addEventListener('click', () => showLOD(4));
-const rotBtn = document.getElementById('rot');
-rotBtn.addEventListener('click', () => { autoRot = !autoRot; rotBtn.textContent = '自動回転: ' + (autoRot ? 'オン' : 'オフ'); rotBtn.classList.toggle('on', autoRot); });
-
-(async () => {
-  resize();
+  function tick() {
+    requestAnimationFrame(tick);
+    resize();
+    if (autoRot && !dragging) yaw += 0.0035;
+    group.rotation.set(0, 0, 0);
+    group.rotation.y = yaw; group.rotation.x = pitch;
+    const t = performance.now() / 1000;
+    if (parts.wingL && parts.wingR) {
+      const flap = animOn ? Math.sin(t * 4.0) * 0.40 : 0;
+      parts.wingR.rotation.z = flap;
+      parts.wingL.rotation.z = -flap;
+    }
+    if (parts.jaw) parts.jaw.rotation.x = animOn ? -openAmount(t) * 0.32 : 0;
+    updateFire(t, cellSize);
+    camera.position.set(0, fitR * 0.25, dist);
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+  }
+  syncLod();
+  build(curLod);
   tick();
-  await new Promise(r => setTimeout(r, 30));
-  const t0 = performance.now();
-  decode();
-  statusEl.textContent = 'データを読みました（表面ボクセル ' + NV.toLocaleString() + ' 個、' +
-    ((performance.now() - t0) / 1000).toFixed(1) + ' 秒）。表示を作っています…';
-  const small = window.innerWidth < 760;
-  await showLOD(small ? 4 : 2);
-  if (small) { buttons[2].classList.remove('on'); buttons[4].classList.add('on'); }
 })();
 </script>
-<!-- Cloudflare Web Analytics --><script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script><!-- End Cloudflare Web Analytics -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script>
 </body>
 </html>
