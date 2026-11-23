@@ -122,7 +122,7 @@
   const MEMB = new Set([7, 8]);       // 翼膜の色（濃い赤紫2色、パレット番号）
   const REDS = new Set([1, 2, 3]);    // 翼の枠の赤3色
   const WING_PIVOT = { x: 35, y: -105 };  // 翼の付け根（ローカル座標、回転はZ軸まわり）
-  const JAW_PIVOT = { y: 155, z: -175 };  // あごの関節（回転はX軸まわり）
+  const JAW_PIVOT = { y: 92, z: -150 };  // あごの関節（回転はX軸まわり。口の奥の上端）
   function classify(cells, s) {
     const part = new Int8Array(cells.length); // 0=体 1=翼(左) 2=翼(右) 3=あご
     const loc = cells.map(cell => ({
@@ -148,11 +148,12 @@
         seen.add(j); part[j] = loc[j].lx > 0 ? 2 : 1; queue.push([j, step + 1]);
       }
     }
-    // あご: 頭の前面・下・中央の帯
+    // あご: 実測では口の内側（暗赤色）は格子 z 573..610・前面 y 695..778、口先ブロックは z 530..700。
+    // あごは「口より下で、前面に出ている部分」だけにする（鼻先や口先の上半分を一緒に動かさない）。
     cells.forEach((cell, i) => {
       if (part[i]) return;
       const L = loc[i];
-      if (L.lz >= -300 && L.lz <= -180 && L.ly >= 25 && L.ly <= 170 && Math.abs(L.lx) <= 180) part[i] = 3;
+      if (L.lz >= -300 && L.lz <= -145 && L.ly >= 5 && L.ly <= 92 && Math.abs(L.lx) <= 205) part[i] = 3;
     });
     return part;
   }
@@ -243,7 +244,7 @@
   group.add(fireMesh);
   const dummy = new THREE.Object3D();
   const fireColor = new THREE.Color(), fireC1 = new THREE.Color(0xfff3b0), fireC2 = new THREE.Color(0xff7b1c), fireC3 = new THREE.Color(0xc22418);
-  const MOUTH = { x: 0, y: 85, z: -295, len: 640 };
+  const MOUTH = { x: 0, y: 78, z: -300, len: 430 };  // 口の内側の実測位置（格子 z 573..610、前面 y 786）
   function smooth01(u) { return u * u * (3 - 2 * u); }
   // 約5.2秒周期: 静止 → 口が開く → 開いたまま（火を吐く） → 閉じる（伸縮実験ページと同じ型）
   function openAmount(t) {
@@ -267,7 +268,7 @@
       const spread = 6 + prog * 95 * sd.rad;
       dummy.position.set(
         MOUTH.x + Math.cos(sd.ang) * spread,
-        MOUTH.y + Math.sin(sd.ang) * spread * 0.7 - prog * prog * 55,
+        MOUTH.y + Math.sin(sd.ang) * spread * 0.5 - prog * prog * 18,
         MOUTH.z - prog * MOUTH.len
       );
       const sc = Math.max(0.1, (1.15 - age)) * 15 * cell;
