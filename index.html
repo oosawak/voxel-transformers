@@ -18,6 +18,20 @@
   h1 { font-size: 26px; letter-spacing: .12em; margin: 8px 0 4px; }
   .sub { color: #9bb3d8; font-size: 14px; line-height: 1.8; }
   .sub a { color: #7cc4ff; }
+  .big-banner {
+    max-width: 1080px; margin: 18px auto 0; padding: 0 16px;
+    display: flex; gap: 16px; align-items: stretch;
+  }
+  .big-banner > a { flex: 0 0 300px; max-width: 42%; }
+  .big-banner img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; border: 1px solid rgba(100, 160, 255, 0.4); display: block; }
+  .big-banner-text {
+    flex: 1; background: rgba(24, 38, 64, 0.9); border: 1px solid rgba(100, 160, 255, 0.4);
+    border-radius: 10px; padding: 14px 18px;
+  }
+  .big-banner-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .big-banner-text p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.7; color: #cbd5e1; }
+  .big-banner-link { font-weight: 600; }
+  @media (max-width: 640px) { .big-banner { flex-direction: column; } .big-banner > a { max-width: 100%; flex: none; } }
   .grid {
     max-width: 1080px; margin: 20px auto 0;
     display: grid; gap: 18px;
@@ -157,6 +171,15 @@
   <canvas id="viewer-canvas"></canvas>
   <div class="viewer-note">ドラッグで回転できます。カードの「このページで変形を見る」からも、そのモデルがここに開きます。ロボット形態では「アニメ」ボタンで関節アニメ（歩行・構え・敬礼・L字・走行・移動）が、獣形態では型アニメ（うねり・はばたき・四足歩行）が再生でき、「関節の位置」で回転中心を1ブロックずつ調整できます。</div>
 </section>
+
+<div class="big-banner">
+  <a href="bigdragon.html"><img src="./models/preview_babydragon_big1024.png" alt="赤い子竜（大）格子1024のプレビュー"></a>
+  <div class="big-banner-text">
+    <div class="big-banner-title">特大モデル: 赤い子竜（大）― 格子1024</div>
+    <p>通常のモデルの上限（格子256）を超えた、表面ボクセル 1,385,385個の特大モデルです。独自形式 .voxx と、面カリング＋LOD の専用表示で開きます。</p>
+    <a class="big-banner-link" href="bigdragon.html">格子1024の子竜を見る →</a>
+  </div>
+</div>
 
 <div class="grid" id="grid"></div>
 

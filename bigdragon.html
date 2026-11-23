@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>赤い子竜（大）格子1024 ― 特大ボクセル表示 | 変形ボクセルギャラリー</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0b1324; color: #e2e8f0; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; }
+  header { max-width: 1080px; margin: 0 auto; padding: 20px 16px 4px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p.lead { color: #94a3b8; font-size: 14px; line-height: 1.7; margin: 0 0 4px; }
+  a { color: #7dd3fc; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+  .tabs a {
+    padding: 8px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
+    text-decoration: none; color: #dce8ff;
+    background: rgba(24, 38, 64, 0.9); border: 1px solid rgba(100, 160, 255, 0.4);
+  }
+  .tabs a:hover { background: rgba(45, 75, 125, 0.95); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 8px 16px 28px; }
+  #viewer-canvas { width: 100%; height: 62vh; display: block; background: #0b1324; border: 1px solid #1e293b; border-radius: 10px; touch-action: none; }
+  .panel { margin-top: 12px; background: #111c33; border: 1px solid #1e293b; border-radius: 10px; padding: 14px 16px; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .row span { font-size: 13px; color: #94a3b8; }
+  button { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 8px; padding: 7px 14px; font-size: 14px; cursor: pointer; }
+  button.on { background: #2563eb; border-color: #2563eb; }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  #status { font-size: 13.5px; color: #cbd5e1; margin-top: 10px; line-height: 1.7; }
+  .note { color: #94a3b8; font-size: 13px; line-height: 1.7; margin-top: 10px; }
+  .spec { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13.5px; }
+  .spec th, .spec td { border: 1px solid #1e293b; padding: 6px 10px; text-align: left; }
+  .spec th { background: #111c33; color: #9bb3d8; font-weight: 600; white-space: nowrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>赤い子竜（大）― 格子1024の特大ボクセル</h1>
+  <nav class="tabs">
+    <a href="./">モデル集</a>
+    <a href="warlords.html">武将ロボ</a>
+    <a href="maids.html">十二支メイドロボ＋猫</a>
+    <a href="classics.html">西遊記／封神演義ロボ</a>
+    <a href="sangokushi.html">三国志ロボ</a>
+    <a href="zodiac.html">黄道十二星座ロボ</a>
+    <a href="howto.html">作り方</a>
+  </nav>
+  <p class="lead">造形テストの本命です。通常のモデルは格子256まで（座標が1バイトの形式の都合）ですが、これは独自形式 <strong>.voxx</strong>（座標2バイト）で <strong>格子 878×982×1024</strong> まで大きくした赤い子竜です。表面ボクセルは <strong>1,385,385個</strong>。表示は、見える面だけを描く面カリングと、解像度を落とす LOD（間引き）で軽くしています。ドラッグで回せます。</p>
+</header>
+<div class="wrap">
+  <canvas id="viewer-canvas"></canvas>
+  <div class="panel">
+    <div class="row">
+      <span>解像度:</span>
+      <button id="lod4">1/4（軽い）</button>
+      <button id="lod2" class="on">1/2</button>
+      <button id="lod1">フル（重い）</button>
+      <button id="rot" class="on">自動回転: オン</button>
+    </div>
+    <div id="status">データを読み込んでいます…</div>
+  </div>
+  <div class="panel">
+    <div class="row"><span style="font-size:15px; color:#e2e8f0; font-weight:600">実測の記録</span></div>
+    <table class="spec">
+      <tr><th>格子</th><td>878 × 982 × 1024（最長辺 1024、総格子点 約8.83億）</td></tr>
+      <tr><th>表面ボクセル</th><td>1,385,385 個（生成時に6近傍の表面だけを抽出）</td></tr>
+      <tr><th>生成</th><td>Mac（Antigravity）で 74.17 秒、ピークメモリ 約3.85 GiB。Z方向にスラブ分割して表面だけを残す作り</td></tr>
+      <tr><th>データ</th><td>.voxx 形式 9.25 MiB（1ボクセル7バイト）。Web用データ 12.33 MiB</td></tr>
+      <tr><th>変換の見比べ</th><td>Mac側とミューズ側で同じ変換器（convert_one.py）を回し、出力がバイト単位で一致することを確認済み</td></tr>
+      <tr><th>表示</th><td>面カリング（隣り合う面を描かない）と LOD（1/2・1/4 は 2×2×2・4×4×4 を1個にまとめた間引き表示）</td></tr>
+    </table>
+    <p class="note">128版（格子124×124×128）は、モデル集の「赤い子竜（大）」として通常のビューアでも見られます。この1024版は、大きさの実測のために分けた特大版です。</p>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./models/babydragon_big-data.js"></script>
+<script>
+"use strict";
+const statusEl = document.getElementById('status');
+const canvas = document.getElementById('viewer-canvas');
+const M = window.BIG_MODEL;
+const FORM = M.forms[0];
+const DIMS = FORM.dims; // [X, Y, Z] Y=奥行き(正面+Y), Z=高さ
+const PAL = M.palette;
+
+let VX = null, VY = null, VZ = null, VC = null, NV = 0;
+function decode() {
+  const bin = atob(FORM.data);
+  const n = Math.floor(bin.length / 7);
+  VX = new Uint16Array(n); VY = new Uint16Array(n); VZ = new Uint16Array(n); VC = new Uint8Array(n);
+  for (let i = 0, o = 0; i < n; i++, o += 7) {
+    VX[i] = bin.charCodeAt(o) | (bin.charCodeAt(o + 1) << 8);
+    VY[i] = bin.charCodeAt(o + 2) | (bin.charCodeAt(o + 3) << 8);
+    VZ[i] = bin.charCodeAt(o + 4) | (bin.charCodeAt(o + 5) << 8);
+    VC[i] = bin.charCodeAt(o + 6);
+  }
+  NV = n;
+}
+
+// LOD: s×s×s のセルを1ボクセルにまとめる。色はセル内の多数決、位置はセルの原点にそろえる（隣と隙間なく並ぶ）。
+function downsample(s) {
+  if (s === 1) return { x: VX, y: VY, z: VZ, c: VC, n: NV, s: 1 };
+  const cells = new Map();
+  for (let i = 0; i < NV; i++) {
+    const gx = (VX[i] / s) | 0, gy = (VY[i] / s) | 0, gz = (VZ[i] / s) | 0;
+    const key = (gx * 2048 + gy) * 2048 + gz;
+    let cell = cells.get(key);
+    if (!cell) { cell = { gx, gy, gz, cnt: new Map() }; cells.set(key, cell); }
+    const c = VC[i];
+    cell.cnt.set(c, (cell.cnt.get(c) || 0) + 1);
+  }
+  const n = cells.size;
+  const ox = new Uint16Array(n), oy = new Uint16Array(n), oz = new Uint16Array(n), oc = new Uint8Array(n);
+  let j = 0;
+  for (const cell of cells.values()) {
+    let best = -1, bestN = -1;
+    for (const [c, cnt] of cell.cnt) if (cnt > bestN) { bestN = cnt; best = c; }
+    ox[j] = cell.gx * s; oy[j] = cell.gy * s; oz[j] = cell.gz * s; oc[j] = best; j++;
+  }
+  return { x: ox, y: oy, z: oz, c: oc, n, s };
+}
+
+// 面カリングつきジオメトリ: 隣にボクセルがある方向の面は出さない
+const DIRS = [
+  { d: [1, 0, 0], n: [1, 0, 0] }, { d: [-1, 0, 0], n: [-1, 0, 0] },
+  { d: [0, 1, 0], n: [0, 1, 0] }, { d: [0, -1, 0], n: [0, -1, 0] },
+  { d: [0, 0, 1], n: [0, 0, 1] }, { d: [0, 0, -1], n: [0, 0, -1] },
+];
+// ローカル座標: lx = x - X/2, ly = z - Z/2 (高さ), lz = -(y - Y/2)
+// 面の4頂点（ボクセル中心からのオフセット×(s), 方向ごと）
+function faceCorners(nx, ny, nz) {
+  // 法線方向に +0.5、それ以外は ±0.5 の組み合わせ
+  const ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
+  let u, v;
+  if (ax) { u = [0, 1, 0]; v = [0, 0, 1]; }
+  else if (ay) { u = [1, 0, 0]; v = [0, 0, 1]; }
+  else { u = [1, 0, 0]; v = [0, 1, 0]; }
+  const c = [nx * 0.5, ny * 0.5, nz * 0.5];
+  const pts = [];
+  for (const [su, sv] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+    pts.push([
+      c[0] + (u[0] * su + v[0] * sv) * 0.5,
+      c[1] + (u[1] * su + v[1] * sv) * 0.5,
+      c[2] + (u[2] * su + v[2] * sv) * 0.5,
+    ]);
+  }
+  // 外向きになるよう、法線と逆なら反転
+  const e1 = [pts[1][0] - pts[0][0], pts[1][1] - pts[0][1], pts[1][2] - pts[0][2]];
+  const e2 = [pts[3][0] - pts[0][0], pts[3][1] - pts[0][1], pts[3][2] - pts[0][2]];
+  const cx = e1[1] * e2[2] - e1[2] * e2[1], cy = e1[2] * e2[0] - e1[0] * e2[2], cz = e1[0] * e2[1] - e1[1] * e2[0];
+  if (cx * nx + cy * ny + cz * nz < 0) pts.reverse();
+  return pts;
+}
+const FACE_PTS = DIRS.map(d => faceCorners(d.n[0], d.n[1], d.n[2]));
+
+function buildGeometry(lod) {
+  const { x, y, z, c, n, s } = lod;
+  const set = new Set();
+  for (let i = 0; i < n; i++) set.add((x[i] * 2048 + y[i]) * 2048 + z[i]);
+  const has = (lx, ly, lz) => {
+    // ローカル座標→元座標の逆変換はせず、元座標のまま判定する
+    return set.has((lx * 2048 + ly) * 2048 + lz);
+  };
+  let faces = 0;
+  for (let i = 0; i < n; i++) {
+    for (let f = 0; f < 6; f++) {
+      const d = DIRS[f].d;
+      if (!has(x[i] + d[0] * s, y[i] + d[1] * s, z[i] + d[2] * s)) faces++;
+    }
+  }
+  const pos = new Float32Array(faces * 4 * 3);
+  const nor = new Float32Array(faces * 4 * 3);
+  const col = new Float32Array(faces * 4 * 3);
+  const idx = new Uint32Array(faces * 6);
+  const X2 = DIMS[0] / 2, Y2 = DIMS[1] / 2, Z2 = DIMS[2] / 2;
+  const off = (s - 1) / 2; // LOD セルの中心へのずれ（フル解像度では0）
+  let fp = 0, ip = 0, vb = 0;
+  const tmpC = new THREE.Color();
+  for (let i = 0; i < n; i++) {
+    const cx = x[i] + off - X2, cy = z[i] + off - Z2, cz = -(y[i] + off - Y2);
+    tmpC.setHex(PAL[c[i]] || 0xffffff);
+    for (let f = 0; f < 6; f++) {
+      const d = DIRS[f].d;
+      if (has(x[i] + d[0] * s, y[i] + d[1] * s, z[i] + d[2] * s)) continue;
+      // ローカル法線: 元座標の方向 d=(dx,dy,dz) → ローカル (dx, dz, -dy)
+      const ln = [d[0], d[2], -d[1]];
+      const pts = FACE_PTS[f];
+      for (let k = 0; k < 4; k++) {
+        // 面の頂点オフセットも同じ変換: 元 (px,py,pz) → ローカル (px, pz, -py)
+        const lp = [pts[k][0], pts[k][2], -pts[k][1]];
+        pos[fp] = cx + lp[0] * s; pos[fp + 1] = cy + lp[1] * s; pos[fp + 2] = cz + lp[2] * s;
+        nor[fp] = ln[0]; nor[fp + 1] = ln[1]; nor[fp + 2] = ln[2];
+        col[fp] = tmpC.r; col[fp + 1] = tmpC.g; col[fp + 2] = tmpC.b;
+        fp += 3;
+      }
+      idx[ip++] = vb; idx[ip++] = vb + 1; idx[ip++] = vb + 2;
+      idx[ip++] = vb; idx[ip++] = vb + 2; idx[ip++] = vb + 3;
+      vb += 4;
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setIndex(new THREE.BufferAttribute(idx, 1));
+  return { geometry: g, faces, voxels: n };
+}
+
+// ---------- three.js ----------
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b1324);
+const camera = new THREE.PerspectiveCamera(42, 1, 1, 20000);
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dl = new THREE.DirectionalLight(0xffffff, 0.85);
+dl.position.set(600, 900, 700);
+scene.add(dl);
+const dl2 = new THREE.DirectionalLight(0xaac4ff, 0.3);
+dl2.position.set(-700, 300, -500);
+scene.add(dl2);
+const group = new THREE.Group();
+scene.add(group);
+let mesh = null;
+
+const fitR = Math.hypot(DIMS[0], DIMS[1], DIMS[2]) / 2;
+let dist = fitR / Math.tan(THREE.MathUtils.degToRad(21)) * 1.12;
+let yaw = 2.7, pitch = 0.32, autoRot = true;
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+
+let dragging = false, px = 0, py = 0;
+canvas.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  yaw += (e.clientX - px) * 0.008;
+  pitch = Math.max(-1.3, Math.min(1.3, pitch + (e.clientY - py) * 0.008));
+  px = e.clientX; py = e.clientY;
+});
+canvas.addEventListener('pointerup', () => { dragging = false; });
+canvas.addEventListener('wheel', e => { e.preventDefault(); dist = Math.max(fitR * 0.6, Math.min(fitR * 5, dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: false });
+
+function tick() {
+  requestAnimationFrame(tick);
+  if (autoRot && !dragging) yaw += 0.0035;
+  camera.position.set(
+    Math.sin(yaw) * Math.cos(pitch) * dist,
+    Math.sin(pitch) * dist,
+    Math.cos(yaw) * Math.cos(pitch) * dist
+  );
+  camera.lookAt(0, 0, 0);
+  renderer.render(scene, camera);
+}
+
+const buttons = { 1: document.getElementById('lod1'), 2: document.getElementById('lod2'), 4: document.getElementById('lod4') };
+let building = false;
+async function showLOD(s) {
+  if (building) return;
+  building = true;
+  for (const k in buttons) { buttons[k].disabled = true; buttons[k].classList.toggle('on', +k === s); }
+  statusEl.textContent = '表示を作っています…（解像度 ' + (s === 1 ? 'フル' : '1/' + s) + '）';
+  await new Promise(r => setTimeout(r, 30));
+  const t0 = performance.now();
+  const lod = downsample(s);
+  const built = buildGeometry(lod);
+  if (mesh) { group.remove(mesh); mesh.geometry.dispose(); }
+  mesh = new THREE.Mesh(built.geometry, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  group.add(mesh);
+  const ms = Math.round(performance.now() - t0);
+  statusEl.textContent = 'ボクセル ' + built.voxels.toLocaleString() + ' 個 → 面 ' + built.faces.toLocaleString() +
+    ' 枚（三角形 ' + (built.faces * 2).toLocaleString() + '）。面カリングなしの箱表示なら三角形 ' +
+    (built.voxels * 12).toLocaleString() + ' になるところです。構築 ' + (ms / 1000).toFixed(1) + ' 秒。';
+  for (const k in buttons) buttons[k].disabled = false;
+  building = false;
+}
+buttons[1].addEventListener('click', () => showLOD(1));
+buttons[2].addEventListener('click', () => showLOD(2));
+buttons[4].addEventListener('click', () => showLOD(4));
+const rotBtn = document.getElementById('rot');
+rotBtn.addEventListener('click', () => { autoRot = !autoRot; rotBtn.textContent = '自動回転: ' + (autoRot ? 'オン' : 'オフ'); rotBtn.classList.toggle('on', autoRot); });
+
+(async () => {
+  resize();
+  tick();
+  await new Promise(r => setTimeout(r, 30));
+  const t0 = performance.now();
+  decode();
+  statusEl.textContent = 'データを読みました（表面ボクセル ' + NV.toLocaleString() + ' 個、' +
+    ((performance.now() - t0) / 1000).toFixed(1) + ' 秒）。表示を作っています…';
+  const small = window.innerWidth < 760;
+  await showLOD(small ? 4 : 2);
+  if (small) { buttons[2].classList.remove('on'); buttons[4].classList.add('on'); }
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
