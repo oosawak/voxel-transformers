@@ -45,7 +45,8 @@
   <p class="lead">
     造形テストの本命です。通常のモデルは格子256まで（座標が1バイトの形式の都合）ですが、これは独自形式 .voxx（座標2バイト）で 格子 878×982×1024 まで大きくした赤い子竜です。表面ボクセルは <strong>1,385,385個</strong>。
     表示は、見える面だけを描く面カリングと、解像度を落とす LOD（間引き）で軽くしています。翼・あご・体を部品に分けて作ってあるので、はばたきと口の開閉、火吹きも動きます。ドラッグで回せます。
-    色をパレットではなく RGB で持ち、陰影を焼き込んだ <a href="./bigdragon-rgb.html">RGB版</a> もあります。
+    待機モーション（目パチ・呼吸・頭の動き・尻尾）も付いていて、それぞれボタンでオン/オフできます。火を吹く間は、頭は正面を向きます。
+    色をパレットではなく RGB で持ち、陰影を焼き込んだ <a href="./bigdragon-rgb.html">RGB版</a> と、陰影を焼き込まず表示側で付ける <a href="./bigdragon-shadow.html">比較版</a> もあります。
   </p>
   <div id="stage"><canvas id="cv"></canvas></div>
   <div class="bar">
@@ -55,6 +56,10 @@
     <button data-lod="1">フル（重い）</button>
     <button id="rot" class="on">自動回転: オン</button>
     <button id="anim" class="on">アニメ: オン</button>
+    <button id="blink" class="on">目パチ: オン</button>
+    <button id="breath" class="on">呼吸: オン</button>
+    <button id="headm" class="on">頭の動き: オン</button>
+    <button id="tailm" class="on">尻尾: オン</button>
   </div>
   <div id="status">読み込み中…</div>
 
@@ -66,6 +71,7 @@
     <tr><th>形式</th><td>.voxx（座標は uint16、1ボクセル7バイト）＋ palette.json ＋ meta.json。.vox と現行のWeb形式は座標が1バイトで256が上限のため、この大きさでは使えない</td></tr>
     <tr><th>変換の見比べ</th><td>Mac側とミューズ側で同じ変換器（convert_one.py）を回し、出力データがバイト単位で完全一致した（SHA-256 b897d00e…）</td></tr>
     <tr><th>表示</th><td>面カリング＋LOD。フル解像度で面 4,938,910枚・三角形 9,877,820（面カリングなしの箱表示なら三角形 16,624,620）。アニメーションは翼・あご・体に部品分けして、それぞれの部品の中で面カリングしている</td></tr>
+    <tr><th>待機モーション</th><td>頭（首の関節は格子 439, 640, 640）・尻尾（付け根は格子 300, 255, 160）・目（色9/10/11が固まる範囲、左右とも約6,900個）を別部品に分けた。目パチは目の部品の材質をまぶた色に切り替える方式。頭の動きは火を吹く間は正面に戻る</td></tr>
   </table>
   <p class="back"><a href="./index.html">← モデル集へ戻る</a></p>
 </main>
@@ -124,8 +130,11 @@
   const REDS = new Set([1, 2, 3]);    // 翼の枠の赤3色
   const WING_PIVOT = { x: 35, y: -105 };  // 翼の付け根（ローカル座標、回転はZ軸まわり）
   const JAW_PIVOT = { y: 92, z: -150 };  // あごの関節（回転はX軸まわり。口の奥の上端）
+  const HEAD_PIVOT = { x: 0, y: 128, z: -149 };  // 首の関節（格子 439, 640, 640）
+  const TAIL_PIVOT = { x: -139, y: -352, z: 236 };  // 尻尾の付け根（格子 300, 255, 160）
+  const EYE_COLORS = new Set([9, 10, 11]);  // 白・黒・琥珀（目はこの3色。歯は z が低いので混ざらない）
   function classify(cells, s) {
-    const part = new Int8Array(cells.length); // 0=体 1=翼(左) 2=翼(右) 3=あご
+    const part = new Int8Array(cells.length); // 0=体 1=翼(左) 2=翼(右) 3=あご 4=頭 5=尻尾 6=目
     const loc = cells.map(cell => ({
       lx: cell.x + s / 2 - X / 2, ly: cell.z + s / 2 - Z / 2, lz: -(cell.y + s / 2 - Y / 2)
     }));
@@ -155,6 +164,19 @@
       if (part[i]) return;
       const L = loc[i];
       if (L.lz >= -300 && L.lz <= -145 && L.ly >= 5 && L.ly <= 92 && Math.abs(L.lx) <= 205) part[i] = 3;
+    });
+    // 目: 実測では色9/10/11が左右とも x 283..376 と 501..594、y 662..727、z 664..750 に固まっている
+    cells.forEach((cell, i) => {
+      if (part[i]) return;
+      const gx = cell.x + s / 2, gy = cell.y + s / 2, gz = cell.z + s / 2;
+      if (EYE_COLORS.has(cell.c) && gy >= 650 && gy <= 740 && gz >= 640 && gz <= 765 && Math.abs(gx - 439) >= 50 && Math.abs(gx - 439) <= 175) part[i] = 6;
+    });
+    // 尻尾は後ろ（y が小さい）で低い部分（翼は y 255以上なのでかからない）。頭は前（y 640以上）で高い部分（z 500以上）
+    cells.forEach((cell, i) => {
+      if (part[i]) return;
+      const gy = cell.y + s / 2, gz = cell.z + s / 2;
+      if (gy <= 252 && gz <= 300) { part[i] = 5; return; }
+      if (gy >= 640 && gz >= 500) part[i] = 4;
     });
     return part;
   }
@@ -285,10 +307,15 @@
     if (fireMesh.instanceColor) fireMesh.instanceColor.needsUpdate = true;
   }
 
-  let parts = { body: null, wingL: null, wingR: null, jaw: null };
+  let parts = { body: null, wingL: null, wingR: null, jaw: null, head: null, tail: null, eye: null };
+  let builtMeshes = [];
+  let eyeMats = null;
   let cellSize = 2;
   function clearParts() {
-    for (const k in parts) if (parts[k]) { group.remove(parts[k]); parts[k].geometry.dispose(); parts[k] = null; }
+    for (const m of builtMeshes) m.geometry.dispose();
+    builtMeshes = [];
+    for (const k of ['body', 'wingL', 'wingR', 'tail', 'head']) if (parts[k]) { group.remove(parts[k]); parts[k] = null; }
+    parts.jaw = null; parts.eye = null; eyeMats = null;
   }
   function build(s) {
     cellSize = s;
@@ -297,29 +324,43 @@
       const t0 = performance.now();
       const cells = downsample(s);
       const part = classify(cells, s);
-      const lists = [[], [], [], []];
+      const lists = [[], [], [], [], [], [], []];
       cells.forEach((cell, i) => lists[part[i]].push(cell));
       clearParts();
       const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
       let faces = 0;
-      const mk = (list, off) => {
+      const mk = (list, off, parent, m) => {
         if (!list.length) return null;
         const { geometry, faces: f } = buildPartGeometry(list, s);
         faces += f;
         if (off) geometry.translate(-off.x, -off.y, -off.z);
-        const mesh = new THREE.Mesh(geometry, mat);
+        const mesh = new THREE.Mesh(geometry, m || mat);
         if (off) mesh.position.set(off.x, off.y, off.z);
-        group.add(mesh);
+        (parent || group).add(mesh);
+        builtMeshes.push(mesh);
         return mesh;
       };
       parts.body = mk(lists[0], null);
       parts.wingL = mk(lists[1], { x: -WING_PIVOT.x, y: WING_PIVOT.y, z: 0 });
       parts.wingR = mk(lists[2], { x: WING_PIVOT.x, y: WING_PIVOT.y, z: 0 });
-      parts.jaw = mk(lists[3], { x: 0, y: JAW_PIVOT.y, z: JAW_PIVOT.z });
+      parts.tail = mk(lists[5], TAIL_PIVOT);
+      // 頭はグループにして、あごと目をその中に入れる（頭が動くと一緒に動く）
+      const headGroup = new THREE.Group();
+      headGroup.position.set(HEAD_PIVOT.x, HEAD_PIVOT.y, HEAD_PIVOT.z);
+      group.add(headGroup);
+      parts.head = headGroup;
+      mk(lists[4], HEAD_PIVOT, headGroup);
+      if (parts.head.children.length) parts.head.children[0].position.set(0, 0, 0);
+      eyeMats = { n: new THREE.MeshLambertMaterial({ vertexColors: true }), lid: new THREE.MeshLambertMaterial({ color: 0xb02020 }) };
+      parts.eye = mk(lists[6], HEAD_PIVOT, headGroup, eyeMats.n);
+      if (parts.eye) parts.eye.position.set(0, 0, 0);
+      parts.jaw = mk(lists[3], { x: 0, y: JAW_PIVOT.y, z: JAW_PIVOT.z }, headGroup);
+      if (parts.jaw) parts.jaw.position.set(0, JAW_PIVOT.y - HEAD_PIVOT.y, JAW_PIVOT.z - HEAD_PIVOT.z);
       const secs = ((performance.now() - t0) / 1000).toFixed(1);
       status.innerHTML = '解像度 1/' + s + '： ボクセル ' + cells.length.toLocaleString() + '個 → 面 ' + faces.toLocaleString() +
         '枚（三角形 ' + (faces * 2).toLocaleString() + '）。組み立て ' + secs + '秒。翼 ' + (lists[1].length + lists[2].length).toLocaleString() +
-        '個／あご ' + lists[3].length.toLocaleString() + '個を別部品にしています。';
+        '個／あご ' + lists[3].length.toLocaleString() + '個／頭 ' + lists[4].length.toLocaleString() +
+        '個／尻尾 ' + lists[5].length.toLocaleString() + '個／目 ' + lists[6].length.toLocaleString() + '個を別部品にしています。';
     }, 30);
   }
 
@@ -349,6 +390,14 @@
   function syncAnim() { animBtn.textContent = 'アニメ: ' + (animOn ? 'オン' : 'オフ'); animBtn.classList.toggle('on', animOn); }
   animBtn.addEventListener('click', () => { animOn = !animOn; syncAnim(); });
   syncAnim();
+  // 待機モーションのオン/オフ（それぞれ選べる）
+  const idle = { blink: true, breath: true, head: true, tail: true };
+  for (const [id, key, label] of [['blink', 'blink', '目パチ'], ['breath', 'breath', '呼吸'], ['headm', 'head', '頭の動き'], ['tailm', 'tail', '尻尾']]) {
+    const b = document.getElementById(id);
+    b.addEventListener('click', () => { idle[key] = !idle[key]; b.textContent = label + ': ' + (idle[key] ? 'オン' : 'オフ'); b.classList.toggle('on', idle[key]); });
+  }
+  let blinkNext = 2.0, blinkUntil = 0;
+  let headYawCur = 0, headTiltCur = 0;
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -370,6 +419,30 @@
       parts.wingL.rotation.z = -flap;
     }
     if (parts.jaw) parts.jaw.rotation.x = animOn ? -openAmount(t) * 0.32 : 0;
+    // --- 待機モーション ---
+    // 呼吸: 全体をわずかに膨らませる
+    const br = idle.breath ? Math.sin(t * 1.25) : 0;
+    group.scale.set(1 + 0.010 * br, 1 + 0.013 * br, 1 + 0.010 * br);
+    // 頭: きょろきょろ＋傾け＋呼吸に合わせた小さなうなずき。火を吹く間は正面に戻る
+    let calm = 1;
+    if (animOn) { const c = t % 5.2; if (c < 2.9) calm = 0; else if (c < 3.7) calm = (c - 2.9) / 0.8; else if (c > 4.5) calm = Math.max(0, 1 - (c - 4.5) / 0.7); }
+    const yawT = idle.head ? (0.13 * Math.sin(t * 0.37) + 0.05 * Math.sin(t * 0.83 + 2.0)) * calm : 0;
+    const tiltT = idle.head ? 0.085 * Math.sin(t * 0.21 + 0.8) * (0.5 + 0.5 * Math.sin(t * 0.53)) * calm : 0;
+    headYawCur += (yawT - headYawCur) * 0.05;
+    headTiltCur += (tiltT - headTiltCur) * 0.05;
+    if (parts.head) {
+      parts.head.rotation.y = headYawCur;
+      parts.head.rotation.z = headTiltCur;
+      parts.head.rotation.x = idle.head ? 0.025 * Math.sin(t * 1.25 + 0.4) * calm : 0;
+    }
+    // 尻尾: ゆっくり左右に振る
+    if (parts.tail) {
+      parts.tail.rotation.y = idle.tail ? 0.085 * Math.sin(t * 1.15) + 0.03 * Math.sin(t * 2.17 + 1.3) : 0;
+      parts.tail.rotation.x = idle.tail ? 0.035 * Math.sin(t * 0.83 + 0.6) : 0;
+    }
+    // 目パチ: 目の部品の材質をまぶた色に切り替える
+    if (idle.blink && t >= blinkNext) { blinkUntil = t + 0.13; blinkNext = t + (Math.random() < 0.15 ? 0.45 : 2.4 + Math.random() * 2.6); }
+    if (parts.eye && eyeMats) parts.eye.material = (idle.blink && t < blinkUntil) ? eyeMats.lid : eyeMats.n;
     updateFire(t, cellSize);
     camera.position.set(0, fitR * 0.25, dist);
     camera.lookAt(0, 0, 0);
