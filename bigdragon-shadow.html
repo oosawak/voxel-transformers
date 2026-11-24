@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>赤い子竜（大）影の比較版 格子1024｜変形ボクセルモデル集</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; background: #0b1324; color: #e2e8f0; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 1.45rem; margin: 4px 0 10px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+  .tabs a { color: #cbd5e1; text-decoration: none; border: 1px solid #334155; border-radius: 999px; padding: 6px 14px; font-size: .9rem; background: #111c33; }
+  .tabs a.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+  p.lead { color: #cbd5e1; line-height: 1.75; margin: 0 0 14px; }
+  #stage { background: radial-gradient(1200px 600px at 50% 30%, #16233f 0%, #0b1324 70%); border: 1px solid #1e293b; border-radius: 14px; }
+  canvas { display: block; width: 100%; height: 62vh; touch-action: none; cursor: grab; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .bar button { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 999px; padding: 7px 16px; font-size: .92rem; cursor: pointer; }
+  .bar button.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .bar .lbl { color: #94a3b8; font-size: .9rem; }
+  #status { color: #94a3b8; font-size: .9rem; margin-top: 10px; line-height: 1.7; }
+  h2 { font-size: 1.1rem; margin: 26px 0 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td { border: 1px solid #1e293b; padding: 7px 10px; text-align: left; }
+  th { background: #111c33; color: #cbd5e1; white-space: nowrap; }
+  td { color: #e2e8f0; }
+  .back { margin-top: 26px; }
+  .back a { color: #7dd3fc; }
+</style>
+</head>
+<body>
+<main>
+  <h1>赤い子竜（大）比較版 ― 陰影と影は表示側で</h1>
+  <nav class="tabs">
+    <a href="./index.html">モデル集</a>
+    <a href="./warlords.html">武将ロボ</a>
+    <a href="./maids.html">十二支メイドロボ＋猫</a>
+    <a href="./classics.html">西遊記／封神演義ロボ</a>
+    <a href="./sangokushi.html">三国志ロボ</a>
+    <a href="./zodiac.html">黄道十二星座ロボ</a>
+    <a href="./howto.html">作り方</a>
+  </nav>
+  <p class="lead">
+    <a href="./bigdragon-rgb.html">焼き込み版（RGB版）</a>との比較用です。データは、パレットの色をそのまま RGB で持っただけ（13色、陰影の焼き込みなし）で、陰影と影は表示側が付けます。
+    面の向きによる明暗はライト、窪みの暗さはジオメトリを作る時の頂点の陰影（頂点AO）、翼が体に落とすような影はシャドウマップです。
+    下のボタンで頂点の陰影と影をオン/オフして、焼き込み版と比べられます。はばたきと口の開閉、火吹きも動きます。ドラッグで回せます。
+  </p>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div class="bar">
+    <span class="lbl">解像度:</span>
+    <button data-lod="4">1/4（軽い）</button>
+    <button data-lod="2">1/2</button>
+    <button data-lod="1">フル（重い）</button>
+    <button id="rot" class="on">自動回転: オン</button>
+    <button id="anim" class="on">アニメ: オン</button>
+    <button id="ao" class="on">頂点の陰影: オン</button>
+    <button id="shadow" class="on">影: オン</button>
+  </div>
+  <div id="status">読み込み中…</div>
+
+  <h2>実測の記録</h2>
+  <table>
+    <tr><th>格子</th><td>878 × 982 × 1024（総格子点 882,884,608）。形はパレット版と同一（生成し直しではなく、パレット版の表面データから色だけを作り直した）</td></tr>
+    <tr><th>表面ボクセル</th><td>1,385,385個</td></tr>
+    <tr><th>形式</th><td>.voxx の RGB 版（座標は uint16、色は RGB 各1バイト、1ボクセル9バイト）。色はパレットの13色をそのまま RGB に展開しただけで、陰影の焼き込みはしていない。palette.json は翼・あごの部品分けの判定に使う参照色としてだけ残してある</td></tr>
+    <tr><th>データ量</th><td>焼き込み版と同寸。.voxx は 12,468,465 バイト、Web 用データ（base64）は 16,625,057 バイト</td></tr>
+    <tr><th>陰影の付け方</th><td>表示側。頂点AOは、面の隅ごとに周りの3近傍（横・縦・角）を見て4段階に暗くする。影は方向ライトのシャドウマップ（2048×2048）で、翼や頭が体に落とす影まで付く</td></tr>
+    <tr><th>表示</th><td>面カリング＋LOD（LOD の色は RGB の平均）。影を描く分、描画パスが1回増える。ジオメトリ生成も、頂点AOの近傍判定の分だけ重くなる。アニメーションは翼・あご・体に部品分けして、それぞれの部品の中で面カリングしている</td></tr>
+  </table>
+  <p class="back"><a href="./index.html">← モデル集へ戻る</a></p>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./models/babydragon_big-rgbflat-data.js"></script>
+<script>
+(function () {
+  const status = document.getElementById('status');
+  const M = window.BIG_MODEL;
+  if (!M) { status.textContent = 'データの読み込みに失敗しました。'; return; }
+  const FORM = M.forms[0];
+  const X = FORM.dims[0], Y = FORM.dims[1], Z = FORM.dims[2];
+
+  // --- デコード（u16rgb9: 座標 uint16 ×3 ＋ 色 RGB 各1バイト） ---
+  const bin = atob(FORM.data);
+  const NB = bin.length;
+  const n = (NB / 9) | 0;
+  const VX = new Uint16Array(n), VY = new Uint16Array(n), VZ = new Uint16Array(n);
+  const VR = new Uint8Array(n), VG = new Uint8Array(n), VB = new Uint8Array(n);
+  for (let i = 0, o = 0; i < n; i++, o += 9) {
+    VX[i] = bin.charCodeAt(o) | (bin.charCodeAt(o + 1) << 8);
+    VY[i] = bin.charCodeAt(o + 2) | (bin.charCodeAt(o + 3) << 8);
+    VZ[i] = bin.charCodeAt(o + 4) | (bin.charCodeAt(o + 5) << 8);
+    VR[i] = bin.charCodeAt(o + 6); VG[i] = bin.charCodeAt(o + 7); VB[i] = bin.charCodeAt(o + 8);
+  }
+  const PAL = [];
+  for (const k in M.palette) PAL[+k] = M.palette[k];
+  // 部品分け用: RGB から一番近いパレット番号を引く（陰影は明るさ方向の倍率なので、色の向きで比べる）
+  const PALN = [];
+  for (const k in PAL) {
+    if (PAL[k] === undefined) continue;
+    const r = (PAL[k] >> 16) & 255, g = (PAL[k] >> 8) & 255, b = PAL[k] & 255;
+    const len = Math.hypot(r, g, b) || 1;
+    PALN[k] = [r / len, g / len, b / len];
+  }
+  function nearestPal(r, g, b) {
+    const len = Math.hypot(r, g, b) || 1;
+    const ur = r / len, ug = g / len, ub = b / len;
+    let best = 0, bd = -2;
+    for (const k in PALN) {
+      const d = ur * PALN[k][0] + ug * PALN[k][1] + ub * PALN[k][2];
+      if (d > bd) { bd = d; best = +k; }
+    }
+    return best;
+  }
+
+  // --- LOD 間引き（s×s×s セルの RGB 平均） ---
+  function downsample(s) {
+    if (s === 1) {
+      const cells = new Array(n);
+      for (let i = 0; i < n; i++) cells[i] = { x: VX[i], y: VY[i], z: VZ[i], r: VR[i], g: VG[i], b: VB[i], idx: nearestPal(VR[i], VG[i], VB[i]) };
+      return cells;
+    }
+    const map = new Map();
+    for (let i = 0; i < n; i++) {
+      const gx = (VX[i] / s) | 0, gy = (VY[i] / s) | 0, gz = (VZ[i] / s) | 0;
+      const key = (gx * 2048 + gy) * 2048 + gz;
+      let cell = map.get(key);
+      if (!cell) { cell = { x: gx * s, y: gy * s, z: gz * s, sr: 0, sg: 0, sb: 0, cnt: 0 }; map.set(key, cell); }
+      cell.sr += VR[i]; cell.sg += VG[i]; cell.sb += VB[i]; cell.cnt++;
+    }
+    const cells = [...map.values()];
+    for (const cell of cells) {
+      cell.r = Math.round(cell.sr / cell.cnt); cell.g = Math.round(cell.sg / cell.cnt); cell.b = Math.round(cell.sb / cell.cnt);
+      cell.idx = nearestPal(cell.r, cell.g, cell.b);
+      delete cell.sr; delete cell.sg; delete cell.sb; delete cell.cnt;
+    }
+    return cells;
+  }
+
+  // --- 部品分け（翼・あご・体） ---
+  // 実測した位置関係（格子座標）: 顔は +Y 側（目の暗色が y 662..786, z 637..782）、
+  // 翼膜は x 173..704 / y 255..388 / z 330..513。ローカル座標は lx=x-X/2, ly=z-Z/2, lz=-(y-Y/2) で、正面は -Z。
+  const MEMB = new Set([7, 8]);       // 翼膜の色（濃い赤紫2色、パレット番号）
+  const REDS = new Set([1, 2, 3]);    // 翼の枠の赤3色
+  const WING_PIVOT = { x: 35, y: -105 };  // 翼の付け根（ローカル座標、回転はZ軸まわり）
+  const JAW_PIVOT = { y: 92, z: -150 };  // あごの関節（回転はX軸まわり。口の奥の上端）
+  function classify(cells, s) {
+    const part = new Int8Array(cells.length); // 0=体 1=翼(左) 2=翼(右) 3=あご
+    const loc = cells.map(cell => ({
+      lx: cell.x + s / 2 - X / 2, ly: cell.z + s / 2 - Z / 2, lz: -(cell.y + s / 2 - Y / 2)
+    }));
+    const inWingRegion = L => Math.abs(L.lx) <= 310 && L.ly >= -300 && L.ly <= 90 && L.lz >= 30 && L.lz <= 330;
+    // 翼: 膜色を種に、近くの赤い枠セルへ広げる
+    const byKey = new Map();
+    cells.forEach((cell, i) => byKey.set((cell.x * 2048 + cell.y) * 2048 + cell.z, i));
+    const queue = [];
+    cells.forEach((cell, i) => { if (MEMB.has(cell.idx)) { part[i] = loc[i].lx > 0 ? 2 : 1; queue.push([i, 0]); } });
+    const seen = new Set(queue.map(q => q[0]));
+    let qh = 0;
+    while (qh < queue.length) {
+      const [i, step] = queue[qh++];
+      if (step >= 16) continue;
+      const cell = cells[i];
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+        if (!dx && !dy && !dz) continue;
+        const j = byKey.get(((cell.x + dx * s) * 2048 + (cell.y + dy * s)) * 2048 + (cell.z + dz * s));
+        if (j === undefined || seen.has(j)) continue;
+        if (!REDS.has(cells[j].idx) || !inWingRegion(loc[j])) continue;
+        seen.add(j); part[j] = loc[j].lx > 0 ? 2 : 1; queue.push([j, step + 1]);
+      }
+    }
+    // あご: 実測では口の内側（暗赤色）は格子 z 573..610・前面 y 695..778、口先ブロックは z 530..700。
+    // あごは「口より下で、前面に出ている部分」だけにする（鼻先や口先の上半分を一緒に動かさない）。
+    cells.forEach((cell, i) => {
+      if (part[i]) return;
+      const L = loc[i];
+      if (L.lz >= -300 && L.lz <= -145 && L.ly >= 5 && L.ly <= 92 && Math.abs(L.lx) <= 205) part[i] = 3;
+    });
+    return part;
+  }
+
+  // --- 面カリングしたジオメトリ（部品ごと。オフセットは部品の回転中心） ---
+  const DIRS = [
+    { d: [1, 0, 0], n: [1, 0, 0] }, { d: [-1, 0, 0], n: [-1, 0, 0] },
+    { d: [0, 1, 0], n: [0, 0, -1] }, { d: [0, -1, 0], n: [0, 0, 1] },
+    { d: [0, 0, 1], n: [0, 1, 0] }, { d: [0, 0, -1], n: [0, -1, 0] }
+  ];
+  // 面の4隅に接線方向の符号（a, b）を持たせる。頂点AOの近傍判定に使う
+  function faceFrame(d) {
+    let u, v;
+    if (d[0] !== 0) { u = [0, 1, 0]; v = [0, 0, 1]; }
+    else if (d[1] !== 0) { u = [1, 0, 0]; v = [0, 0, 1]; }
+    else { u = [1, 0, 0]; v = [0, 1, 0]; }
+    const h = 0.5;
+    const c = [d[0] * h, d[1] * h, d[2] * h];
+    const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => ({
+      a, b,
+      p: [c[0] + u[0] * a * h + v[0] * b * h,
+          c[1] + u[1] * a * h + v[1] * b * h,
+          c[2] + u[2] * a * h + v[2] * b * h]
+    }));
+    const P = corners.map(k => k.p);
+    const e1 = [P[1][0] - P[0][0], P[1][1] - P[0][1], P[1][2] - P[0][2]];
+    const e2 = [P[3][0] - P[0][0], P[3][1] - P[0][1], P[3][2] - P[0][2]];
+    const cr = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
+    if (cr[0] * d[0] + cr[1] * d[1] + cr[2] * d[2] < 0) { const t = corners[1]; corners[1] = corners[3]; corners[3] = t; }
+    return { d, u, v, corners };
+  }
+  const FRAMES = DIRS.map(({ d }) => faceFrame(d));
+  const AO_LEVELS = [0.55, 0.72, 0.86, 1.0];
+  let aoOn = true;
+  function buildPartGeometry(list, s) {
+    const occ = new Set();
+    for (const c of list) occ.add((c.x * 2048 + c.y) * 2048 + c.z);
+    const has = (x, y, z) => occ.has((x * 2048 + y) * 2048 + z);
+    let faces = 0;
+    for (const c of list) for (const { d } of FRAMES) {
+      if (!has(c.x + d[0] * s, c.y + d[1] * s, c.z + d[2] * s)) faces++;
+    }
+    const pos = new Float32Array(faces * 4 * 3);
+    const nor = new Float32Array(faces * 4 * 3);
+    const col = new Float32Array(faces * 4 * 3);
+    const idx = new Uint32Array(faces * 6);
+    let fp = 0, ip = 0, vi = 0;
+    const off = (s - 1) / 2;
+    for (const c of list) {
+      const cx = c.x + off - X / 2, cy = c.z + off - Z / 2, cz = -(c.y + off - Y / 2);
+      const br = c.r / 255, bg = c.g / 255, bb = c.b / 255;
+      for (const { d, u, v, corners } of FRAMES) {
+        if (has(c.x + d[0] * s, c.y + d[1] * s, c.z + d[2] * s)) continue;
+        const ln = [d[0], d[2], -d[1]];
+        for (const k of corners) {
+          let f = 1;
+          if (aoOn) {
+            const s1 = has(c.x + (d[0] + u[0] * k.a) * s, c.y + (d[1] + u[1] * k.a) * s, c.z + (d[2] + u[2] * k.a) * s) ? 1 : 0;
+            const s2 = has(c.x + (d[0] + v[0] * k.b) * s, c.y + (d[1] + v[1] * k.b) * s, c.z + (d[2] + v[2] * k.b) * s) ? 1 : 0;
+            const cc = has(c.x + (d[0] + u[0] * k.a + v[0] * k.b) * s, c.y + (d[1] + u[1] * k.a + v[1] * k.b) * s, c.z + (d[2] + u[2] * k.a + v[2] * k.b) * s) ? 1 : 0;
+            f = AO_LEVELS[(s1 && s2) ? 0 : 3 - (s1 + s2 + cc)];
+          }
+          pos[fp] = cx + (k.p[0] * s); pos[fp + 1] = cy + (k.p[2] * s); pos[fp + 2] = cz + (-k.p[1] * s);
+          nor[fp] = ln[0]; nor[fp + 1] = ln[1]; nor[fp + 2] = ln[2];
+          col[fp] = br * f; col[fp + 1] = bg * f; col[fp + 2] = bb * f;
+          fp += 3;
+        }
+        idx[ip++] = vi; idx[ip++] = vi + 1; idx[ip++] = vi + 2;
+        idx[ip++] = vi; idx[ip++] = vi + 2; idx[ip++] = vi + 3;
+        vi += 4;
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.setIndex(new THREE.BufferAttribute(idx, 1));
+    return { geometry: g, faces };
+  }
+
+  // --- シーン ---
+  const canvas = document.getElementById('cv');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1324);
+  const camera = new THREE.PerspectiveCamera(45, 2, 1, 20000);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const dir = new THREE.DirectionalLight(0xfff5e6, 0.95); dir.position.set(600, 1200, 700); scene.add(dir);
+  dir.castShadow = true;
+  dir.shadow.mapSize.set(2048, 2048);
+  dir.shadow.camera.left = -950; dir.shadow.camera.right = 950;
+  dir.shadow.camera.top = 950; dir.shadow.camera.bottom = -950;
+  dir.shadow.camera.near = 200; dir.shadow.camera.far = 4000;
+  dir.shadow.bias = -0.0001; dir.shadow.normalBias = 3;
+  const rim = new THREE.DirectionalLight(0x4da6ff, 0.45); rim.position.set(-700, 300, -800); scene.add(rim);
+  const group = new THREE.Group(); scene.add(group);
+
+  // 火の粒子（口の開閉と連動）
+  const FIRE_N = 150, FIRE_LIFE = 0.55;
+  const fireSeeds = [];
+  for (let i = 0; i < FIRE_N; i++) fireSeeds.push({ u: Math.random(), ang: Math.random() * Math.PI * 2, rad: Math.sqrt(Math.random()), wob: Math.random() * Math.PI * 2 });
+  const fireMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffffff }), FIRE_N);
+  fireMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  fireMesh.visible = false; fireMesh.frustumCulled = false;
+  group.add(fireMesh);
+  const dummy = new THREE.Object3D();
+  const fireColor = new THREE.Color(), fireC1 = new THREE.Color(0xfff3b0), fireC2 = new THREE.Color(0xff7b1c), fireC3 = new THREE.Color(0xc22418);
+  const MOUTH = { x: 0, y: 78, z: -300, len: 430 };  // 口の内側の実測位置（格子 z 573..610、前面 y 786）
+  function smooth01(u) { return u * u * (3 - 2 * u); }
+  // 約5.2秒周期: 静止 → 口が開く → 開いたまま（火を吐く） → 閉じる（伸縮実験ページと同じ型）
+  function openAmount(t) {
+    const c = t % 5.2;
+    if (c < 0.3) return 0;
+    if (c < 0.8) return smooth01((c - 0.3) / 0.5);
+    if (c < 2.2) return 1;
+    if (c < 2.7) return 1 - smooth01((c - 2.2) / 0.5);
+    return 0;
+  }
+  function updateFire(nowS, cell) {
+    const c = nowS % 5.2;
+    const bursting = animOn && c >= 0.7 && c <= 2.3;
+    fireMesh.visible = !!bursting;
+    if (!bursting) return;
+    const bt = c - 0.7;
+    for (let i = 0; i < FIRE_N; i++) {
+      const sd = fireSeeds[i];
+      const age = ((bt / FIRE_LIFE + sd.u) % 1);
+      const prog = age;
+      const spread = 6 + prog * 95 * sd.rad;
+      dummy.position.set(
+        MOUTH.x + Math.cos(sd.ang) * spread,
+        MOUTH.y + Math.sin(sd.ang) * spread * 0.5 - prog * prog * 18,
+        MOUTH.z - prog * MOUTH.len
+      );
+      const sc = Math.max(0.1, (1.15 - age)) * 15 * cell;
+      dummy.scale.set(sc, sc, sc);
+      dummy.rotation.set(sd.wob + prog * 2, sd.wob * 2 + prog * 3, 0);
+      dummy.updateMatrix();
+      fireMesh.setMatrixAt(i, dummy.matrix);
+      if (age < 0.35) fireColor.copy(fireC1).lerp(fireC2, age / 0.35);
+      else fireColor.copy(fireC2).lerp(fireC3, (age - 0.35) / 0.65);
+      fireMesh.setColorAt(i, fireColor);
+    }
+    fireMesh.instanceMatrix.needsUpdate = true;
+    if (fireMesh.instanceColor) fireMesh.instanceColor.needsUpdate = true;
+  }
+
+  let parts = { body: null, wingL: null, wingR: null, jaw: null };
+  let partMat = null;
+  let cellSize = 2;
+  function clearParts() {
+    for (const k in parts) if (parts[k]) { group.remove(parts[k]); parts[k].geometry.dispose(); parts[k] = null; }
+  }
+  function build(s) {
+    cellSize = s;
+    status.textContent = '組み立て中…（解像度 1/' + s + '）';
+    setTimeout(() => {
+      const t0 = performance.now();
+      const cells = downsample(s);
+      const part = classify(cells, s);
+      const lists = [[], [], [], []];
+      cells.forEach((cell, i) => lists[part[i]].push(cell));
+      clearParts();
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+      partMat = mat;
+      let faces = 0;
+      const mk = (list, off) => {
+        if (!list.length) return null;
+        const { geometry, faces: f } = buildPartGeometry(list, s);
+        faces += f;
+        if (off) geometry.translate(-off.x, -off.y, -off.z);
+        const mesh = new THREE.Mesh(geometry, mat);
+        mesh.castShadow = true; mesh.receiveShadow = true;
+        if (off) mesh.position.set(off.x, off.y, off.z);
+        group.add(mesh);
+        return mesh;
+      };
+      parts.body = mk(lists[0], null);
+      parts.wingL = mk(lists[1], { x: -WING_PIVOT.x, y: WING_PIVOT.y, z: 0 });
+      parts.wingR = mk(lists[2], { x: WING_PIVOT.x, y: WING_PIVOT.y, z: 0 });
+      parts.jaw = mk(lists[3], { x: 0, y: JAW_PIVOT.y, z: JAW_PIVOT.z });
+      const secs = ((performance.now() - t0) / 1000).toFixed(1);
+      status.innerHTML = '解像度 1/' + s + '： ボクセル ' + cells.length.toLocaleString() + '個 → 面 ' + faces.toLocaleString() +
+        '枚（三角形 ' + (faces * 2).toLocaleString() + '）。組み立て ' + secs + '秒。翼 ' + (lists[1].length + lists[2].length).toLocaleString() +
+        '個／あご ' + lists[3].length.toLocaleString() + '個を別部品にしています。';
+    }, 30);
+  }
+
+  // --- カメラと操作 ---
+  const fitR = 0.5 * Math.hypot(X, Y, Z);
+  let yaw = 2.7, pitch = 0.32, autoRot = true;
+  let animOn = new URLSearchParams(location.search).get('anim') !== '0';
+  let dragging = false, px = 0, py = 0;
+  canvas.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    yaw += (e.clientX - px) * 0.008; pitch += (e.clientY - py) * 0.008;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch));
+    px = e.clientX; py = e.clientY;
+  });
+  canvas.addEventListener('pointerup', () => { dragging = false; });
+  let dist = fitR * 2.6;
+  canvas.addEventListener('wheel', e => { e.preventDefault(); dist = Math.max(fitR * 0.9, Math.min(fitR * 5, dist * (1 + Math.sign(e.deltaY) * 0.09))); }, { passive: false });
+
+  const lodBtns = [...document.querySelectorAll('[data-lod]')];
+  let curLod = window.innerWidth < 760 ? 4 : 2;
+  function syncLod() { lodBtns.forEach(b => b.classList.toggle('on', +b.dataset.lod === curLod)); }
+  lodBtns.forEach(b => b.addEventListener('click', () => { curLod = +b.dataset.lod; syncLod(); build(curLod); }));
+  const rotBtn = document.getElementById('rot');
+  rotBtn.addEventListener('click', () => { autoRot = !autoRot; rotBtn.textContent = '自動回転: ' + (autoRot ? 'オン' : 'オフ'); rotBtn.classList.toggle('on', autoRot); });
+  const animBtn = document.getElementById('anim');
+  function syncAnim() { animBtn.textContent = 'アニメ: ' + (animOn ? 'オン' : 'オフ'); animBtn.classList.toggle('on', animOn); }
+  animBtn.addEventListener('click', () => { animOn = !animOn; syncAnim(); });
+  syncAnim();
+  let shadowOn = true;
+  const aoBtn = document.getElementById('ao');
+  aoBtn.addEventListener('click', () => { aoOn = !aoOn; aoBtn.textContent = '頂点の陰影: ' + (aoOn ? 'オン' : 'オフ'); aoBtn.classList.toggle('on', aoOn); build(curLod); });
+  const shadowBtn = document.getElementById('shadow');
+  shadowBtn.addEventListener('click', () => { shadowOn = !shadowOn; dir.castShadow = shadowOn; if (partMat) partMat.needsUpdate = true; shadowBtn.textContent = '影: ' + (shadowOn ? 'オン' : 'オフ'); shadowBtn.classList.toggle('on', shadowOn); });
+
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (canvas.width !== (w * renderer.getPixelRatio()) | 0 || canvas.height !== (h * renderer.getPixelRatio()) | 0) {
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+  }
+  function tick() {
+    requestAnimationFrame(tick);
+    resize();
+    if (autoRot && !dragging) yaw += 0.0035;
+    group.rotation.set(0, 0, 0);
+    group.rotation.y = yaw; group.rotation.x = pitch;
+    const t = performance.now() / 1000;
+    if (parts.wingL && parts.wingR) {
+      const flap = animOn ? Math.sin(t * 4.0) * 0.40 : 0;
+      parts.wingR.rotation.z = flap;
+      parts.wingL.rotation.z = -flap;
+    }
+    if (parts.jaw) parts.jaw.rotation.x = animOn ? -openAmount(t) * 0.32 : 0;
+    updateFire(t, cellSize);
+    camera.position.set(0, fitR * 0.25, dist);
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+  }
+  syncLod();
+  build(curLod);
+  tick();
+})();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "cdf4ee53507948e4a412f503875833cd"}'></script>
+</body>
+</html>
